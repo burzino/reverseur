@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  MAX_GAIN_DB,
+  UNVOICED_MAX_GAIN_DB,
+  analyzeTrim,
   applyFades,
   encodeWavSamples,
   findTrimBounds,
+  normalizeGainDb,
   normalizeSamples,
   peakOf,
+  processSamples,
   reverseSamples,
   trimSamples,
 } from "./audio";
@@ -206,6 +211,99 @@ describe("encodeWavSamples", () => {
     const empty = encodeWavSamples([new Float32Array(0)], 16000);
     expect(empty.byteLength).toBe(44);
     expect(new DataView(empty).getUint32(40, true)).toBe(0);
+  });
+});
+
+/** Adds a 10 ms full-scale noise burst ("click" of a finger tap) at atMs. */
+function addClick(x: Float32Array, atMs: number, amp = 0.9, lenMs = 10): Float32Array {
+  const s = ms(atMs);
+  for (let i = s; i < Math.min(x.length, s + ms(lenMs)); i++) x[i] += (i % 2 ? 1 : -1) * amp;
+  return x;
+}
+
+describe("trim: isolated clicks are not voice (3 consecutive windows)", () => {
+  it("cuts a 10 ms click before and after the voice", () => {
+    // 600 ms silence, voice 300..700, 500 ms silence; clicks at 100 ms and 1000 ms
+    const x = addClick(addClick(makeSignal({ preMs: 300, toneMs: 400, postMs: 500, amp: 0.3 }), 100), 1000);
+    const t = analyzeTrim([x], SR);
+    expect(t.voiced).toBe(true);
+    expect(Math.abs(t.start - (ms(300) - ms(50)))).toBeLessThanOrEqual(WIN);
+    expect(Math.abs(t.end - (ms(700) + ms(50)))).toBeLessThanOrEqual(WIN);
+  });
+
+  it("a loud click does not raise the threshold above a quiet voice", () => {
+    const x = addClick(makeSignal({ preMs: 300, toneMs: 400, postMs: 500, amp: 0.05 }), 1100, 1);
+    const { start, end } = findTrimBounds([x], SR);
+    expect(Math.abs(start - (ms(300) - ms(50)))).toBeLessThanOrEqual(WIN);
+    expect(Math.abs(end - (ms(700) + ms(50)))).toBeLessThanOrEqual(WIN);
+  });
+
+  it("keeps real voice with pauses untouched (two syllables and the gap)", () => {
+    const a = makeSignal({ preMs: 200, toneMs: 120, postMs: 0, amp: 0.3 });
+    const gap = new Float32Array(ms(80));
+    const b = makeSignal({ preMs: 0, toneMs: 200, postMs: 300, amp: 0.2 });
+    const x = new Float32Array(a.length + gap.length + b.length);
+    x.set(a);
+    x.set(b, a.length + gap.length);
+    const { start, end } = findTrimBounds([x], SR);
+    expect(Math.abs(start - (ms(200) - ms(50)))).toBeLessThanOrEqual(WIN);
+    expect(Math.abs(end - (ms(600) + ms(50)))).toBeLessThanOrEqual(WIN);
+  });
+
+  it("only clicks, no voice → whole buffer, voiced false; minWindows 1 restores the old rule", () => {
+    const x = addClick(addClick(new Float32Array(ms(800)), 200), 600);
+    expect(analyzeTrim([x], SR)).toEqual({ start: 0, end: x.length, voiced: false });
+    const old = findTrimBounds([x], SR, { minWindows: 1 });
+    expect(Math.abs(old.start - (ms(200) - ms(50)))).toBeLessThanOrEqual(WIN);
+    expect(Math.abs(old.end - (ms(610) + ms(50)))).toBeLessThanOrEqual(WIN);
+  });
+
+  it("a buffer shorter than 3 windows can still be voice", () => {
+    const x = makeSignal({ preMs: 0, toneMs: 15, postMs: 0, amp: 0.5 });
+    expect(analyzeTrim([x], SR)).toEqual({ start: 0, end: x.length, voiced: true });
+  });
+});
+
+describe("normalize gain cap / processSamples", () => {
+  it("normalizeSamples honours maxGainDb", () => {
+    const x = makeSignal({ amp: 0.01 }); // -40 dBFS
+    const y = normalizeSamples([x], -1, 24);
+    expect(dB(peakOf(y))).toBeCloseTo(-16, 1);
+    expect(normalizeGainDb([x], -1, 24)).toBe(24);
+    expect(normalizeGainDb([x])).toBeCloseTo(39, 1);
+    expect(normalizeGainDb([new Float32Array(10)])).toBe(0);
+  });
+
+  it("voiced recording: peak -1 dBFS, voiced true", () => {
+    const r = processSamples([makeSignal({ amp: 0.2, noise: 0.003 })], SR);
+    expect(r.voiced).toBe(true);
+    expect(Math.abs(dB(peakOf(r.channels)) + 1)).toBeLessThan(0.1);
+    expect(r.gainDb).toBeCloseTo(-1 - dB(0.2 + 0.003), 0);
+  });
+
+  it("near-silent recording with hiss is not blown up to -1 dBFS", () => {
+    const hiss = makeSignal({ preMs: 0, toneMs: 0, postMs: 1000, noise: 0.005 });
+    const peakIn = dB(peakOf([hiss]));
+    const r = processSamples([hiss], SR);
+    expect(r.voiced).toBe(false);
+    expect(r.gainDb).toBe(UNVOICED_MAX_GAIN_DB);
+    expect(r.channels[0]).toHaveLength(hiss.length);
+    expect(dB(peakOf(r.channels))).toBeLessThanOrEqual(peakIn + UNVOICED_MAX_GAIN_DB + 0.01);
+    expect(dB(peakOf(r.channels))).toBeLessThan(-20);
+  });
+
+  it("very quiet voice: gain capped at MAX_GAIN_DB", () => {
+    const r = processSamples([makeSignal({ amp: 0.02 })], SR); // -34 dBFS, voiced (RMS > 0.01)
+    expect(r.voiced).toBe(true);
+    expect(r.gainDb).toBe(MAX_GAIN_DB);
+    expect(dB(peakOf(r.channels))).toBeCloseTo(-34 + MAX_GAIN_DB, 0);
+  });
+
+  it("silent and empty input: gain 0, no NaN", () => {
+    const r = processSamples([new Float32Array(ms(200))], SR);
+    expect(r).toMatchObject({ voiced: false, gainDb: 0 });
+    expect(r.channels[0].every((v) => v === 0)).toBe(true);
+    expect(processSamples([new Float32Array(0)], SR).channels[0]).toHaveLength(0);
   });
 });
 

@@ -77,7 +77,14 @@ export function holdButton(
   let startedAt = 0;
   let shakeTimer = 0;
   let bypassTapPending = false; // pointerdown happened while bypass() was true
+  // Element rect taken at pointerdown, before `.is-holding` (which may scale
+  // the button) is added: the leave hit-test uses it, so a finger near the
+  // edge does not "leave" a button that merely shrank under it.
+  let pressRect: DOMRect | null = null;
   let destroyed = false;
+
+  const isOutside = (e: PointerEvent, r: DOMRect): boolean =>
+    e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
 
   const wantsBypass = (): boolean => {
     try {
@@ -171,6 +178,7 @@ export function holdButton(
     releaseCapture();
     active = null;
     done = false;
+    pressRect = null;
     resetVisuals();
   }
 
@@ -207,11 +215,20 @@ export function holdButton(
     } catch {
       /* synthetic or already-gone pointer */
     }
+    const rect = el.getBoundingClientRect(); // before start() adds .is-holding
     start({ kind: 'pointer', id: e.pointerId, ev: e });
+    pressRect = rect;
   }
 
   function onPointerUp(e: PointerEvent): void {
     if (isOurs(e)) cancel('early');
+  }
+
+  // Window-level (capture): a bypass tap released outside the element (drag
+  // off) gets no click on the element, so the pending tap must not linger.
+  // Released inside, it stays pending for the click that follows.
+  function onWinPointerUp(e: PointerEvent): void {
+    if (bypassTapPending && isOutside(e, el.getBoundingClientRect())) bypassTapPending = false;
   }
 
   function onPointerCancel(e: PointerEvent): void {
@@ -221,10 +238,7 @@ export function holdButton(
 
   function onPointerMove(e: PointerEvent): void {
     if (!isOurs(e) || done) return;
-    const r = el.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
-      cancel('leave');
-    }
+    if (isOutside(e, pressRect ?? el.getBoundingClientRect())) cancel('leave');
   }
 
   function onPointerLeave(e: PointerEvent): void {
@@ -235,6 +249,9 @@ export function holdButton(
   function onLostCapture(e: PointerEvent): void {
     // Capture lost while pressed without up/cancel (e.g. element re-rendered).
     if (isOurs(e) && !done) cancel('cancel');
+    // Touch has implicit capture, lost right after pointerup and before the
+    // click: keep a bypass tap released inside, drop one released outside.
+    if (bypassTapPending && isOutside(e, el.getBoundingClientRect())) bypassTapPending = false;
   }
 
   // ---- keyboard ---------------------------------------------------------
@@ -268,8 +285,9 @@ export function holdButton(
     bypassTapPending = false;
     if (isDisabled(el)) return;
     // Pointer tap that started in bypass mode, or a non-pointer click
-    // (detail 0: assistive tech / programmatic) while bypass is on.
-    if (tap || (e.detail === 0 && !active && wantsBypass())) confirmNow(e);
+    // (detail 0: assistive tech / programmatic); either way bypass must still
+    // be on now (it may have turned off since pointerdown, e.g. sound ended).
+    if ((tap || (e.detail === 0 && !active)) && wantsBypass()) confirmNow(e);
   }
 
   const prevent = (e: Event): void => e.preventDefault();
@@ -294,6 +312,7 @@ export function holdButton(
   ];
   for (const [type, fn] of elListeners) el.addEventListener(type, fn as EventListener);
   el.addEventListener('click', onClick, true);
+  win.addEventListener('pointerup', onWinPointerUp, true);
   win.addEventListener('blur', onWinBlur);
   doc.addEventListener('visibilitychange', onVisibility);
 
@@ -308,6 +327,7 @@ export function holdButton(
     el.classList.remove('is-shake');
     for (const [type, fn] of elListeners) el.removeEventListener(type, fn as EventListener);
     el.removeEventListener('click', onClick, true);
+    win.removeEventListener('pointerup', onWinPointerUp, true);
     win.removeEventListener('blur', onWinBlur);
     doc.removeEventListener('visibilitychange', onVisibility);
   };

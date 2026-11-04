@@ -14,6 +14,8 @@ const HARNESS_HTML = `<!doctype html>
   body { font-family: system-ui, sans-serif; margin: 16px; }
   button { display: block; width: 240px; height: 80px; margin: 0 0 24px;
     touch-action: manipulation; user-select: none; -webkit-touch-callout: none; }
+  /* like the app's pulsanti.css: the button shrinks while held */
+  .is-holding { transform: scale(0.97); }
 </style></head>
 <body>
   <button id="hold" type="button">Tieni premuto</button>
@@ -21,6 +23,7 @@ const HARNESS_HTML = `<!doctype html>
   <button id="disabled" type="button" disabled>Disabled</button>
   <button id="aria" type="button" aria-disabled="true">Aria disabled</button>
   <button id="action" type="button">Svelte action</button>
+  <button id="flip" type="button">Bypass switchable</button>
 </body></html>`;
 
 const HARNESS_JS = `
@@ -53,6 +56,14 @@ const mk = (bypassOn, tag) => ({
 });
 window.__action = hold(actionEl, mk(false, 'v1'));
 window.__actionNext = () => window.__action.update(mk(true, 'v2'));
+// Bypass driven by a flag the test flips (window.__flipBypass).
+window.__flipBypass = true;
+const flipEl = track('flip');
+holdButton(flipEl, {
+  onConfirm: () => { log.flip.confirm++; },
+  onCancel: ({ reason }) => { log.flip.cancel.push(reason); },
+  bypass: () => window.__flipBypass,
+});
 window.__ready = true;
 `;
 
@@ -162,10 +173,15 @@ test("is-holding and --hold-progress while held, is-shake after early release", 
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.waitForTimeout(100);
-  await expect(el).toHaveClass(/is-holding/);
-  const p = await el.evaluate((n) => parseFloat((n as HTMLElement).style.getPropertyValue("--hold-progress")));
-  expect(p).toBeGreaterThan(0);
-  expect(p).toBeLessThan(1);
+  // Class and progress sampled together, mid-hold (separate round-trips can
+  // land after the 200 ms confirm when the machine is loaded).
+  const snap = await el.evaluate((n) => ({
+    holding: n.classList.contains("is-holding"),
+    p: parseFloat((n as HTMLElement).style.getPropertyValue("--hold-progress")),
+  }));
+  expect(snap.holding).toBe(true);
+  expect(snap.p).toBeGreaterThan(0);
+  expect(snap.p).toBeLessThan(1);
   await page.mouse.up();
   await expect(el).toHaveClass(/is-shake/);
   await expect(el).not.toHaveClass(/is-holding/);
@@ -323,6 +339,65 @@ test("bypass: a plain tap or Enter confirms immediately", async ({ page }) => {
   await page.keyboard.press("Enter");
   s = await stats(page, "bypass");
   expect(s.confirm).toBe(2);
+});
+
+test("bypass: drag off without click leaves no stale tap for a later programmatic click", async ({ page }) => {
+  const setBypass = (on: boolean) => page.evaluate((v) => ((window as any).__flipBypass = v), on);
+  const { x, y, box } = await center(page, "#flip");
+  // pointerdown in bypass mode, drag off, release outside: no click on the button
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x, box.y + box.height + 60, { steps: 3 });
+  await page.mouse.up();
+  let s = await stats(page, "flip");
+  expect(s.confirm).toBe(0);
+  // bypass turns off; a detail-0 click (assistive tech / el.click()) must not confirm
+  await setBypass(false);
+  await page.evaluate(() => (document.getElementById("flip") as HTMLElement).click());
+  s = await stats(page, "flip");
+  expect(s.confirm).toBe(0);
+  expect(s.clicks).toBe(0);
+  // with bypass on, a detail-0 click still confirms (unchanged behaviour)
+  await setBypass(true);
+  await page.evaluate(() => (document.getElementById("flip") as HTMLElement).click());
+  expect((await stats(page, "flip")).confirm).toBe(1);
+});
+
+test("bypass re-checked at click: bypass turning off between pointerdown and click does not confirm", async ({ page }) => {
+  const { x, y } = await center(page, "#flip");
+  await page.mouse.move(x, y);
+  await page.mouse.down(); // bypass on at pointerdown
+  await page.evaluate(() => ((window as any).__flipBypass = false)); // e.g. the sound ended
+  await page.mouse.up(); // click follows
+  await page.waitForTimeout(30);
+  let s = await stats(page, "flip");
+  expect(s.confirm).toBe(0);
+  expect(s.clicks).toBe(0);
+  // bypass on: a plain tap still confirms
+  await page.evaluate(() => ((window as any).__flipBypass = true));
+  await press(page, "#flip", 20);
+  await page.waitForTimeout(30);
+  s = await stats(page, "flip");
+  expect(s.confirm).toBe(1);
+});
+
+test("finger near the edge: the 0.97 scale of .is-holding does not trigger a false leave", async ({ page }) => {
+  const { y, box } = await center(page, "#hold");
+  // 2 px inside the left edge: outside the scaled rect (0.015 × 240 = 3.6 px), inside the original
+  const x = box.x + 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.waitForTimeout(40);
+  await expect(page.locator("#hold")).toHaveClass(/is-holding/);
+  const scaledLeft = await page.locator("#hold").evaluate((n) => n.getBoundingClientRect().left);
+  expect(scaledLeft).toBeGreaterThan(x); // precondition: the pointer is outside the scaled rect
+  await page.mouse.move(x + 0.5, y + 1); // small jitter, still on the button
+  await page.waitForTimeout(230);
+  await page.mouse.up();
+  await page.waitForTimeout(30);
+  const s = await stats(page);
+  expect(s.cancel).toEqual([]);
+  expect(s.confirm).toBe(1);
 });
 
 test("contextmenu is prevented on the button", async ({ page }) => {

@@ -88,12 +88,30 @@ interface Session {
   analyser: AnalyserNode | null;
   source: MediaStreamAudioSourceNode | null;
   raf: number | ReturnType<typeof setTimeout> | null;
+  /** Set once the session has been finished, cancelled or failed. */
+  closed: boolean;
+  /** Pending stop() promise, shared by repeated stop() calls. */
+  stopping: Promise<Blob> | null;
+  /** Rejects the pending stop() promise (cancel / error before onstop). */
+  rejectStop: ((err: RecorderError) => void) | null;
 }
 
 let session: Session | null = null;
 let starting = false;
-let cancelWhileStarting = false;
+/** Incremented by every start() and by cancel(): a getUserMedia that resolves for an old generation is stale. */
+let startGen = 0;
 const levelListeners = new Set<(level: number) => void>();
+const errorListeners = new Set<(err: RecorderError) => void>();
+
+function emitError(err: RecorderError): void {
+  for (const cb of errorListeners) {
+    try {
+      cb(err);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
 
 function emitLevel(level: number): void {
   for (const cb of levelListeners) {
@@ -184,6 +202,35 @@ function teardown(s: Session): void {
   if (session === s) session = null;
 }
 
+function detach(s: Session): void {
+  s.recorder.ondataavailable = null;
+  s.recorder.onstop = null;
+  s.recorder.onerror = null;
+  for (const t of s.stream.getTracks()) t.onended = null;
+}
+
+/**
+ * Closes a session without producing a Blob: recorder stopped, data
+ * discarded, tracks stopped. A pending stop() rejects with `err`; otherwise,
+ * if `notify`, the onError listeners receive `err` (after the teardown).
+ */
+function abort(s: Session, err: RecorderError, notify: boolean): void {
+  if (s.closed) return;
+  s.closed = true;
+  const reject = s.rejectStop;
+  s.rejectStop = null;
+  detach(s);
+  s.chunks = [];
+  try {
+    if (s.recorder.state !== "inactive") s.recorder.stop();
+  } catch {
+    /* ignore */
+  }
+  teardown(s);
+  if (reject) reject(err);
+  else if (notify) emitError(err);
+}
+
 // --- public API ------------------------------------------------------------
 
 export function isRecording(): boolean {
@@ -197,13 +244,14 @@ export async function start(): Promise<void> {
   if (!md || typeof md.getUserMedia !== "function" || typeof globalThis.MediaRecorder !== "function") {
     throw new RecorderError("unsupported", "Recording not supported in this browser");
   }
+  const gen = ++startGen;
   starting = true;
-  cancelWhileStarting = false;
   let stream: MediaStream | null = null;
   try {
     stream = await md.getUserMedia({ audio: currentConstraints() });
-    if (cancelWhileStarting) {
-      // cancel() was called while the permission prompt was open.
+    if (gen !== startGen) {
+      // cancel() was called while the permission prompt was open: release the
+      // stale stream and resolve without recording.
       stopTracks(stream);
       return;
     }
@@ -217,33 +265,59 @@ export async function start(): Promise<void> {
       analyser: null,
       source: null,
       raf: null,
+      closed: false,
+      stopping: null,
+      rejectStop: null,
     };
     recorder.ondataavailable = (e: BlobEvent) => {
       if (e.data && e.data.size > 0) s.chunks.push(e.data);
     };
-    recorder.onerror = () => {
-      // Unexpected recorder failure: release the microphone.
-      teardown(s);
+    recorder.onerror = (e?: Event) => {
+      // Unexpected recorder failure: release the microphone and tell the UI.
+      const cause = (e as { error?: unknown } | undefined)?.error ?? e;
+      abort(s, new RecorderError("unknown", "Recorder error", cause), true);
     };
+    for (const t of stream.getTracks()) {
+      // Microphone unplugged, permission revoked, iOS interruption (call, Siri).
+      // Not fired by our own track.stop().
+      t.onended = () => abort(s, new RecorderError("unknown", "Microphone track ended"), true);
+    }
     session = s;
     recorder.start(100); // timeslice so Safari delivers data
     startMeter(s);
   } catch (err) {
     stopTracks(stream);
-    if (session && session.stream === stream) teardown(session);
+    if (session && session.stream === stream) {
+      detach(session);
+      session.closed = true;
+      teardown(session);
+    }
+    if (gen !== startGen) return; // cancelled meanwhile: nobody waits for this error
     throw mapError(err);
   } finally {
-    starting = false;
+    if (gen === startGen) starting = false;
   }
 }
 
-/** Stops the recorder, ALWAYS stops every track, resolves the Blob. */
+/**
+ * Stops the recorder, ALWAYS stops every track, resolves the Blob.
+ * Rejects with RecorderError('unknown') if not recording, if the Blob is
+ * empty, if cancel() is called before the recorder delivers its data, or if
+ * the recorder / microphone fails meanwhile (then onError is NOT called).
+ * Calling stop() again while one is pending returns the same promise.
+ */
 export function stop(): Promise<Blob> {
   const s = session;
-  if (!s) return Promise.reject(new RecorderError("unknown", "Not recording"));
-  return new Promise<Blob>((resolve, reject) => {
+  if (!s || s.closed) return Promise.reject(new RecorderError("unknown", "Not recording"));
+  if (s.stopping) return s.stopping;
+  s.stopping = new Promise<Blob>((resolve, reject) => {
     const { recorder } = s;
+    s.rejectStop = reject;
     const finish = (): void => {
+      if (s.closed) return;
+      s.closed = true;
+      s.rejectStop = null;
+      detach(s);
       teardown(s);
       const type = s.mimeType || recorder.mimeType || s.chunks[0]?.type || "";
       const blob = new Blob(s.chunks, type ? { type } : undefined);
@@ -258,26 +332,42 @@ export function stop(): Promise<Blob> {
     try {
       recorder.stop();
     } catch (err) {
-      teardown(s);
-      reject(mapError(err));
+      abort(s, mapError(err), false);
     }
   });
+  return s.stopping;
 }
 
-/** Like stop() but discards data; safe to call when idle. */
+/**
+ * Like stop() but discards data; safe to call when idle. Fully resets: a
+ * start() still waiting for the permission prompt is abandoned (it resolves
+ * without recording and its stream is released when it arrives), so a new
+ * start() can be called right away. A pending stop() rejects with
+ * RecorderError('unknown', 'Recording cancelled').
+ */
 export function cancel(): void {
-  if (starting) cancelWhileStarting = true;
+  if (starting) {
+    startGen++;
+    starting = false;
+  }
   const s = session;
   if (!s) return;
-  s.chunks = [];
-  s.recorder.ondataavailable = null;
-  s.recorder.onstop = null;
-  try {
-    if (s.recorder.state !== "inactive") s.recorder.stop();
-  } catch {
-    /* ignore */
-  }
-  teardown(s);
+  abort(s, new RecorderError("unknown", "Recording cancelled"), false);
+}
+
+/**
+ * Subscribe to unexpected session failures: MediaRecorder `error` or a
+ * microphone track `ended` (unplugged, permission revoked, iOS interruption).
+ * Called at most once per session, after the teardown (tracks stopped,
+ * isRecording() false, data discarded), with RecorderError('unknown').
+ * Not called for cancel(), nor when a stop() is pending (that promise rejects
+ * instead). Returns unsubscribe.
+ */
+export function onError(cb: (err: RecorderError) => void): () => void {
+  errorListeners.add(cb);
+  return () => {
+    errorListeners.delete(cb);
+  };
 }
 
 /** Subscribe to level updates (0..1, ~every animation frame) while recording. Returns unsubscribe. */

@@ -24,15 +24,25 @@ Constants:
 ```js
 reverseSamples(samples: Float32Array): Float32Array          // new array, reversed
 findTrimBounds(channels: Float32Array[], sampleRate: number,
-               opts?: { windowMs = 10, marginMs = 50, threshold?: number })
+               opts?: { windowMs = 10, marginMs = 50, threshold?: number, minWindows = 3 })
   : { start: number, end: number }   // sample indices, end exclusive.
                                      // threshold = RMS in linear units; default derived
-                                     // (e.g. max(0.01, 0.1 * maxWindowRms)). If nothing is
-                                     // above threshold returns { start: 0, end: length }.
+                                     // (e.g. max(0.01, 0.1 * sustainedMaxRms)). Voice = a run of
+                                     // >= minWindows consecutive windows above threshold (an
+                                     // isolated click is not voice). If no voice is found
+                                     // returns { start: 0, end: length }.
+analyzeTrim(channels, sampleRate, opts?)                     // added: same as findTrimBounds
+  : { start, end, voiced: boolean }                          // plus whether voice was found
 trimSamples(channels, sampleRate, opts?) : Float32Array[]    // slices using findTrimBounds
 peakOf(channels: Float32Array[]): number                     // max |x|
-normalizeSamples(channels, targetDb = -1): Float32Array[]    // new arrays, peak = 10^(-1/20)
+normalizeSamples(channels, targetDb = -1, maxGainDb = Infinity): Float32Array[]
+                                                             // new arrays, peak = 10^(-1/20),
+                                                             // gain never above maxGainDb;
                                                              // silent input returned unchanged
+normalizeGainDb(channels, targetDb = -1, maxGainDb = Infinity): number  // added: gain it applies
+processSamples(channels, sampleRate)                         // added: trim → capped normalize → fades
+  : { channels, voiced: boolean, gainDb: number }            // cap MAX_GAIN_DB = 24 if voiced,
+                                                             // UNVOICED_MAX_GAIN_DB = 12 if not
 applyFades(channels, sampleRate, fadeMs = 5): Float32Array[] // new arrays, linear fade in/out
 encodeWavSamples(channels, sampleRate): ArrayBuffer          // 16-bit PCM WAV
 ```
@@ -47,6 +57,11 @@ reverse(buf: AudioBuffer): AudioBuffer
 trimSilence(buf: AudioBuffer): AudioBuffer
 normalize(buf: AudioBuffer): AudioBuffer
 process(buf: AudioBuffer): AudioBuffer      // trimSilence → normalize → fades (5 ms)
+                                            // = processWithInfo(buf).buffer (gain capped)
+processWithInfo(buf: AudioBuffer)           // added
+  : { buffer: AudioBuffer, voiced: boolean, gainDb: number }
+     // voiced false = no voice found (silence / faint hiss / clicks only): the UI
+     // may say "registrazione troppo debole". gainDb = normalization gain applied.
 play(buf: AudioBuffer, opts?: { onEnded?: () => void, meta?: object }): () => void
      // Stops whatever is playing first (only one sound at a time), starts an
      // AudioBufferSourceNode, returns stopFn. onEnded fires once, both on natural
@@ -71,10 +86,23 @@ start(): Promise<void>
 stop(): Promise<Blob>
      // Stops recorder, ALWAYS calls track.stop() on every track (iOS earpiece bug),
      // disconnects the level analyser, resolves the Blob (type = chosen mimeType).
-cancel(): void          // like stop() but discards data; safe to call when idle
+     // Rejects RecorderError('unknown') if not recording, empty Blob, cancel() before
+     // the data arrives ('Recording cancelled'), or recorder/mic failure meanwhile.
+     // A second stop() while one is pending returns the same promise.
+cancel(): void          // like stop() but discards data; safe to call when idle.
+     // Fully resets: a start() waiting on the permission prompt is abandoned (it
+     // resolves without recording; its stream is released when it arrives), so a new
+     // start() works immediately (no 'busy'). A pending stop() rejects (see above).
 isRecording(): boolean
 onLevel(cb: (level: number) => void): () => void
      // level 0..1 (RMS-based, ~ every animation frame) while recording; returns unsubscribe
+onError(cb: (err: RecorderError) => void): () => void      // added
+     // MediaRecorder 'error' or a mic track 'ended' (unplugged, permission revoked,
+     // iOS interruption). Called at most once per session, AFTER teardown (tracks
+     // stopped, isRecording() false, data discarded), with code 'unknown'
+     // (message 'Recorder error' / 'Microphone track ended'). Not called for
+     // cancel(), nor while a stop() is pending (that promise rejects instead).
+     // Returns unsubscribe.
 export class RecorderError extends Error { code: 'denied' | 'notfound' | 'unsupported' | 'busy' | 'unknown' }
 export const MIC_CONSTRAINTS = { echoCancellation: false, noiseSuppression: true, autoGainControl: true }
      // if the URL has ?mic=alt, use { echoCancellation: true, noiseSuppression: true,
@@ -104,6 +132,10 @@ element bounds → `leave`; `pointercancel` (scroll) → `cancel`; window blur /
 (ignore `repeat`) starts, keyup before `ms` → `early`. Disabled elements
 (`el.disabled` or `aria-disabled="true"`) are ignored. Prevents `contextmenu` and the
 native `click` (so a disabled-by-hold element never fires click handlers).
+Bypass: a tap started in bypass mode confirms on the following click only if
+`bypass()` is still true then; released outside the element (drag off) it is dropped.
+The leave hit-test uses the rect measured at pointerdown (before `.is-holding`,
+which may scale the button), so the shrink cannot cause a false `leave`.
 
 ## `js/state.js`
 
@@ -123,6 +155,8 @@ native `click` (so a disabled-by-hold element never fires click handlers).
 createStore(initial?) → { getState(), setSlot(id, patch), setPlaying(p | null),
                           setRevealed(bool), addScore('guessed'|'missed'),
                           reset() /* clears slots, playing, revealed; keeps score */,
+                          newRound() /* additive: clears revealed + verdict, keeps slots and score;
+                                        called when A starts/commits a new recording */,
                           subscribe(fn: (state, prev) => void): () => void }
 ```
 `state.js` must not import browser modules; localStorage access is wrapped in
