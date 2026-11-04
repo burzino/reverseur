@@ -270,12 +270,16 @@
     padding-bottom: calc(var(--spazio-schermata) + env(safe-area-inset-bottom));
   }
 
+  /* Gli slot sono alti quanto il contenuto: i pad di Slot.svelte si dimensionano con le unita' cq di questo
+     contenitore (altezza libera, ma al massimo 1:1,3). Lo spazio che avanza va sopra e sotto. */
   .slots {
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: auto auto;
+    align-content: center;
     gap: var(--spazio-schermata);
+    container-type: size;
   }
 
   .fondo {
@@ -339,25 +343,29 @@
       max-width: 600px;
     }
   }
-  /* Desktop: slot affiancati, la barra di Rivela sotto, centrata */
+  /* Desktop: slot affiancati e Rivela subito sotto, raggruppati al centro dello spazio libero */
   @media (min-width: 900px) {
     .interno,
     .contenuto {
-      max-width: 1040px;
+      max-width: 1080px;
     }
     .interno-conferma {
       max-width: 560px;
     }
-    /* slot alti quanto il contenuto, centrati nello spazio libero */
+    .contenuto {
+      justify-content: center;
+      gap: var(--spazio-5);
+    }
     .slots {
+      flex: none;
+      container-type: inline-size;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: auto;
-      align-content: center;
       gap: var(--spazio-5);
     }
     .fondo {
       width: 100%;
-      max-width: 640px;
+      max-width: 520px;
       align-self: center;
     }
   }
@@ -368,6 +376,8 @@
       min-height: 100dvh;
     }
     .slots {
+      flex: none;
+      container-type: inline-size;
       grid-template-rows: auto;
     }
   }

@@ -23,7 +23,8 @@ export const t = {
   ],
 
   // Slot
-  titoloSlotA: "Originale",
+  /** Titolo breve dello slot A: non "Originale", che e' gia' l'etichetta della pillola di ascolto. */
+  titoloSlotA: "Parola",
   giocatoreA: "Giocatore A",
   titoloSlotB: "Imitazione",
   giocatoreB: "Giocatore B",
@@ -43,12 +44,11 @@ export const t = {
   riregistraDomanda: "Sovrascrivere la registrazione?",
   riregistraConferma: "Sì, registra di nuovo",
 
-  // Stati dello slot
+  // Stati dello slot: una parola sola (la riga del titolo deve stare in 360 px; la durata e' in "Al contrario")
   statoVuoto: "Vuoto",
-  statoRegistrazione: "In registrazione",
-  statoPronto: "Pronto · {durata}",
-  statoRiproduzioneContrario: "In riproduzione · al contrario",
-  statoRiproduzioneOriginale: "In riproduzione · originale",
+  statoRegistrazione: "Registro…",
+  statoPronto: "Pronto",
+  statoRiproduzione: "Riproduco…",
   timer: "{trascorso} / {massimo}",
   livelloMicrofono: "Livello del microfono",
   registrazioneNonRiuscita: "Registrazione non riuscita o troppo breve. Riprova.",

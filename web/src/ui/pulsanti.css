@@ -199,6 +199,15 @@
   opacity: 1;
   transform: translate(-50%, 0);
 }
+/* Variante sotto il pulsante (pillola nella riga del titolo: sopra c'e' l'intestazione dell'app) */
+.suggerimento.sotto {
+  bottom: auto;
+  top: calc(100% - 2px);
+  transform: translate(-50%, -4px);
+}
+.suggerimento.sotto.visibile {
+  transform: translate(-50%, 0);
+}
 
 @media (prefers-reduced-motion: reduce) {
   /* lo shake diventa un lampo di contorno: l'informazione resta, il movimento no */
