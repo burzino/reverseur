@@ -2,38 +2,41 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current state
+Reverseur is a "reverse word" guessing game, shipped as a PWA. Player A records a word, Player B listens to it reversed and imitates it, and the app reverses B's recording. Answer in Italian. All UI text is Italian.
 
-The repository contains only `PROMPT.md`, a spec written in Italian for building **Reverseur**, a "reverse word" guessing game (PWA). No source code, `package.json`, tests, or git repo exist yet. Build, lint, and test commands are therefore not defined; once the project is scaffolded, add them here. `PROMPT.md` is the source of truth for requirements, and `docs/DECISIONS.md` (planned) records trade-offs.
+## Where things live
 
-## Hard constraints (from PROMPT.md)
+- `PROMPT.md` is the original spec (Italian) and the source of truth for behaviour.
+- `STATO.md` records work status by wave, decisions, open points, and agent notes. The orchestrator and every agent update it.
+- `docs/INTERFACES.md` is the contract between modules, including the DOM contract (`data-action`, `data-role`, `data-state`) that E2E tests rely on.
+- `docs/DECISIONS.md` records trade-offs, such as Svelte instead of vanilla, the workbox service worker, and the mic constraints.
 
-- Vanilla HTML, CSS, and ES-module JavaScript with **no build step and no framework or bundler**. Any exception must be justified in `docs/DECISIONS.md`.
-- No backend, analytics, or external network requests. Audio never leaves the device. Use no external dependencies at runtime.
-- All paths must be **relative**: the app is served from `https://burzino.github.io/reverseur/`, not the domain root.
-- Microphone via `getUserMedia` + `MediaRecorder`. Audio processing via Web Audio API (`decodeAudioData`, reverse each channel's `Float32Array`, trim silence, normalize peak to −1 dBFS, 5 ms fades).
-- Must work offline (`service-worker.js`, cache-first) and be installable (`manifest.webmanifest`).
-- UI text is Italian and lives in `i18n.js`.
-- Commits use Conventional Commits in English.
+## Stack and commands (run from `web/`)
 
-## Planned architecture
+The stack is Svelte 5 (runes), TypeScript strict, Vite, vite-plugin-pwa, Vitest, and Playwright, the same as github.com/burzino/agenteur.
 
-The app is one screen with two slots (Player A's original, Player B's imitation). Each slot has record, play reversed, and play original actions. Module responsibilities:
+```bash
+npm install
+npm test                 # Vitest (unit, node env)
+npm run check            # svelte-check
+npm run build            # check + vite build -> dist/ (base /reverseur/)
+npm run test:e2e         # Playwright: builds, runs vite preview on :4173/reverseur/, fake mic from tests/fixtures/word.wav
+npx playwright test tests/e2e/hold.spec.ts --project=chromium   # one spec
+```
 
-- `recorder.js` produces a Blob and exposes a level callback for the VU-meter.
-- `audio.js` holds the single shared `AudioContext`. It contains the pure functions `reverse`, `trimSilence`, and `normalize`, which operate on `Float32Array` so they can be unit-tested without a browser. It also handles play and stop, and only one sound plays at a time.
-- `holdButton.js` is a reusable 200 ms long-press guard (`HOLD_TO_PLAY_MS`). It backs both "Listen to original" for Player A and the "Reveal" button, so the answer can't be triggered by an accidental tap.
-- `state.js` is the session store (slot A, slot B, playing) with events. `main.js` wires it to the UI.
+## Architecture
 
-Interfaces that modules must respect are listed in the "Interfaces" section of `PROMPT.md`.
+- `web/src/audio/` contains `audio.ts` and `recorder.ts`. `audio.ts` holds the one shared `AudioContext`. Its pure functions on `Float32Array` (reverse, trim, normalize, fades, WAV) are tested in Node. `recorder.ts` wraps getUserMedia and MediaRecorder.
+- `web/src/ui/` holds the Svelte components and the session store. `holdButton.ts` is the 200 ms long-press guard (`HOLD_TO_PLAY_MS`) plus the `use:hold` action. It protects Player A's "Ascolta originale" and the "Rivela" button.
+- In test mode (`?test`), `window.__reverseurSpy.started` records every started `AudioBufferSourceNode`, and `window.__reverseur.store` exposes the store.
 
 ## Platform quirks to preserve
 
-- Create or `resume()` the `AudioContext` inside a user gesture (iOS requirement).
+- Call `audio.ensureRunning()` synchronously at the start of every gesture handler, before any `await`. iOS requires it.
 - Call `track.stop()` after every recording. Otherwise iOS keeps routing audio to the earpiece.
-- Pick the MIME type with `MediaRecorder.isTypeSupported` in order: `audio/webm;codecs=opus`, `audio/mp4`, `audio/ogg`.
-- Microphone constraints: `echoCancellation: false`, `noiseSuppression: true`, `autoGainControl: true`. Compare the alternative and record the choice in `docs/DECISIONS.md`.
+- Pick the MIME type in this order: `audio/webm;codecs=opus`, `audio/mp4`, `audio/ogg`.
+- No backend, analytics, or network requests. Audio never leaves the device.
 
-## Testing plan
+## Deploy
 
-Planned: unit tests for the pure audio functions, and Playwright E2E tests using Chromium with `--use-fake-device-for-media-stream` and `--use-file-for-fake-audio-capture` (fixture `tests/fixtures/word.wav`). E2E tests should check `data-state` on slots and use an exposed spy to confirm an `AudioBufferSourceNode` started. CI runs in `.github/workflows/test.yml`, and deploy runs from `pages.yml` on `main`.
+GitHub Pages is deployed through Actions (`.github/workflows/pages.yml`) with base `/reverseur/`. Because of the user's custom domain, the live URL is https://burzi.eu/reverseur/. Commits use Conventional Commits in English.

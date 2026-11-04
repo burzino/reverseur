@@ -1,8 +1,12 @@
 # Interfaces between modules (orchestrator contract)
 
-Every module is a native ES module under `js/`, imported with **relative** paths
-(`./audio.js`). No module may touch `window`/`document`/`navigator` at import
-time except `main.js`, so that the pure functions can be imported by `node --test`.
+Stack: Svelte 5 + TypeScript + Vite in `web/` (see STATO.md). Module locations:
+`web/src/audio/audio.ts`, `web/src/audio/recorder.ts`, `web/src/ui/holdButton.ts`
+(+ Svelte action `hold`), `web/src/ui/state.svelte.ts` (store), `web/src/ui/testi.ts`
+(i18n). Sections below still say `js/*.js` / `main.js`: read them as these TS
+modules and the Svelte components (`App.svelte`). No module except the UI
+entry point may touch `window`/`document`/`navigator` at import time, so that
+the pure functions can be unit-tested by Vitest in the node environment.
 
 Constants:
 
