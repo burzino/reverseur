@@ -338,7 +338,8 @@
     animation: compare var(--molla-spaziale);
   }
 
-  /* Registra si prende l'altezza libera, i due ascolti affiancati sotto */
+  /* Spazio dei pulsanti, uno sotto l'altro: Registra 40%, Al contrario 40%, Originale 20%.
+     Basi proporzionali in dvh: su desktop (slot alto quanto il contenuto) le proporzioni restano. */
   .azioni {
     position: relative;
     flex: 1;
@@ -348,30 +349,45 @@
     gap: clamp(6px, 1dvh, 12px);
   }
   .riga-registra {
-    /* base definita: su desktop lo slot e' alto quanto il contenuto; su telefono cresce o si stringe */
-    flex: 1 1 max(120px, 22dvh);
-    min-height: var(--altezza-pulsante-grande);
-    max-height: max(160px, 28dvh);
+    flex: 4 1 14dvh;
+    min-height: var(--altezza-pulsante);
     display: flex;
   }
   .riga-ascolto {
-    flex: none;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spazio-2);
+    display: contents;
+  }
+  .riga-ascolto > .pulsante[data-action="play-reversed"] {
+    flex: 4 1 14dvh;
+  }
+  .riga-ascolto > .pulsante[data-action="play-original"],
+  .contenitore-trattieni {
+    flex: 2 1 7dvh;
   }
   .riga-ascolto .pulsante {
-    justify-content: flex-start;
-    gap: var(--spazio-2);
-    height: 100%;
-    min-height: clamp(var(--altezza-pulsante), 8dvh, 76px);
-    padding-inline: var(--spazio-3);
+    justify-content: center;
+    gap: var(--spazio-3);
+    min-height: var(--altezza-pulsante);
+    padding-inline: var(--spazio-4);
     font: var(--testo-titolo);
     line-height: 1.2;
+  }
+  /* Al contrario: l'ascolto chiave del gioco, grande quanto Registra */
+  .riga-ascolto > .pulsante[data-action="play-reversed"] {
+    font-size: 1.375rem;
+    background: var(--contenitore-accento);
+    color: var(--su-contenitore-accento);
+  }
+  .riga-ascolto > .pulsante[data-action="play-reversed"] :global(svg) {
+    width: 2rem;
+    height: 2rem;
   }
   .contenitore-trattieni {
     display: flex;
     min-width: 0;
+    min-height: var(--altezza-pulsante);
+  }
+  .contenitore-trattieni > .pulsante {
+    width: 100%;
   }
   .con-lucchetto {
     display: inline-flex;
