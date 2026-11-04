@@ -18,11 +18,14 @@ File di stato condiviso. L'orchestratore e ogni agente lo aggiornano a fine lavo
 2. [fatto] Agente QA: `web/tests/e2e/flusso.spec.ts` (1 test) e `regole.spec.ts` (12 test) + `helpers.ts`, verdi su chromium e mobile-chromium (2 giri ciascuno). Suite completa: Vitest 65/65, Playwright 90/90. Nessun bug dell'app trovato.
 2. [fatto] Agente CI/Docs: `.github/workflows/pages.yml`, `.github/workflows/test.yml`, `README.md`, `LICENSE` (MIT).
 3. [fatto] Agente Code Reviewer: revisione in sola lettura di tutto `web/`, workflow e build. 0 Critical, 1 High, 4 Medium, 7 Low, vari Nit (elenco in "Note degli agenti › Code Review"). Vitest 46/46 e `svelte-check` 0/0.
-3. [fatto, PR da aprire] Sito personale: carta Reverseur prima di A cracker in `index.html` di burzino.github.io, branch `add-reverseur` (a8bea06) pushato. PR non aperta (gh non autenticato): https://github.com/burzino/burzino.github.io/compare/main...add-reverseur?expand=1. L'icona della carta punta a `reverseur/icona.svg`: il build deve pubblicarla lì.
-3. [bloccato: serve `gh auth login`] Deploy: repo `burzino/reverseur`, Pages, topics, homepage.
+3. [fatto] Sito personale: carta Reverseur prima di A cracker in `index.html` di burzino.github.io, PR https://github.com/burzino/burzino.github.io/pull/1 unita dall'utente il 2026-11-04. Online su https://burzi.eu/.
+3. [fatto] Deploy: repo pubblico https://github.com/burzino/reverseur (topics game, audio, pwa, web-audio-api, svelte; homepage burzi.eu/reverseur), Pages da Actions. Live su https://burzi.eu/reverseur/.
+4. [fatto] Correzioni della review (motore + UI) e layout a schermata unica (100dvh, nessuno scroll da 360×640 a 1280×720). Vitest 65/65, svelte-check 0/0, Playwright 90/90 in locale e in CI; il deploy di Pages ora aspetta gli E2E.
 
 ## Punti aperti
-- `gh` installato ma non autenticato: l'utente deve eseguire `gh auth login`.
+- Collaudo su dispositivi reali (iOS Safari, Android Chrome): sblocco audio iOS, layout, qualità dell'inversione a orecchio.
+- Idea aperta: "Rivela / confronta" potrebbe suonare in sequenza B al contrario e poi A originale (da confermare con l'utente).
+- Caso limite del guard: con il main thread bloccato, un rilascio arrivato prima di 200 ms ma elaborato dopo il timer conferma comunque (segnalato dal QA).
 - Scelta dei vincoli del microfono: non è possibile un ascolto comparativo in questa sessione; `?mic=alt` permette il confronto manuale (vedi DECISIONS.md).
 
 ## Note degli agenti
