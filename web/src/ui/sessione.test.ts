@@ -114,6 +114,33 @@ describe("createStore", () => {
     expect(s.score).toEqual({ guessed: 1, missed: 0 });
   });
 
+  it("newRound toglie rivelazione ed esito ma tiene slot e punteggio", () => {
+    const storage = fakeStorage();
+    const store = createStore({ storage });
+    store.setSlot("A", ready);
+    store.setSlot("B", ready);
+    store.setRevealed(true);
+    store.judge("guessed");
+    store.newRound();
+    const s = store.getState();
+    expect(s.revealed).toBe(false);
+    expect(s.verdict).toBeNull();
+    expect(s.slots.A.status).toBe("ready");
+    expect(s.slots.B.original).toBe(buf);
+    expect(s.score).toEqual({ guessed: 1, missed: 0 });
+    // Il giro nuovo si giudica da capo: il punto precedente resta, uno nuovo si aggiunge.
+    store.judge("missed");
+    expect(store.getState().score).toEqual({ guessed: 1, missed: 1 });
+  });
+
+  it("newRound non notifica se non c'e' niente da azzerare", () => {
+    const store = createStore();
+    const fn = vi.fn();
+    store.subscribe(fn);
+    store.newRound();
+    expect(fn).not.toHaveBeenCalled();
+  });
+
   it("unsubscribe smette di notificare", () => {
     const store = createStore();
     const fn = vi.fn();

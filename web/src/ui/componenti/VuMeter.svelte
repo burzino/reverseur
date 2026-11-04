@@ -29,13 +29,13 @@
   }
   .segmento {
     border-radius: 3px;
-    background: color-mix(in srgb, var(--colore-su-superficie) 14%, transparent);
+    background: color-mix(in srgb, var(--colore-vu, var(--colore-su-superficie)) 22%, transparent);
     transition: background-color 60ms linear;
   }
   .segmento.acceso {
-    background: var(--accento);
+    background: var(--colore-vu, var(--accento));
   }
   .segmento.alto.acceso {
-    background: var(--colore-errore);
+    background: var(--colore-vu-alto, var(--colore-errore));
   }
 </style>

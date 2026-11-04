@@ -177,11 +177,18 @@ section.slot#slot-B[data-slot=B][data-state=...]
     button[data-action=play-original]         (aria-pressed while playing; in slot A it is a holdButton)
     button[data-action=download]              (optional WAV export)
     [data-role=timer]  [data-role=vu]  [data-role=status] (aria-live=polite)
+                                              (timer and vu live inside button[data-action=record])
+    [role=alert]                              slot notice (too short / interrupted / too weak), overlays the slot header
     [data-role=rerecord-confirm] (hidden) with
        button[data-action=confirm-rerecord], button[data-action=cancel-rerecord]
     [data-role=hold-hint]                     "Tieni premuto" (slot A only)
 button#reveal                         holdButton; plays A original, sets revealed
+                                      (a tap while A's original plays only stops it)
+  [data-role=reveal-hint]             "Tieni premuto" live region, sibling of #reveal
+button#help                           opens dialog#rules ("Come si gioca", native modal <dialog>)
 #score  with button[data-action=guessed], button[data-action=missed]   (visible after reveal)
 #mic-error[role=alert] (hidden)       permission-denied help (Chrome / Safari)
 ```
 `data-state="playing"` on a slot is set while either of its sounds is playing.
+Layout: one screen, no vertical scroll at heights >= 600 px (header, two slots sharing the height,
+reveal/score bar). Inline confirms, the mic error and hints overlay content instead of pushing it.

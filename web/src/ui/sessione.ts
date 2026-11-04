@@ -52,6 +52,11 @@ export interface Store {
   addScore(kind: Verdict, delta?: number): void;
   /** Sceglie l'esito della partita: aggiorna il punteggio una sola volta, cambiare idea sposta il punto. */
   judge(v: Verdict): void;
+  /**
+   * Nuovo giro con la stessa partita: toglie rivelazione ed esito, slot e punteggio restano.
+   * Si chiama quando A registra una nuova parola (la soluzione non e' piu' nota).
+   */
+  newRound(): void;
   /** Azzera slot, riproduzione, rivelazione ed esito; il punteggio resta. */
   reset(): void;
   /** Azzera il punteggio salvato. */
@@ -172,6 +177,11 @@ export function createStore(opts: StoreOptions = {}): Store {
       score[v] += 1;
       saveScore(storage, key, score);
       commit({ ...state, score, verdict: v });
+    },
+
+    newRound() {
+      if (!state.revealed && state.verdict === null) return;
+      commit({ ...state, revealed: false, verdict: null });
     },
 
     reset() {

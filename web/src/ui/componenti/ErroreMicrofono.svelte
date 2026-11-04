@@ -53,13 +53,31 @@
 </div>
 
 <style>
+  /* Sovrapposto sotto l'intestazione: non spinge il layout della schermata unica */
   .errore {
+    position: fixed;
+    z-index: 20;
+    top: calc(env(safe-area-inset-top) + 72px);
+    left: 0;
+    right: 0;
+    width: min(100% - 2 * var(--margine-schermata), 560px);
+    max-height: calc(100dvh - env(safe-area-inset-top) - 88px);
+    overflow-y: auto;
+    margin: 0 auto;
     display: grid;
     gap: var(--spazio-3);
     padding: var(--spazio-4);
     border-radius: var(--raggio-xl);
     background: var(--colore-contenitore-errore);
     color: var(--colore-su-contenitore-errore);
+    box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
+    animation: entra var(--molla-spaziale);
+  }
+  @keyframes entra {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
   }
   .errore[hidden] {
     display: none;

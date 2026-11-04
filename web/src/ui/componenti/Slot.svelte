@@ -1,13 +1,15 @@
 <script lang="ts">
   // Uno slot (A = originale, B = imitazione): Registra, Ascolta al contrario, Ascolta originale, Scarica.
   // In A "Ascolta originale" svela la soluzione: pressione lunga (use:hold) finche' non si e' rivelato.
+  // Layout compatto per la schermata unica: riga del titolo (con Scarica come icona), Registra che si
+  // prende l'altezza libera, i due ascolti affiancati. Conferma e avvisi si sovrappongono, non spingono.
+  import { sbloccaAudio } from "../gioco.svelte";
   import { hold } from "../holdButton";
   import type { Playing, PlayMode, SlotId, SlotState } from "../sessione";
   import { riempi, secondi, t } from "../testi";
   import ConfermaInline from "./ConfermaInline.svelte";
   import Icona from "./Icona.svelte";
   import PulsanteRegistra from "./PulsanteRegistra.svelte";
-  import VuMeter from "./VuMeter.svelte";
 
   interface StatoRegistrazione {
     trascorso: number;
@@ -26,7 +28,8 @@
     /** L'altro slot sta registrando: qui non si registra e non si ascolta. */
     altroOccupato: boolean;
     confermaAperta: boolean;
-    errore: boolean;
+    /** Testo dell'avviso di registrazione di questo slot, se c'e'. */
+    errore: string | null;
     suggerimento: boolean;
     massimoMs: number;
     onRegistra: () => void;
@@ -34,7 +37,6 @@
     onAnnullaRiregistra: () => void;
     onAscolta: (mode: PlayMode) => void;
     onScarica: () => void;
-    onGesto: () => void;
     onPressioneAnnullata: (motivo: string) => void;
   }
   let {
@@ -53,11 +55,11 @@
     onAnnullaRiregistra,
     onAscolta,
     onScarica,
-    onGesto,
     onPressioneAnnullata,
   }: Props = $props();
 
   const idAiuto = $props.id();
+  let sezione: HTMLElement | undefined = $state();
   const eA = $derived(id === "A");
   const titolo = $derived(eA ? t.titoloSlotA : t.titoloSlotB);
   const giocatore = $derived(eA ? t.giocatoreA : t.giocatoreB);
@@ -91,6 +93,7 @@
   data-slot={id}
   data-state={slot.status}
   aria-labelledby="titolo-{id}"
+  bind:this={sezione}
 >
   <header class="testa">
     <span class="numero" aria-hidden="true">{eA ? 1 : 2}</span>
@@ -102,22 +105,110 @@
         <span class="punto" aria-hidden="true"></span>{stato}
       </p>
     </div>
+    <button
+      type="button"
+      class="pulsante testo solo-icona scarica"
+      data-action="download"
+      aria-label={t.scaricaWav}
+      disabled={!haAudio || occupato || protetto}
+      title={haAudio && protetto ? t.scaricaDopoRivela : t.scaricaWav}
+      onclick={onScarica}
+    >
+      <Icona nome="scarica" />
+    </button>
+    {#if errore}
+      <!-- Avviso sovrapposto alla riga del titolo: non sposta i pulsanti -->
+      <p class="errore" role="alert">{errore}</p>
+    {/if}
   </header>
 
   <div class="azioni">
-    <PulsanteRegistra
-      inRegistrazione={inRegistrazione}
-      inAvvio={registrazione?.avvio ?? false}
-      inElaborazione={registrazione?.elaborazione ?? false}
-      disabilitato={altroOccupato || (registrazione?.avvio ?? false) || (registrazione?.elaborazione ?? false)}
-      trascorso={registrazione?.trascorso ?? 0}
-      {massimoMs}
-      onPremi={onRegistra}
-    />
-    <VuMeter livello={registrazione?.livello ?? 0} attivo={inRegistrazione && !registrazione?.elaborazione} />
+    <div class="riga-registra">
+      <PulsanteRegistra
+        {inRegistrazione}
+        inAvvio={registrazione?.avvio ?? false}
+        inElaborazione={registrazione?.elaborazione ?? false}
+        disabilitato={altroOccupato || (registrazione?.avvio ?? false) || (registrazione?.elaborazione ?? false)}
+        trascorso={registrazione?.trascorso ?? 0}
+        livello={registrazione?.livello ?? 0}
+        {massimoMs}
+        onPremi={onRegistra}
+      />
+    </div>
 
+    <div class="riga-ascolto">
+      <button
+        type="button"
+        class="pulsante tonale"
+        data-action="play-reversed"
+        aria-label={t.ascoltaContrario}
+        aria-pressed={suonaContrario}
+        disabled={!haAudio || occupato}
+        onclick={() => onAscolta("reversed")}
+      >
+        <Icona nome={suonaContrario ? "stop" : "contrario"} />
+        <span class="etichetta">
+          <span>{t.contrarioBreve}</span>
+          {#if suonaContrario}<span class="sotto">{t.toccaPerFermare}</span>{/if}
+        </span>
+      </button>
+
+      {#if eA}
+        <div class="contenitore-trattieni">
+          <p class="suggerimento" class:visibile={suggerimento} data-role="hold-hint" aria-live="polite">
+            {suggerimento ? t.tieniPremuto : ""}
+          </p>
+          <button
+            type="button"
+            class="pulsante contorno"
+            class:trattieni={protetto}
+            data-action="play-original"
+            aria-label={t.ascoltaOriginale}
+            aria-pressed={suonaOriginale}
+            aria-describedby={protetto ? idAiuto : undefined}
+            disabled={!haAudio || occupato}
+            use:sbloccaAudio
+            use:hold={{
+              onConfirm: () => onAscolta("original"),
+              onCancel: ({ reason }) => onPressioneAnnullata(reason),
+              bypass: () => revealed || (playing?.slot === "A" && playing.mode === "original"),
+            }}
+          >
+            <Icona nome={suonaOriginale ? "stop" : "play"} />
+            <span class="etichetta">
+              <span>{t.originaleBreve}</span>
+              {#if suonaOriginale}
+                <span class="sotto">{t.toccaPerFermare}</span>
+              {:else if protetto}
+                <span class="sotto con-lucchetto"><Icona nome="lucchetto" misura={12} />{t.tieniPremuto}</span>
+              {/if}
+            </span>
+          </button>
+          <span class="solo-lettori" id={idAiuto}>{t.tieniPremutoAiuto}</span>
+        </div>
+      {:else}
+        <button
+          type="button"
+          class="pulsante contorno"
+          data-action="play-original"
+          aria-label={t.ascoltaOriginale}
+          aria-pressed={suonaOriginale}
+          disabled={!haAudio || occupato}
+          onclick={() => onAscolta("original")}
+        >
+          <Icona nome={suonaOriginale ? "stop" : "play"} />
+          <span class="etichetta">
+            <span>{t.originaleBreve}</span>
+            {#if suonaOriginale}<span class="sotto">{t.toccaPerFermare}</span>{/if}
+          </span>
+        </button>
+      {/if}
+    </div>
+
+    <!-- Sovrapposta all'area dei pulsanti: prende il posto di Registra e degli ascolti -->
     <ConfermaInline
       aperto={confermaAperta}
+      sovrapposta
       ruolo="rerecord-confirm"
       domanda={t.riregistraDomanda}
       etichettaSi={t.riregistraConferma}
@@ -126,86 +217,8 @@
       azioneNo="cancel-rerecord"
       onSi={onConfermaRiregistra}
       onNo={onAnnullaRiregistra}
+      ritorno={() => sezione?.querySelector<HTMLElement>("[data-action=record]") ?? null}
     />
-
-    {#if errore}
-      <p class="errore" role="alert">{t.registrazioneNonRiuscita}</p>
-    {/if}
-
-    <button
-      type="button"
-      class="pulsante tonale grande"
-      data-action="play-reversed"
-      aria-pressed={suonaContrario}
-      disabled={!haAudio || occupato}
-      onclick={() => onAscolta("reversed")}
-    >
-      <Icona nome={suonaContrario ? "stop" : "contrario"} misura={28} />
-      <span class="etichetta">
-        <span>{t.ascoltaContrario}</span>
-        {#if suonaContrario}<span class="sotto">{t.toccaPerFermare}</span>{/if}
-      </span>
-    </button>
-
-    {#if eA}
-      <div class="contenitore-trattieni">
-        <p class="suggerimento" class:visibile={suggerimento} data-role="hold-hint" aria-live="polite">
-          {suggerimento ? t.tieniPremuto : ""}
-        </p>
-        <button
-          type="button"
-          class="pulsante contorno"
-          class:trattieni={protetto}
-          data-action="play-original"
-          aria-pressed={suonaOriginale}
-          aria-describedby={protetto ? idAiuto : undefined}
-          disabled={!haAudio || occupato}
-          onpointerdown={onGesto}
-          onkeydown={onGesto}
-          use:hold={{
-            onConfirm: () => onAscolta("original"),
-            onCancel: ({ reason }) => onPressioneAnnullata(reason),
-            bypass: () => revealed || (playing?.slot === "A" && playing.mode === "original"),
-          }}
-        >
-          <Icona nome={suonaOriginale ? "stop" : "play"} />
-          <span class="etichetta">
-            <span>{t.ascoltaOriginale}</span>
-            {#if suonaOriginale}<span class="sotto">{t.toccaPerFermare}</span>
-            {:else if protetto}<span class="sotto">{t.tieniPremuto}</span>{/if}
-          </span>
-          {#if protetto}<span class="lucchetto"><Icona nome="lucchetto" misura={18} /></span>{/if}
-        </button>
-        <span class="solo-lettori" id={idAiuto}>{t.tieniPremutoAiuto}</span>
-      </div>
-    {:else}
-      <button
-        type="button"
-        class="pulsante contorno"
-        data-action="play-original"
-        aria-pressed={suonaOriginale}
-        disabled={!haAudio || occupato}
-        onclick={() => onAscolta("original")}
-      >
-        <Icona nome={suonaOriginale ? "stop" : "play"} />
-        <span class="etichetta">
-          <span>{t.ascoltaOriginale}</span>
-          {#if suonaOriginale}<span class="sotto">{t.toccaPerFermare}</span>{/if}
-        </span>
-      </button>
-    {/if}
-
-    <button
-      type="button"
-      class="pulsante testo scarica"
-      data-action="download"
-      disabled={!haAudio || occupato || protetto}
-      title={haAudio && protetto ? t.scaricaDopoRivela : undefined}
-      onclick={onScarica}
-    >
-      <Icona nome="scarica" misura={20} />
-      {t.scaricaWav}
-    </button>
   </div>
 </section>
 
@@ -215,10 +228,11 @@
     --su-accento: var(--colore-su-primario);
     --contenitore-accento: var(--colore-contenitore-primario);
     --su-contenitore-accento: var(--colore-su-contenitore-primario);
-    display: grid;
-    align-content: start;
-    gap: var(--spazio-4);
-    padding: var(--spazio-4);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(4px, 1dvh, 12px);
+    min-height: 0;
+    padding: clamp(4px, 1dvh, 16px) clamp(10px, 1.4dvh, 16px) clamp(10px, 1.4dvh, 16px);
     border-radius: var(--raggio-xl);
     background: var(--colore-contenitore-superficie-basso);
     border: 1px solid var(--colore-contorno-variante);
@@ -241,45 +255,57 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accento) 30%, transparent);
   }
 
+  /* Riga del titolo: numero · titolo e stato · Scarica (icona) */
   .testa {
+    position: relative;
+    flex: none;
     display: flex;
     align-items: center;
-    gap: var(--spazio-3);
+    gap: var(--spazio-2);
+    min-height: var(--altezza-pulsante);
   }
   .numero {
     flex: none;
     display: grid;
     place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 2.25rem;
+    height: 2.25rem;
     border-radius: var(--raggio-m);
     background: var(--accento);
     color: var(--su-accento);
     font: var(--testo-titolo-sezione);
+    font-size: 1.125rem;
   }
   .titoli {
+    flex: 1;
     display: grid;
-    gap: 2px;
     min-width: 0;
   }
   h2 {
-    font: var(--testo-titolo-sezione);
+    font: var(--testo-titolo);
+    font-size: 1.0625rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .giocatore {
-    font: var(--testo-corpo);
+    font: var(--testo-corpo-piccolo);
     color: var(--colore-su-superficie-variante);
   }
   .stato {
     display: flex;
     align-items: center;
     gap: var(--spazio-2);
-    font: var(--testo-etichetta);
+    min-width: 0;
+    font: var(--testo-didascalia);
+    font-size: 0.8125rem;
     color: var(--colore-su-superficie-variante);
+    white-space: nowrap;
   }
   .punto {
     flex: none;
-    width: 0.625rem;
-    height: 0.625rem;
+    width: 0.5rem;
+    height: 0.5rem;
     border-radius: 50%;
     background: var(--colore-contorno);
   }
@@ -294,29 +320,74 @@
     background: var(--colore-errore);
     animation: lampeggia 1s steps(2, jump-none) infinite;
   }
-
-  .azioni {
-    display: grid;
-    gap: var(--spazio-3);
-  }
-  .azioni :global(.pulsante:not(.testo)) {
-    justify-content: flex-start;
-  }
   .scarica {
-    justify-self: start;
-    font: var(--testo-etichetta);
+    margin-right: calc(-1 * var(--spazio-2));
   }
   .errore {
-    padding: var(--spazio-3) var(--spazio-4);
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    padding: var(--spazio-1) var(--spazio-3);
     border-radius: var(--raggio-m);
     background: var(--colore-contenitore-errore);
     color: var(--colore-su-contenitore-errore);
     font: var(--testo-corpo-piccolo);
+    line-height: 1.15;
+    animation: compare var(--molla-spaziale);
+  }
+
+  /* Registra si prende l'altezza libera, i due ascolti affiancati sotto */
+  .azioni {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(6px, 1dvh, 12px);
+  }
+  .riga-registra {
+    /* base definita: su desktop lo slot e' alto quanto il contenuto; su telefono cresce o si stringe */
+    flex: 1 1 max(120px, 22dvh);
+    min-height: var(--altezza-pulsante-grande);
+    max-height: max(160px, 28dvh);
+    display: flex;
+  }
+  .riga-ascolto {
+    flex: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spazio-2);
+  }
+  .riga-ascolto .pulsante {
+    justify-content: flex-start;
+    gap: var(--spazio-2);
+    height: 100%;
+    min-height: clamp(var(--altezza-pulsante), 8dvh, 76px);
+    padding-inline: var(--spazio-3);
+    font: var(--testo-titolo);
+    line-height: 1.2;
+  }
+  .contenitore-trattieni {
+    display: flex;
+    min-width: 0;
+  }
+  .con-lucchetto {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
   }
 
   @keyframes lampeggia {
     50% {
       opacity: 0.25;
+    }
+  }
+  @keyframes compare {
+    from {
+      opacity: 0;
     }
   }
 </style>

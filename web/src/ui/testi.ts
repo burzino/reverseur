@@ -13,6 +13,7 @@ export const t = {
 
   // Come si gioca
   comeSiGioca: "Come si gioca",
+  chiudi: "Chiudi",
   passi: [
     "Il Giocatore A registra una parola o una frase breve. Gli altri non devono sentirla.",
     "Il Giocatore B ascolta la registrazione di A al contrario.",
@@ -31,6 +32,9 @@ export const t = {
   attendoMicrofono: "Attendo il microfono…",
   ascoltaContrario: "Ascolta al contrario",
   ascoltaOriginale: "Ascolta originale",
+  /** Etichette visibili brevi dei pulsanti di ascolto (il nome accessibile resta quello lungo). */
+  contrarioBreve: "Al contrario",
+  originaleBreve: "Originale",
   toccaPerFermare: "Tocca per fermare",
   scaricaWav: "Scarica WAV",
   scaricaDopoRivela: "Disponibile dopo «Rivela»",
@@ -48,6 +52,9 @@ export const t = {
   timer: "{trascorso} / {massimo}",
   livelloMicrofono: "Livello del microfono",
   registrazioneNonRiuscita: "Registrazione non riuscita o troppo breve. Riprova.",
+  registrazioneDebole: "Registrazione troppo debole: riprova più vicino al microfono.",
+  registrazioneInterrotta:
+    "La registrazione si è interrotta: il microfono si è fermato (scollegato o preso da un'altra app). Riprova.",
 
   // Rivela e punteggio
   rivela: "Rivela / confronta",
@@ -59,6 +66,8 @@ export const t = {
   nonIndovinata: "Non indovinata ✗",
   punteggio: "Punteggio",
   punteggioRiga: "Indovinate {g} · Non indovinate {m}",
+  /** Totale nell'intestazione: corto, deve stare in 360 px accanto a "?" e "Nuova". */
+  punteggioBreve: "Indovinate {g} su {n}",
   azzeraPunteggio: "Azzera",
 
   // Errori del microfono

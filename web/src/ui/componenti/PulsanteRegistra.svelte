@@ -2,6 +2,7 @@
   // "Registra": tap per avviare, tap per fermare. Mentre registra pulsa e mostra il timer.
   import { riempi, secondi, t } from "../testi";
   import Icona from "./Icona.svelte";
+  import VuMeter from "./VuMeter.svelte";
 
   interface Props {
     inRegistrazione: boolean;
@@ -10,10 +11,13 @@
     disabilitato: boolean;
     /** ms trascorsi */
     trascorso: number;
+    /** Livello del microfono 0..1 (VU-meter dentro il pulsante). */
+    livello: number;
     massimoMs: number;
     onPremi: () => void;
   }
-  let { inRegistrazione, inAvvio, inElaborazione, disabilitato, trascorso, massimoMs, onPremi }: Props = $props();
+  let { inRegistrazione, inAvvio, inElaborazione, disabilitato, trascorso, livello, massimoMs, onPremi }: Props =
+    $props();
 
   const sotto = $derived(
     inElaborazione ? t.elaboro : inAvvio ? t.attendoMicrofono : inRegistrazione ? t.toccaPerFermare : "",
@@ -42,12 +46,28 @@
   <span class="timer" data-role="timer" hidden={!inRegistrazione && !inElaborazione}>
     {riempi(t.timer, { trascorso: secondi(trascorso / 1000), massimo: secondi(massimoMs / 1000) })}
   </span>
+  <!-- VU-meter sovrapposto in fondo al pulsante: nessuna riga in piu' mentre si registra -->
+  <span class="vu-contenitore"><VuMeter {livello} attivo={inRegistrazione && !inElaborazione} /></span>
 </button>
 
 <style>
   .registra {
     justify-content: flex-start;
+    height: 100%;
     padding-left: var(--spazio-3);
+    /* alto fino a 160 px: una pillola piena diventerebbe una capsula */
+    border-radius: var(--raggio-xxl);
+  }
+  .vu-contenitore {
+    position: absolute;
+    left: calc(var(--spazio-3) + 3rem + var(--spazio-3));
+    right: var(--spazio-6);
+    bottom: clamp(10px, 1.6dvh, 18px);
+    pointer-events: none;
+  }
+  .vu-contenitore :global(.vu) {
+    height: 8px;
+    --colore-vu: currentColor;
   }
   .icona {
     display: grid;
