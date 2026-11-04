@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="it" data-tema="sistema">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#fef7ff" />
+    <meta name="description" content="Gioco della parola al contrario: registra, inverti, indovina." />
+    <link rel="icon" type="image/svg+xml" href="/icona.svg" />
+    <link rel="icon" type="image/png" href="/icona-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>Reverseur</title>
+    <style>
+      /* sfondo prima del caricamento di tema.css (evita il lampo) */
+      html { background: #fef7ff; }
+      @media (prefers-color-scheme: dark) { html { background: #141218; } }
+    </style>
+    <script>
+      // Tema di sistema applicato prima del primo paint (stessa logica di ui/tema.ts).
+      (function () {
+        try {
+          var scuro = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.setAttribute("data-tema", "sistema");
+          document.querySelector('meta[name="theme-color"]').setAttribute("content", scuro ? "#141218" : "#fef7ff");
+        } catch (e) {
+          /* nessun matchMedia: resta il chiaro */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="radice"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
