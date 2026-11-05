@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverseur v3 · 10 · Storie</title>
+<style>
+/* ---------- Presentation shell (shared by mockups v3 06-10) ---------- */
+@font-face{
+  font-family:"RF";
+  src:url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2-variations"),
+      url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2");
+  font-weight:100 1000;font-stretch:25% 151%;font-display:block;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#ebe9e4;color:#16141c;font-family:"RF",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-optical-sizing:auto}
+body{padding:64px 64px 80px;width:max-content;min-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;text-align:inherit}
+svg{display:block}
+.tnum{font-variant-numeric:tabular-nums}
+
+.doc-head{display:grid;grid-template-columns:1.3fr 1fr 1fr 1.15fr;gap:52px;margin-bottom:28px;align-items:start;max-width:2140px}
+.kicker{font:680 13px/1 "RF";letter-spacing:.18em;text-transform:uppercase;color:#6b6676;margin-bottom:18px}
+.doc-head h1{font-size:84px;line-height:.9;font-weight:900;letter-spacing:-.03em;margin-bottom:20px;font-stretch:88%}
+.doc-head .pitch{font-size:21px;line-height:1.42;color:#2c2935;font-weight:450;max-width:34ch}
+.doc-head h3{font:720 13px/1 "RF";letter-spacing:.15em;text-transform:uppercase;color:#6b6676;margin:4px 0 14px}
+.doc-head p,.doc-head li{font-size:16px;line-height:1.55;color:#34313d}
+.doc-head ol,.doc-head ul{padding-left:20px;display:grid;gap:6px}
+.doc-head strong{font-weight:720;color:#16141c}
+.metrics{display:flex;gap:12px;margin:0 0 56px;flex-wrap:wrap;max-width:2140px}
+.metric{background:#fff;border-radius:18px;padding:14px 20px 13px;display:flex;align-items:baseline;gap:10px;box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.metric b{font:850 30px/1 "RF";letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.metric span{font:560 14px/1.25 "RF";color:#55505f}
+
+.row{display:flex;gap:40px;align-items:flex-start;margin-bottom:64px}
+.shot{display:flex;flex-direction:column;gap:18px;flex:none}
+.cap{display:flex;align-items:baseline;gap:10px;font:620 15px/1.2 "RF";color:#3b3746;padding-left:6px;white-space:nowrap}
+.cap b{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 6px;border-radius:13px;background:#16141c;color:#fff;font:760 13px/1 "RF"}
+.cap span{color:#77727f;font-weight:500}
+
+.phone{width:390px;height:844px;border-radius:54px;position:relative;overflow:hidden;flex:none;isolation:isolate;container-type:size;
+  box-shadow:0 0 0 10px #111016,0 0 0 11.5px #3a3744,0 40px 70px -28px rgba(25,15,50,.5);background:var(--bg);color:var(--ink)}
+.phone.s360{width:360px;height:640px;border-radius:40px}
+.phone.land{width:844px;height:390px}
+.phone.land.s360{width:640px;height:360px;border-radius:40px}
+.sb{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;font:650 16px/1 "RF";z-index:60;pointer-events:none;color:var(--sb,var(--ink))}
+.sb svg{height:13px;width:auto}
+.s360 .sb{height:30px;font-size:13px;padding:2px 20px 0 22px}
+.land .sb{display:none}
+.hi{position:absolute;bottom:8px;left:50%;width:136px;height:5px;border-radius:3px;background:var(--sb,var(--ink));opacity:.75;transform:translateX(-50%);z-index:60;pointer-events:none}
+.s360 .hi{width:100px;height:4px;bottom:6px}
+.scr{position:absolute;inset:0;padding:50px 0 30px;display:flex;flex-direction:column}
+.s360 .scr{padding:30px 0 18px}
+.land .scr{padding:14px 50px 22px}
+.land.s360 .scr{padding:10px 36px 18px}
+
+.desk{border-radius:16px;overflow:hidden;position:relative;flex:none;box-shadow:0 0 0 1px #c9c6cf,0 40px 70px -30px rgba(25,15,50,.45);background:var(--bg);color:var(--ink);container-type:size}
+.desk .bar{height:38px;background:#dedce2;display:flex;align-items:center;gap:8px;padding:0 14px}
+.desk .bar i{width:12px;height:12px;border-radius:50%;background:#bdbac3}
+.desk .bar span{margin-left:16px;font:500 12.5px/1 "RF";color:#5a5663;background:#f4f3f6;border-radius:8px;padding:6px 14px}
+
+.note{width:390px;flex:none;background:#fff;border-radius:28px;padding:30px 30px 28px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 20px 40px -30px rgba(25,15,50,.3)}
+.note h4{font:760 13px/1 "RF";letter-spacing:.15em;text-transform:uppercase;color:#6b6676;margin-bottom:16px}
+.note p,.note li{font-size:14.5px;line-height:1.5;color:#34313d}
+.note ul{padding-left:18px;display:grid;gap:8px}
+.note strong{color:#16141c;font-weight:720}
+.note + .note{margin-top:0}
+.stack{display:flex;flex-direction:column;gap:28px}
+.sw{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.sw i{height:54px;border-radius:14px;display:flex;align-items:flex-end;padding:7px 9px;font:650 11px/1 "RF";font-style:normal}
+
+/* thumb map */
+.thumb{display:flex;gap:18px;align-items:flex-start}
+.thumb svg{flex:none}
+.legend{display:grid;gap:8px;font:520 13px/1.35 "RF";color:#45414f}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:8px;vertical-align:-1px}
+
+/* hold demo shared */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shaking{animation:shake .32s ease}
+.shot-mode *,.shot-mode *::before,.shot-mode *::after{animation:none!important;transition:none!important}
+
+
+/* ================= 10 · STORIE ================= */
+.phone{--bg:var(--cbg);--ink:var(--cink);--sb:var(--cink)}
+.k1{--cbg:#c9b8ff;--cink:#1a1030;--acc:#1a1030}
+.k2{--cbg:#ff8f6b;--cink:#2a0c02;--acc:#2a0c02}
+.k3{--cbg:#7fe3c4;--cink:#04261c;--acc:#04261c}
+.k4{--cbg:#93d3ff;--cink:#06223a;--acc:#06223a}
+.k5{--cbg:#ffe066;--cink:#1a1030;--acc:#1a1030}
+.k6{--cbg:#b9f5a2;--cink:#0b2a06;--acc:#0b2a06}
+.k5.dark{--cbg:#140c26;--cink:#ffe066}
+.card{position:absolute;inset:0;background:var(--cbg);color:var(--cink);display:flex;flex-direction:column;padding:56px 20px 30px;overflow:hidden}
+.s360 .card{padding:34px 16px 18px}
+.prog{display:flex;gap:4px;height:4px;flex:none}
+.prog i{flex:1;border-radius:2px;background:color-mix(in srgb,var(--cink) 18%,transparent);overflow:hidden;position:relative}
+.prog i b{position:absolute;inset:0;width:calc(var(--t,0)*100%);background:var(--cink);border-radius:2px}
+.prog i.done b{width:100%}
+.prog i.rec b{background:#d7261e}
+.hdr{display:flex;align-items:center;gap:10px;height:56px;flex:none;margin-top:6px}
+.hdr .av{width:40px;height:40px;border-radius:50%;background:var(--cink);color:var(--cbg);display:grid;place-items:center;font:900 19px/1 "RF";font-stretch:80%;flex:none}
+.hdr .av.out{background:transparent;color:var(--cink);box-shadow:inset 0 0 0 2.5px var(--cink)}
+.hdr .meta{display:flex;flex-direction:column;gap:3px;min-width:0}
+.hdr .meta b{font:780 15px/1.1 "RF"}
+.hdr .meta small{font:550 12.5px/1.1 "RF";opacity:.75;white-space:nowrap}
+.hdr .sc{margin-left:auto;font:800 14px/1 "RF";font-variant-numeric:tabular-nums;display:flex;gap:6px;align-items:center;opacity:.9;white-space:nowrap}
+.hdr .x{width:56px;height:56px;display:grid;place-items:center;margin-right:-12px;color:var(--cink)}
+.hdr .x svg{width:24px;height:24px}
+.kick{font:760 12.5px/1 "RF";letter-spacing:.16em;text-transform:uppercase;opacity:.78;margin:14px 0 10px}
+.h1{font:900 64px/.88 "RF";font-stretch:62%;text-transform:uppercase;letter-spacing:-.005em}
+.h1 em{font-style:normal;background:var(--cink);color:var(--cbg);padding:0 .07em;-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:.06em}
+.h1{line-height:.96}
+.sub{font:500 16px/1.4 "RF";margin-top:12px;max-width:30ch;opacity:.88}
+.ill{flex:1;min-height:0;display:grid;place-items:center;position:relative}
+.ill svg{max-width:100%;max-height:100%}
+.bot{flex:none;display:flex;flex-direction:column;gap:10px}
+.pill{height:64px;border-radius:32px;background:var(--cink);color:var(--cbg);display:flex;align-items:center;justify-content:center;gap:10px;font:800 17px/1 "RF"}
+.pill svg{width:22px;height:22px}
+.pill.ghost{background:transparent;color:var(--cink);box-shadow:inset 0 0 0 2.5px var(--cink)}
+.hint{display:flex;justify-content:space-between;font:650 12.5px/1 "RF";opacity:.7;padding:0 6px;white-space:nowrap}
+.hint span{display:flex;align-items:center;gap:5px}
+.hint svg{width:14px;height:14px}
+.edge{position:absolute;top:50%;width:26px;height:56px;margin-top:-28px;display:grid;place-items:center;opacity:.3;color:var(--cink);pointer-events:none}
+.edge svg{width:20px;height:20px}
+.edge.l{left:2px} .edge.r{right:2px}
+.zones{position:absolute;inset:0;display:grid;grid-template-columns:25% 50% 25%;pointer-events:none;z-index:1}
+.zones.show i{border:2px dashed color-mix(in srgb,var(--cink) 45%,transparent);margin:126px 3px 120px;border-radius:18px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font:700 11px/1 "RF";letter-spacing:.1em;text-transform:uppercase;font-style:normal;color:var(--cink);opacity:.8}
+
+/* big round action */
+.orb{width:236px;height:236px;border-radius:50%;background:var(--cink);color:var(--cbg);display:grid;place-items:center;position:relative}
+.orb svg.ic{width:84px;height:84px}
+.orb .ring{position:absolute;inset:-14px;width:calc(100% + 28px);height:calc(100% + 28px);max-width:none;max-height:none}
+.orb .cnt{position:absolute;bottom:34px;font:800 13px/1 "RF";letter-spacing:.08em;text-transform:uppercase}
+.timer{font:250 104px/.85 "RF";font-variant-numeric:tabular-nums;letter-spacing:-.05em;text-align:center}
+.timer small{font:700 16px/1 "RF";letter-spacing:.04em;margin-left:4px}
+.vuring span{transform-origin:center}
+
+/* reveal card: liquid fill with inverted duplicate layer */
+.k5 .lay{position:absolute;inset:0;display:flex;flex-direction:column;padding:56px 20px 30px}
+.k5 .lay.inv{background:var(--cink);color:var(--cbg);clip-path:inset(calc((1 - var(--p,0)) * 100%) 0 0 0)}
+.k5 .lay.inv .prog i{background:color-mix(in srgb,var(--cbg) 22%,transparent)} .k5 .lay.inv .prog i b{background:var(--cbg)}
+.k5 .lay.inv .hdr .av{background:var(--cbg);color:var(--cink)}
+.k5 .lay.inv .pill{background:var(--cbg);color:var(--cink)}
+.k5 .lay.inv .pill.ghost{background:transparent;color:var(--cbg);box-shadow:inset 0 0 0 2.5px var(--cbg)}
+.k5 .lay.inv .h1 em{background:var(--cbg);color:var(--cink)}
+.k5 .lay.inv .x{color:var(--cbg)}
+.k5 .lay.inv .bubble{color:var(--cbg)}
+.holdzone{position:absolute;inset:0;z-index:5;background:transparent;border-radius:0;--p:0}
+.pct{font:250 92px/.85 "RF";font-variant-numeric:tabular-nums;letter-spacing:-.05em}
+.pct small{font-size:.4em;font-weight:500}
+.phone[data-tip] .tipx{opacity:1}
+.tipx{position:absolute;left:50%;top:150px;transform:translateX(-50%);background:var(--cink);color:var(--cbg);font:750 14px/1 "RF";padding:11px 16px;border-radius:12px;opacity:0;transition:opacity .2s;z-index:20;pointer-events:none;white-space:nowrap}
+.phone.is-revealed{--p:1}
+.phone.is-revealed .lay.inv{clip-path:inset(0)}
+
+.res{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.res button{height:72px;border-radius:24px;display:flex;align-items:center;justify-content:center;gap:9px;font:800 17px/1 "RF";box-shadow:inset 0 0 0 2.5px var(--cink);color:var(--cink)}
+.res button svg{width:24px;height:24px}
+.res .on{background:var(--cink);color:var(--cbg);box-shadow:none}
+.score{display:flex;gap:56px;align-items:flex-end;justify-content:center}
+.score div{display:flex;flex-direction:column;align-items:center;gap:6px;font:700 12.5px/1 "RF";letter-spacing:.1em;text-transform:uppercase}
+.score b{font:250 92px/.8 "RF";font-variant-numeric:tabular-nums;letter-spacing:-.05em}
+.plus{display:inline-grid;place-items:center;height:28px;padding:0 10px;border-radius:14px;background:var(--cink);color:var(--cbg);font:800 14px/1 "RF";letter-spacing:0}
+.chip{align-self:center;height:56px;border-radius:28px;padding:0 20px;display:flex;align-items:center;gap:9px;font:750 15px/1 "RF";box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--cink) 40%,transparent);color:var(--cink)}
+.chip svg{width:20px;height:20px}
+.wavebig{width:100%;height:84px;color:var(--cink)}
+
+.s360 .h1{font-size:46px}
+.s360 .sub{font-size:14px;margin-top:8px}
+.s360 .kick{margin:8px 0 6px}
+.s360 .orb{width:170px;height:170px}
+.s360 .orb svg.ic{width:60px;height:60px}
+.s360 .timer{font-size:72px}
+.s360 .pill{height:60px}
+.s360 .hdr{height:50px}
+
+/* desktop */
+.desk .stage{position:absolute;inset:38px 0 0;background:#121016;display:flex;align-items:center;justify-content:center;gap:40px}
+.desk .phone{box-shadow:0 30px 60px -20px rgba(0,0,0,.6);border-radius:22px}
+.desk .phone .sb,.desk .phone .hi{display:none}
+.desk .side{transform:scale(.72);opacity:.5;margin:0 -48px}
+.desk .nav{width:64px;height:64px;border-radius:50%;background:#2a2633;color:#f3f1f7;display:grid;place-items:center;flex:none}
+.desk .nav svg{width:26px;height:26px}
+.desk .kb{position:absolute;bottom:20px;left:0;right:0;text-align:center;font:550 13px/1 "RF";color:#a8a3b5}
+.desk .kb kbd{font:700 12px/1 "RF";background:#2a2633;color:#f3f1f7;border-radius:6px;padding:4px 8px;margin:0 3px}
+.desk .phone .card{padding-top:18px}
+.desk .phone .k5 .lay{padding-top:18px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mic" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 0 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5zm5.6-3.6a5.6 5.6 0 0 1-11.2 0H4.3a7.7 7.7 0 0 0 6.6 7.6V21h2.2v-2.5a7.7 7.7 0 0 0 6.6-7.6z"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5.5" y="5.5" width="13" height="13" rx="3" fill="currentColor"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.3v13.4a1 1 0 0 0 1.53.85l10.6-6.7a1 1 0 0 0 0-1.7L9.53 4.45A1 1 0 0 0 8 5.3z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1.3" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-rev" viewBox="0 0 24 24"><path fill="currentColor" d="M11.6 6.1v11.8a.8.8 0 0 1-1.3.63L2.9 12.63a.8.8 0 0 1 0-1.26l7.4-5.9a.8.8 0 0 1 1.3.63zm10 0v11.8a.8.8 0 0 1-1.3.63l-7.4-5.9a.8.8 0 0 1 0-1.26l7.4-5.9a.8.8 0 0 1 1.3.63z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10V7.6a5 5 0 0 1 10 0V10h.8A2.2 2.2 0 0 1 20 12.2v7.6a2.2 2.2 0 0 1-2.2 2.2H6.2A2.2 2.2 0 0 1 4 19.8v-7.6A2.2 2.2 0 0 1 6.2 10zm2.2 0h5.6V7.6a2.8 2.8 0 0 0-5.6 0z"/></symbol>
+  <symbol id="i-unlock" viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 10V7.6a2.8 2.8 0 0 1 5.4-1l2-.8A5 5 0 0 0 7 7.6V10h-.8A2.2 2.2 0 0 0 4 12.2v7.6A2.2 2.2 0 0 0 6.2 22h11.6a2.2 2.2 0 0 0 2.2-2.2v-7.6a2.2 2.2 0 0 0-2.2-2.2z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.8 12.6l4.6 4.6L19.4 7.2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="18.5" cy="12" r="2" fill="currentColor"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.2v4.6h4.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4.5L3.5 8 7 11.5M3.5 8h13M17 12.5l3.5 3.5-3.5 3.5M20.5 16h-13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4.5 12h14M13 6.5l5.5 5.5-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19.5 12h-14M11 6.5L5.5 12l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5C6.5 5 2.7 9.6 1.6 11.4a1.1 1.1 0 0 0 0 1.2C2.7 14.4 6.5 19 12 19s9.3-4.6 10.4-6.4a1.1 1.1 0 0 0 0-1.2C21.3 9.6 17.5 5 12 5zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2.2a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6z"/></symbol>
+  <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9.5 6L4 11.5 9.5 17M4.5 11.5h9a6.5 6.5 0 0 1 6.5 6.5v.5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-ear" viewBox="0 0 24 24"><path d="M6.5 9a5.5 5.5 0 0 1 11 0c0 3.4-3.4 4.2-3.8 7.3-.3 2.4-1.8 3.7-3.7 3.7A3 3 0 0 1 7 17M9.5 9.2a2.5 2.5 0 0 1 5 0c0 1.4-1.3 2-1.6 3" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+
+<header class="doc-head">
+  <div>
+    <div class="kicker">Reverseur · mockup v3 · concetto 10</div>
+    <h1>Storie</h1>
+    <p class="pitch">Il round è una <strong>storia a schede</strong>, come quelle dei social: sei schede a tutto schermo, una barra a segmenti in alto, tocchi a destra per andare avanti. Ogni scheda è un solo passo con una sola illustrazione gigante, e la scheda della rivelazione <strong>si riempie tenendo premuto ovunque</strong>.</p>
+  </div>
+  <div>
+    <h3>Concetto</h3>
+    <p>Ogni scheda ha il suo colore pieno, così dall'altra parte del tavolo si capisce a che punto è il round. La superficie è divisa in tre zone invisibili: <strong>sinistra 25% = indietro</strong>, <strong>destra 25% = avanti</strong>, <strong>centro 50% = l'azione della scheda</strong> (registra, ascolta). Durante la registrazione <strong>tutto lo schermo è Stop</strong>, e il segmento della barra diventa il timer di 10 s.</p>
+  </div>
+  <div>
+    <h3>Flusso (6 schede)</h3>
+    <ol>
+      <li><strong>Round 3</strong>: chi fa cosa. Tocca per iniziare.</li>
+      <li><strong>A parla</strong>: tocca, parla, tocca ovunque per fermare. Il segmento si riempie in 10 s.</li>
+      <li><strong>B ascolta</strong>: il disco ◀◀ suona al contrario, quante volte vuoi.</li>
+      <li><strong>B imita</strong>: stessa scheda di A, in azzurro.</li>
+      <li><strong>Indovina</strong>: l'imitazione al contrario parte da sola. Tieni premuto ovunque: la scheda si riempie dal basso come un liquido.</li>
+      <li><strong>Esito</strong>: ✓/✗, punteggio, e la storia del round dopo.</li>
+    </ol>
+  </div>
+  <div>
+    <h3>Perché il layout è ottimale</h3>
+    <ul>
+      <li><strong>Il bersaglio è lo schermo:</strong> registrare, fermare e svelare si fanno su 195×560 px o su tutto lo schermo. Non si può mancare.</li>
+      <li><strong>Un passo alla volta:</strong> niente da cercare, niente da scorrere; il testo dice il passo, l'illustrazione lo mostra.</li>
+      <li><strong>Lo spoiler è irraggiungibile</strong> fino alla scheda 5, e lì richiede 600 ms di pressione.</li>
+      <li><strong>Gesto già noto</strong> a chiunque usi i social: zero spiegazioni.</li>
+    </ul>
+  </div>
+</header>
+<div class="metrics">
+  <div class="metric"><b>7</b><span>tocchi per round<br>(tocco·tocco · ◀◀·›·tocco·tocco · tieni · ✓)</span></div>
+  <div class="metric"><b>100%</b><span>dello schermo è Stop<br>mentre si registra</span></div>
+  <div class="metric"><b>195×560</b><span>px zona azione<br>(centro della scheda)</span></div>
+  <div class="metric"><b>6</b><span>schede per round,<br>una sola azione ciascuna</span></div>
+  <div class="metric"><b>0</b><span>scroll, 0 pulsanti<br>piccoli da cercare</span></div>
+</div>
+
+<!-- ============ ROW 1 ============ -->
+<div class="row">
+  <!-- a -->
+  <div class="shot">
+    <div class="cap"><b>a</b>Scheda 1 · Round 3 <span>· 390×844 chiaro · zone di tocco</span></div>
+    <div class="phone k1" data-id="a">
+      <div class="card">
+        <div class="prog"><i style="--t:.6"><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
+        <div class="hdr"><span class="av">R3</span><span class="meta"><b>Round 3</b><small>Stasera · 4 prese, 2 mancate</small></span><button class="x" aria-label="Menu"><svg><use href="#i-more"/></svg></button></div>
+        <div class="kick">Come si gioca</div>
+        <div class="h1">A parla.<br><em>B indovina</em><br><em>al contrario.</em></div>
+        <div class="ill">
+          <svg viewBox="0 0 320 230" width="320" height="230" aria-hidden="true">
+            <path d="M246 70 C 210 16, 110 16, 74 70" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+            <path d="M60 52 L72 76 L96 64" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="112" cy="146" r="74" fill="currentColor"/>
+            <text x="112" y="180" text-anchor="middle" font-family="RF,system-ui" font-weight="900" font-size="100" font-stretch="70%" fill="#c9b8ff">A</text>
+            <circle cx="208" cy="146" r="74" fill="#c9b8ff" stroke="currentColor" stroke-width="7"/>
+            <text x="208" y="180" text-anchor="middle" font-family="RF,system-ui" font-weight="900" font-size="100" font-stretch="70%" fill="currentColor">B</text>
+          </svg>
+        </div>
+        <div class="bot">
+          <div class="pill"><span>A, tocca per iniziare</span><svg><use href="#i-arrow"/></svg></div>
+          <div class="hint"><span><svg><use href="#i-back"/></svg>indietro</span><span>B si copre le orecchie</span><span>avanti<svg><use href="#i-arrow"/></svg></span></div>
+        </div>
+      </div>
+      <div class="zones show"><i>indietro</i><i>azione</i><i>avanti</i></div>
+    </div>
+  </div>
+
+  <!-- b -->
+  <div class="shot">
+    <div class="cap"><b>b</b>Scheda 2 · A parla <span>· il segmento è il timer da 10 s</span></div>
+    <div class="phone k2" data-id="b">
+      <div class="card">
+        <div class="prog"><i class="done"><b></b></i><i class="rec" style="--t:.34"><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
+        <div class="hdr"><span class="av">A</span><span class="meta"><b>A registra</b><small>B non ascolta</small></span><span class="sc"><svg style="width:12px;height:12px;color:#d7261e"><use href="#i-stop"/></svg>REC</span><button class="x" aria-label="Annulla"><svg><use href="#i-x"/></svg></button></div>
+        <div class="kick">Scheda 2 di 6</div>
+        <div class="h1">Parla<br>adesso.</div>
+        <div class="ill">
+          <svg viewBox="0 0 320 320" width="300" height="300" aria-hidden="true">
+            <circle cx="160" cy="150" r="150" fill="currentColor" opacity=".08"/>
+            <circle cx="160" cy="150" r="122" fill="currentColor" opacity=".12"/>
+            <circle cx="160" cy="150" r="96" fill="currentColor" opacity=".9"/>
+            <rect x="134" y="86" width="52" height="96" rx="26" fill="#ff8f6b"/>
+            <path d="M114 150 a46 46 0 0 0 92 0" fill="none" stroke="#ff8f6b" stroke-width="9" stroke-linecap="round"/>
+            <path d="M160 196 v22" stroke="#ff8f6b" stroke-width="9" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="timer">03,4<small>/ 10 s</small></div>
+        <div class="bot" style="margin-top:18px">
+          <div class="pill"><svg><use href="#i-stop"/></svg><span>Tocca ovunque per fermare</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- c -->
+  <div class="shot">
+    <div class="cap"><b>c</b>Scheda 3 · B ascolta al contrario</div>
+    <div class="phone k3" data-id="c">
+      <div class="card">
+        <div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i style="--t:.62"><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
+        <div class="hdr"><span class="av">B</span><span class="meta"><b>B ascolta</b><small>parola di A · 1,8 s</small></span><span class="sc">2×</span><button class="x" aria-label="Menu"><svg><use href="#i-more"/></svg></button></div>
+        <div class="kick">Scheda 3 di 6</div>
+        <div class="h1">Ascolta.<br><em>Al contrario.</em></div>
+        <div class="ill">
+          <button class="orb" aria-label="Pausa">
+            <svg class="ring" viewBox="0 0 264 264"><circle cx="132" cy="132" r="126" fill="none" stroke="currentColor" stroke-opacity=".0" stroke-width="6"/><circle cx="132" cy="132" r="126" fill="none" stroke="#04261c" stroke-width="7" stroke-linecap="round" stroke-dasharray="791.7" stroke-dashoffset="300" transform="rotate(-90 132 132)"/><circle cx="132" cy="132" r="126" fill="none" stroke="#04261c" stroke-opacity=".18" stroke-width="7"/></svg>
+            <svg class="ic"><use href="#i-pause"/></svg><span class="cnt">1,1 / 1,8 s</span>
+          </button>
+        </div>
+        <div class="wavebig" data-wave="3" data-rev data-p=".62" data-bw="4" data-gap="3" data-dim=".28" style="height:56px;margin-bottom:14px"></div>
+        <div class="bot">
+          <div class="pill ghost"><span>Ho capito, imito</span><svg><use href="#i-arrow"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- d -->
+  <div class="shot">
+    <div class="cap"><b>c′</b>Scheda 4 · B imita</div>
+    <div class="phone k4" data-id="c2">
+      <div class="card">
+        <div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="rec" style="--t:.21"><b></b></i><i><b></b></i><i><b></b></i></div>
+        <div class="hdr"><span class="av">B</span><span class="meta"><b>B registra</b><small>rifai i suoni sentiti</small></span><span class="sc"><svg style="width:12px;height:12px;color:#d7261e"><use href="#i-stop"/></svg>REC</span><button class="x" aria-label="Annulla"><svg><use href="#i-x"/></svg></button></div>
+        <div class="kick">Scheda 4 di 6</div>
+        <div class="h1">Rifallo<br><em>uguale.</em></div>
+        <div class="ill">
+          <svg viewBox="0 0 320 320" width="290" height="290" aria-hidden="true">
+            <g>
+              <rect x="128" y="20" width="64" height="118" rx="32" fill="currentColor"/>
+              <path d="M104 96 a56 56 0 0 0 112 0" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+              <path d="M160 152 v12" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+            </g>
+            <path d="M30 170 H290" stroke="currentColor" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/>
+            <g opacity=".28" transform="translate(0 340) scale(1 -1)">
+              <rect x="128" y="20" width="64" height="118" rx="32" fill="currentColor"/>
+              <path d="M104 96 a56 56 0 0 0 112 0" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+              <path d="M160 152 v12" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+        <div class="timer">02,1<small>/ 10 s</small></div>
+        <div class="bot" style="margin-top:18px">
+          <div class="pill"><svg><use href="#i-stop"/></svg><span>Tocca ovunque per fermare</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- e : reveal -->
+  <div class="shot">
+    <div class="cap"><b>d</b>Scheda 5 · Indovina e svela <span>· pressione al 62%</span></div>
+    <div class="phone k5" data-id="d" style="--p:.62">
+      <div class="card" style="padding:0">
+        <div class="lay">
+          <div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i style="--t:.62"><b></b></i><i><b></b></i></div>
+          <div class="hdr"><span class="av">B</span><span class="meta"><b>Indovina</b><small>imitazione al contrario · 3°</small></span><button class="x" aria-label="Menu"><svg><use href="#i-more"/></svg></button></div>
+          <div class="kick">Scheda 5 di 6</div>
+          <div class="h1">Che parola<br><em>senti?</em></div>
+          <div class="sub">Dilla ad alta voce. Poi tieni premuto <strong>ovunque</strong>.</div>
+          <div class="ill"><div class="pct">62<small>%</small></div></div>
+          <div class="bot"><div class="pill ghost"><svg><use href="#i-lock"/></svg><span>Continua a tenere premuto</span></div><div class="hint"><span>tocco breve = riascolta</span><span>600 ms = svela</span></div></div>
+        </div>
+        <div class="lay inv" aria-hidden="true">
+          <div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i style="--t:.62"><b></b></i><i><b></b></i></div>
+          <div class="hdr"><span class="av">B</span><span class="meta"><b>Indovina</b><small>imitazione al contrario · 3°</small></span><button class="x" tabindex="-1"><svg><use href="#i-more"/></svg></button></div>
+          <div class="kick">Scheda 5 di 6</div>
+          <div class="h1">Che parola<br><em>senti?</em></div>
+          <div class="sub">Dilla ad alta voce. Poi tieni premuto <strong>ovunque</strong>.</div>
+          <div class="ill"><div class="pct">62<small>%</small></div></div>
+          <div class="bot"><div class="pill ghost"><svg><use href="#i-lock"/></svg><span>Continua a tenere premuto</span></div><div class="hint"><span>tocco breve = riascolta</span><span>600 ms = svela</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- f : result -->
+  <div class="shot">
+    <div class="cap"><b>e</b>Scheda 6 · Esito e punteggio</div>
+    <div class="phone k6" data-id="e">
+      <div class="card">
+        <div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i style="--t:.4"><b></b></i></div>
+        <div class="hdr"><span class="av">A</span><span class="meta"><b>Era questa!</b><small>originale di A · 0,7 / 1,8 s</small></span><button class="x" aria-label="Menu"><svg><use href="#i-more"/></svg></button></div>
+        <div class="kick">Scheda 6 di 6</div>
+        <div class="h1">Presa?</div>
+        <div class="ill">
+          <div style="width:100%;display:flex;flex-direction:column;gap:26px;align-items:stretch">
+            <div class="wavebig" data-wave="3" data-p=".4" data-bw="4" data-gap="3" data-dim=".28"></div>
+            <div class="score"><div><span style="position:relative"><b>5</b><span class="plus" style="position:absolute;left:100%;top:-4px;margin-left:6px">+1</span></span>Prese</div><div><b style="opacity:.55">2</b>Mancate</div></div>
+          </div>
+        </div>
+        <div class="bot">
+          <div class="res"><button class="on"><svg><use href="#i-check"/></svg>Presa</button><button><svg><use href="#i-x"/></svg>Mancata</button></div>
+          <div class="pill"><span>Round 4 · registra B</span><svg><use href="#i-arrow"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ROW 2 ============ -->
+<div class="row">
+  <div class="shot">
+    <div class="cap"><b>d</b>Svela <span>· scuro · tieni premuto ovunque sulla scheda</span></div>
+    <div class="phone k5 dark" data-id="d-dark">
+      <div class="tipx">Tieni premuto</div>
+      <div class="card" style="padding:0">
+        <div class="lay">
+          <div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i style="--t:.2"><b></b></i><i><b></b></i></div>
+          <div class="hdr"><span class="av">B</span><span class="meta"><b>Indovina</b><small>imitazione al contrario · 3°</small></span><button class="x" aria-label="Menu"><svg><use href="#i-more"/></svg></button></div>
+          <div class="kick">Scheda 5 di 6</div>
+          <div class="h1">Che parola<br><em>senti?</em></div>
+          <div class="sub">Dilla ad alta voce. Poi tieni premuto <strong>ovunque</strong>.</div>
+          <div class="ill"><svg viewBox="0 0 300 210" width="300" height="210" aria-hidden="true"><path d="M30 20 h240 a22 22 0 0 1 22 22 v104 a22 22 0 0 1-22 22 h-160 l-46 36 v-36 h-34 a22 22 0 0 1-22-22 v-104 a22 22 0 0 1 22-22z" fill="none" stroke="currentColor" stroke-width="6"/><text x="150" y="132" text-anchor="middle" font-family="RF,system-ui" font-weight="900" font-size="110" fill="currentColor">?</text></svg></div>
+          <div class="bot"><div class="pill ghost"><svg><use href="#i-lock"/></svg><span>Tieni premuto per svelare</span></div><div class="hint"><span>tocco breve = riascolta</span><span>600 ms = svela</span></div></div>
+        </div>
+        <div class="lay inv" aria-hidden="true">
+          <div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i style="--t:.2"><b></b></i><i><b></b></i></div>
+          <div class="hdr"><span class="av">B</span><span class="meta"><b>Indovina</b><small>imitazione al contrario · 3°</small></span><button class="x" tabindex="-1"><svg><use href="#i-more"/></svg></button></div>
+          <div class="kick">Scheda 5 di 6</div>
+          <div class="h1">Che parola<br><em>senti?</em></div>
+          <div class="sub">Dilla ad alta voce. Poi tieni premuto <strong>ovunque</strong>.</div>
+          <div class="ill"><svg viewBox="0 0 300 210" width="300" height="210" aria-hidden="true"><path d="M30 20 h240 a22 22 0 0 1 22 22 v104 a22 22 0 0 1-22 22 h-160 l-46 36 v-36 h-34 a22 22 0 0 1-22-22 v-104 a22 22 0 0 1 22-22z" fill="none" stroke="currentColor" stroke-width="6"/><text x="150" y="132" text-anchor="middle" font-family="RF,system-ui" font-weight="900" font-size="110" fill="currentColor">?</text></svg></div>
+          <div class="bot"><div class="pill ghost"><svg><use href="#i-lock"/></svg><span>Tieni premuto per svelare</span></div><div class="hint"><span>tocco breve = riascolta</span><span>600 ms = svela</span></div></div>
+        </div>
+        <button class="holdzone" data-hold="600" aria-label="Tieni premuto per svelare l'originale di A"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="cap"><b>c′</b>B imita <span>· 360×640</span></div>
+    <div class="phone k4 s360" data-id="c360">
+      <div class="card">
+        <div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="rec" style="--t:.21"><b></b></i><i><b></b></i><i><b></b></i></div>
+        <div class="hdr"><span class="av">B</span><span class="meta"><b>B registra</b><small>rifai i suoni</small></span><span class="sc">REC</span><button class="x" aria-label="Annulla"><svg><use href="#i-x"/></svg></button></div>
+        <div class="h1" style="margin-top:6px">Rifallo <em>uguale.</em></div>
+        <div class="ill">
+          <svg viewBox="0 0 320 320" width="200" height="200" aria-hidden="true">
+            <rect x="128" y="20" width="64" height="118" rx="32" fill="currentColor"/>
+            <path d="M104 96 a56 56 0 0 0 112 0" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+            <path d="M30 170 H290" stroke="currentColor" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/>
+            <g opacity=".28" transform="translate(0 340) scale(1 -1)"><rect x="128" y="20" width="64" height="118" rx="32" fill="currentColor"/><path d="M104 96 a56 56 0 0 0 112 0" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/></g>
+          </svg>
+        </div>
+        <div class="timer">02,1<small>/ 10 s</small></div>
+        <div class="bot" style="margin-top:12px"><div class="pill"><svg><use href="#i-stop"/></svg><span>Tocca ovunque per fermare</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="note">
+      <h4>Mappa del pollice · scheda 3</h4>
+      <div class="thumb">
+        <svg data-thumb='[[0,126,97,598,"‹","ghost"],[97,126,196,598,"azione",""],[293,126,97,598,"›","ghost"],[20,736,350,64,"Avanti",""]]' data-s=".42"></svg>
+        <div class="legend">
+          <div><i style="background:#2fb36a88"></i>Facile: zona azione bassa, pill, ›</div>
+          <div><i style="background:#f2b82388"></i>Raggiungibile: tutta la colonna centrale</div>
+          <div><i style="background:#e5484d33"></i>Alto: solo intestazione e titolo</div>
+          <p style="margin-top:8px;font-size:13.5px;line-height:1.45">Le zone sono alte 600 px: si toccano dove arriva il pollice, non serve mirare. La pill in basso ripete l'azione "avanti" per chi non conosce il gesto.</p>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <h4>Gesti</h4>
+      <ul>
+        <li><strong>Tocco a destra / sinistra</strong>: avanti / indietro (bloccato mentre si registra).</li>
+        <li><strong>Tocco al centro</strong>: l'azione della scheda (registra, ascolta, riascolta).</li>
+        <li><strong>Tieni premuto ovunque</strong> sulla scheda 5: svela. Un tocco breve riascolta e mostra «Tieni premuto».</li>
+        <li><strong>Scorri in basso</strong>: chiude la storia e torna al riepilogo della partita.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="cap"><b>d</b>Desktop <span>· 1280×760 · scheda al centro, frecce e tastiera</span></div>
+    <div class="desk" style="width:1280px;height:760px" data-id="desk">
+      <div class="bar"><i></i><i></i><i></i><span>burzino.github.io/reverseur/</span></div>
+      <div class="stage">
+        <div class="phone k4 side nosb" style="width:340px;height:600px"><div class="card" style="padding:18px 18px 20px"><div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i><b></b></i><i><b></b></i></div><div class="kick">Scheda 4</div><div class="h1" style="font-size:52px">Rifallo <em>uguale.</em></div></div></div>
+        <button class="nav" aria-label="Indietro"><svg><use href="#i-back"/></svg></button>
+        <div class="phone k5 nosb" style="width:360px;height:640px;--p:.62" data-id="desk-card">
+          <div class="card" style="padding:0">
+            <div class="lay" style="padding:18px 20px 22px">
+              <div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i style="--t:.62"><b></b></i><i><b></b></i></div>
+              <div class="hdr"><span class="av">B</span><span class="meta"><b>Indovina</b><small>3 ascolti</small></span></div>
+              <div class="h1" style="font-size:56px;margin-top:8px">Che parola<br><em>senti?</em></div>
+              <div class="ill"><div class="pct">62<small>%</small></div></div>
+              <div class="bot"><div class="pill ghost"><svg><use href="#i-lock"/></svg><span>Continua a tenere</span></div></div>
+            </div>
+            <div class="lay inv" style="padding:18px 20px 22px" aria-hidden="true">
+              <div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i style="--t:.62"><b></b></i><i><b></b></i></div>
+              <div class="hdr"><span class="av">B</span><span class="meta"><b>Indovina</b><small>3 ascolti</small></span></div>
+              <div class="h1" style="font-size:56px;margin-top:8px">Che parola<br><em>senti?</em></div>
+              <div class="ill"><div class="pct">62<small>%</small></div></div>
+              <div class="bot"><div class="pill ghost"><svg><use href="#i-lock"/></svg><span>Continua a tenere</span></div></div>
+            </div>
+          </div>
+        </div>
+        <button class="nav" aria-label="Avanti"><svg><use href="#i-arrow"/></svg></button>
+        <div class="phone k6 side nosb" style="width:340px;height:600px"><div class="card" style="padding:18px 18px 20px"><div class="prog"><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i class="done"><b></b></i><i><b></b></i></div><div class="kick">Scheda 6</div><div class="h1" style="font-size:52px">Presa?</div></div></div>
+        <div class="kb"><kbd>←</kbd><kbd>→</kbd> schede · <kbd>Invio</kbd> azione · <kbd>Spazio</kbd> tenuto 0,6 s = svela</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="note" style="width:820px">
+    <h4>Movimento</h4>
+    <ul>
+      <li><strong>Cambio scheda:</strong> la nuova scheda entra da destra con una rotazione a cubo di 12° (260 ms), come nelle storie; il colore pieno cambia tutto lo schermo, quindi il passo si legge anche da lontano.</li>
+      <li><strong>Registrazione:</strong> gli anelli attorno al microfono si espandono con l'RMS; il segmento in alto avanza in 10 s e diventa rosso; al limite la scheda vibra e passa da sola.</li>
+      <li><strong>Svela:</strong> un "liquido" scuro sale dal basso seguendo il dito e inverte i colori della scheda (due livelli sovrapposti, quello invertito ritagliato con <code>clip-path</code>). Al 100% la scheda è tutta piena, vibra, e scorre sulla 6 con l'originale che suona. Rilascio anticipato: il liquido ricade (180 ms), shake e «Tieni premuto».</li>
+    </ul>
+  </div>
+  <div class="note" style="width:820px">
+    <h4>Colore e tipo</h4>
+    <div class="sw" style="grid-template-columns:repeat(6,1fr)">
+      <i style="background:#c9b8ff;color:#1a1030">1 Round</i><i style="background:#ff8f6b;color:#2a0c02">2 A parla</i><i style="background:#7fe3c4;color:#04261c">3 Ascolta</i>
+      <i style="background:#93d3ff;color:#06223a">4 Imita</i><i style="background:#ffe066;color:#1a1030">5 Indovina</i><i style="background:#b9f5a2;color:#0b2a06">6 Esito</i>
+    </div>
+    <p>Ogni scheda usa un colore pieno chiaro con l'inchiostro dello stesso tono: tutti i contrasti sono sopra 9:1. Titoli in Roboto Flex 900 molto stretto (larghezza 62) e maiuscolo, come un poster; l'evidenziatore (testo in negativo) segna la seconda metà della frase. Il tema scuro inverte: fondo inchiostro e testo colore.</p>
+  </div>
+</div>
+
+<script>
+/* ---------- Presentation shell JS (shared by mockups v3 06-10). No network. ---------- */
+(() => {
+  const SHOT = /shot/.test(location.search);
+  if (SHOT) document.documentElement.classList.add("shot-mode");
+  const NS = "http://www.w3.org/2000/svg";
+  const sbIcons = '<svg viewBox="0 0 70 13" aria-hidden="true"><g fill="currentColor"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/><path d="M31 3.2a10 10 0 0 1 13 0l-1.6 1.7a7.6 7.6 0 0 0-9.8 0zM33.7 6a6 6 0 0 1 7.6 0l-1.7 1.7a3.6 3.6 0 0 0-4.2 0zM37.5 12.5l-2.2-2.3a3 3 0 0 1 4.4 0z"/><rect x="50" y="1" width="17" height="11" rx="3" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.2"/><rect x="52" y="3" width="11" height="7" rx="1.6"/><rect x="68" y="4.5" width="1.6" height="4" rx=".8" opacity=".45"/></g></svg>';
+  for (const ph of document.querySelectorAll(".phone:not(.nosb)")) {
+    ph.insertAdjacentHTML("afterbegin", `<div class="sb"><span class="tnum">9:41</span>${sbIcons}</div>`);
+    ph.insertAdjacentHTML("beforeend", '<div class="hi"></div>');
+  }
+
+  /* deterministic "word-like" amplitudes */
+  function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+  window.amps = function (seed, n) {
+    const r = rng(seed * 7919 + 13), bumps = [];
+    const k = 2 + Math.floor(r() * 3);
+    for (let i = 0; i < k; i++) bumps.push([0.12 + (i + r() * 0.6) / k * 0.8, 0.06 + r() * 0.07, 0.55 + r() * 0.45]);
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const x = i / (n - 1); let e = 0;
+      for (const [c, w, a] of bumps) e = Math.max(e, a * Math.exp(-((x - c) ** 2) / (2 * w * w)));
+      out.push(Math.max(0.08, Math.min(1, e * (0.6 + 0.4 * r()) + 0.04)));
+    }
+    return out;
+  };
+  function drawWave(el) {
+    const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return;
+    const bw = +(el.dataset.bw || 3), gap = +(el.dataset.gap || 2.2);
+    const n = Math.max(4, Math.floor((w + gap) / (bw + gap)));
+    let a = amps(+el.dataset.wave || 1, n);
+    if ("rev" in el.dataset) a = a.slice().reverse();
+    const p = +(el.dataset.p || 0), mode = el.dataset.mode || "";
+    const sym = el.dataset.align !== "bottom";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("width", w); svg.setAttribute("height", h); svg.setAttribute("aria-hidden", "true");
+    const off = (w - (n * bw + (n - 1) * gap)) / 2;
+    a.forEach((v, i) => {
+      const r = document.createElementNS(NS, "rect");
+      let bh = mode === "sealed" ? Math.min(h, bw) : Math.max(bw, v * h);
+      if (mode === "live" && i / n > p) bh = 0;
+      r.setAttribute("x", off + i * (bw + gap)); r.setAttribute("width", bw);
+      r.setAttribute("y", sym ? (h - bh) / 2 : h - bh); r.setAttribute("height", bh); r.setAttribute("rx", Math.min(bw / 2, 3));
+      r.setAttribute("fill", "currentColor");
+      if (mode !== "live" && p > 0 && i / n >= p) r.setAttribute("fill-opacity", el.dataset.dim || ".32");
+      if (mode === "sealed") r.setAttribute("fill-opacity", ".45");
+      svg.appendChild(r);
+    });
+    el.replaceChildren(svg);
+  }
+  window.drawWaves = () => document.querySelectorAll("[data-wave]").forEach(drawWave);
+
+  /* VU meters: <div data-vu="12" data-level=".7"> -> spans with --v */
+  function vu(el) {
+    const n = +el.dataset.vu, lvl = +(el.dataset.level || 0.7), r = rng(n * 31 + 7);
+    const sp = []; for (let i = 0; i < n; i++) { const s = document.createElement("span"); el.appendChild(s); sp.push(s); }
+    const set = () => sp.forEach((s, i) => {
+      const shape = el.dataset.shape === "bars" ? 0.35 + 0.65 * r() : (i / n <= lvl ? 1 : 0);
+      s.style.setProperty("--v", shape.toFixed(3));
+      s.classList.toggle("on", el.dataset.shape === "bars" ? true : i / n <= lvl);
+    });
+    set();
+    if (!SHOT && !el.hasAttribute("data-still")) setInterval(set, 120);
+  }
+  document.querySelectorAll("[data-vu]").forEach(vu);
+
+  /* hold-to-confirm demo: data-hold="ms" ; sets --p ; early release -> shake + tip */
+  document.querySelectorAll("[data-hold]").forEach((el) => {
+    const ms = +el.dataset.hold; let t0 = 0, raf = 0, done = false;
+    const host = el.closest(".phone") || document.body;
+    const set = (p) => el.style.setProperty("--p", p.toFixed(3));
+    const tip = (txt) => { host.dataset.tip = txt; clearTimeout(el._tt); el._tt = setTimeout(() => { delete host.dataset.tip; }, 1400); };
+    const tick = () => {
+      const p = Math.min(1, (performance.now() - t0) / ms); set(p);
+      if (p >= 1) { done = true; host.classList.add("is-revealed"); try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
+        setTimeout(() => { host.classList.remove("is-revealed"); set(+(el.dataset.p || 0)); done = false; }, 3200); return; }
+      raf = requestAnimationFrame(tick);
+    };
+    const start = (e) => { if (done) return; if (e.pointerId != null) el.setPointerCapture(e.pointerId); t0 = performance.now(); host.classList.add("is-holding"); raf = requestAnimationFrame(tick); };
+    const stop = (cancelled) => { if (!t0) return; cancelAnimationFrame(raf); host.classList.remove("is-holding"); t0 = 0;
+      if (!done) { set(0); if (!cancelled) { el.classList.remove("shaking"); void el.offsetWidth; el.classList.add("shaking"); tip("Tieni premuto"); } } };
+    el.addEventListener("pointerdown", start);
+    el.addEventListener("pointerup", () => stop(false));
+    el.addEventListener("pointercancel", () => stop(true));
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+    el.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); start(e); } });
+    el.addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") stop(false); });
+    set(+(el.dataset.p || 0));
+  });
+
+  /* thumb-zone map: <svg data-thumb='[[x,y,w,h,"label",kind]]' data-w=390 data-h=844 data-s=.5 data-hand=r> */
+  document.querySelectorAll("[data-thumb]").forEach((svg) => {
+    const W = +(svg.dataset.w || 390), H = +(svg.dataset.h || 844), s = +(svg.dataset.s || 0.5);
+    const right = (svg.dataset.hand || "r") === "r", land = W > H;
+    svg.setAttribute("width", W * s); svg.setAttribute("height", H * s); svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const id = "c" + Math.random().toString(36).slice(2, 7);
+    let zones;
+    if (land) {
+      zones = `<circle cx="0" cy="${H}" r="${H * .62}" fill="#2fb36a" fill-opacity=".26"/><circle cx="${W}" cy="${H}" r="${H * .62}" fill="#2fb36a" fill-opacity=".26"/>
+               <circle cx="0" cy="${H}" r="${H * .95}" fill="#f2b823" fill-opacity=".2"/><circle cx="${W}" cy="${H}" r="${H * .95}" fill="#f2b823" fill-opacity=".2"/>`;
+    } else {
+      const cx = right ? W * 0.86 : W * 0.14;
+      zones = `<circle cx="${cx}" cy="${H * 1.02}" r="${H * .62}" fill="#f2b823" fill-opacity=".26"/><circle cx="${cx}" cy="${H * 1.02}" r="${H * .44}" fill="#2fb36a" fill-opacity=".3"/>`;
+    }
+    const t = JSON.parse(svg.dataset.thumb).map(([x, y, w, h, l, k]) =>
+      `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w, h) > 80 ? 22 : 14}" fill="${k === "lock" ? "#16141c" : "#fff"}" fill-opacity="${k === "lock" ? ".9" : ".78"}" stroke="#16141c" stroke-width="3" ${k === "ghost" ? 'stroke-dasharray="8 7" fill-opacity=".25"' : ""}/>` +
+      (l ? `<text x="${x + w / 2}" y="${y + h / 2 + 9}" text-anchor="middle" font-family="RF,system-ui" font-weight="760" font-size="${land ? 22 : 24}" fill="${k === "lock" ? "#fff" : "#16141c"}">${l}</text>` : "")).join("");
+    svg.innerHTML = `<defs><clipPath id="${id}"><rect width="${W}" height="${H}" rx="${land ? 40 : 54}"/></clipPath></defs>
+      <g clip-path="url(#${id})"><rect width="${W}" height="${H}" fill="#f1eff4"/>${zones}<rect x="0" y="0" width="${W}" height="${H}" fill="#e5484d" fill-opacity=".07"/>${t}</g>
+      <rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" rx="${land ? 40 : 54}" fill="none" stroke="#16141c" stroke-width="3"/>`;
+  });
+
+  const go = () => drawWaves();
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(go);
+  addEventListener("resize", go);
+})();
+
+/* reveal card: mirror the hold progress onto the phone so the inverted layer follows the finger */
+document.querySelectorAll(".holdzone").forEach((z) => {
+  const ph = z.closest(".phone");
+  new MutationObserver(() => ph.style.setProperty("--p", z.style.getPropertyValue("--p") || 0)).observe(z, { attributes: true, attributeFilter: ["style"] });
+});
+</script>
+</body>
+</html>

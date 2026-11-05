@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverseur v2 · C · Specchio</title>
+<style>
+/* ---------- Presentation shell (shared by all v2 mockups) ---------- */
+@font-face{
+  font-family:"RF";
+  src:url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2-variations"),
+      url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2");
+  font-weight:100 1000;font-stretch:25% 151%;font-display:block;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#e7e5ec;color:#17141f;font-family:"RF",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{padding:64px 64px 80px;width:max-content;min-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+svg{display:block}
+
+.doc{width:2110px}
+.doc-head{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:48px;margin-bottom:60px;align-items:start}
+.doc-head .kicker{font:650 13px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.doc-head h1{font-size:76px;line-height:.92;font-weight:880;letter-spacing:-.025em;margin-bottom:18px}
+.doc-head .pitch{font-size:21px;line-height:1.4;color:#2c2838;font-weight:450;max-width:34ch}
+.doc-head h3{font:700 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin:6px 0 14px}
+.doc-head p,.doc-head li{font-size:16px;line-height:1.55;color:#36323f}
+.doc-head ol,.doc-head ul{padding-left:20px;display:grid;gap:6px}
+.doc-head strong{font-weight:700;color:#17141f}
+
+.row{display:flex;gap:40px;align-items:flex-start;margin-bottom:64px}
+.shot{display:flex;flex-direction:column;gap:18px;flex:none}
+.cap{display:flex;align-items:baseline;gap:10px;font:600 15px/1.2 "RF";color:#3d3948;padding-left:6px}
+.cap b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#17141f;color:#fff;font:750 13px/1 "RF"}
+.cap span{color:#7a7588;font-weight:500}
+
+.phone{width:390px;height:844px;border-radius:54px;position:relative;overflow:hidden;flex:none;isolation:isolate;container-type:size;
+  box-shadow:0 0 0 10px #121018,0 0 0 11.5px #3b3846,0 40px 70px -28px rgba(25,12,60,.55);background:var(--bg);color:var(--ink)}
+.phone.s360{width:360px;height:640px;border-radius:40px}
+.sb{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;font:650 16px/1 "RF";z-index:60;pointer-events:none;color:var(--sb,var(--ink))}
+.sb svg{height:13px;width:auto}
+.s360 .sb{height:30px;font-size:13px;padding:2px 20px 0 22px}
+.hi{position:absolute;bottom:8px;left:50%;width:136px;height:5px;border-radius:3px;background:var(--sb,var(--ink));opacity:.8;transform:translateX(-50%);z-index:60;pointer-events:none}
+.s360 .hi{width:100px;height:4px;bottom:6px}
+.scr{position:absolute;inset:0;padding:50px 0 30px;display:flex;flex-direction:column}
+.s360 .scr{padding:30px 0 18px}
+
+.note{width:390px;flex:none;background:#fff;border-radius:28px;padding:30px 30px 28px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 20px 40px -30px rgba(25,12,60,.35)}
+.note h4{font:750 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.note h4+*{margin-top:0}
+.note p,.note li{font-size:15px;line-height:1.5;color:#36323f}
+.note ul{padding-left:18px;display:grid;gap:8px}
+.note .sw{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 22px}
+.note .sw i{display:block;height:64px;border-radius:14px;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.note .sw i::after{content:attr(data-n);position:absolute;left:8px;bottom:6px;font:650 10.5px/1 "RF";font-style:normal;letter-spacing:.02em}
+.note .type{margin:0 0 22px;display:grid;gap:6px}
+.note + .note{margin-left:0}
+.stack{display:flex;flex-direction:column;gap:24px;flex:none}
+
+/* shake used by every hold demo */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .38s cubic-bezier(.36,.07,.19,.97)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+
+/* ================= Concept C · Specchio ================= */
+.lt{--bg:#f4f2ee;--ink:#121212;--ink2:#5d5a54;--ink3:#8c887f;--line:#dedad2;--card:#fff;--rev:#5b3df5;--rev-soft:#e7e2ff;--rec:#e0391f;--ok:#167a4a;--ok-soft:#dcefe4;--ko:#b3263c}
+.dk{--bg:#0d0d0f;--ink:#f2f0ea;--ink2:#a9a59c;--ink3:#77736b;--line:#2a2a2e;--card:#17171a;--rev:#a493ff;--rev-soft:#231d47;--rec:#ff6a50;--ok:#52d18f;--ok-soft:#0f2e1f;--ko:#ff7b90}
+
+.top{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 24px;flex:none}
+.wm{font:750 17px/1 "RF";letter-spacing:-.01em;display:flex;align-items:center;gap:0}
+.wm .m{display:inline-block;transform:scaleX(-1);color:var(--rev)}
+.meta{font:600 12px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);display:flex;gap:14px;align-items:center}
+.meta b{color:var(--ink);font-variant-numeric:tabular-nums}
+.icon-btn{width:56px;height:56px;display:grid;place-items:center;color:var(--ink)}
+.icon-btn svg{width:22px;height:22px}
+
+.lab{font:700 12px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);display:flex;align-items:center;gap:8px}
+.lab .dot{width:8px;height:8px;border-radius:50%;background:var(--rec);animation:blink 1s steps(2) infinite}
+.lab.rev{color:var(--rev)}
+@keyframes blink{50%{opacity:.2}}
+.disp{font:250 68px/.95 "RF";font-variation-settings:"opsz" 144;letter-spacing:-.045em;color:var(--ink);text-wrap:balance}
+.disp em{font-style:normal;color:var(--rev)}
+.disp b{font-weight:600}
+.lede{font:420 17px/1.45 "RF";color:var(--ink2);text-wrap:pretty}
+.pad{padding:0 24px}
+
+/* waveform stage */
+.stage{position:relative;margin:0;padding:0 24px}
+.wv{display:flex;align-items:center;gap:3px;height:var(--wh,200px)}
+.wv i{flex:1;height:calc(100%*var(--h));min-height:3px;border-radius:3px;background:var(--ink)}
+.wv.rv i{background:var(--rev)}
+.wv.dim i{background:color-mix(in srgb,var(--ink) 22%,transparent)}
+.wv.rv.dim i{background:color-mix(in srgb,var(--rev) 30%,transparent)}
+.wv i.on{opacity:1}
+.wv.played i:not(.on){opacity:.28}
+.wv.rec i:not(.on){height:3px!important;opacity:.35}
+.axis{position:absolute;left:24px;right:24px;top:50%;height:1px;background:var(--line);z-index:-1}
+.head{position:absolute;top:-10px;bottom:-10px;width:2px;background:var(--rec);border-radius:1px;left:var(--x)}
+.head::before{content:"";position:absolute;top:-6px;left:-5px;width:12px;height:12px;border-radius:50%;background:inherit}
+.head.rv{background:var(--rev)}
+.ticks{display:flex;justify-content:space-between;padding:10px 24px 0;font:600 11px/1 "RF";font-variant-numeric:tabular-nums;color:var(--ink3)}
+.reflect{transform:scaleY(-1);opacity:.14;-webkit-mask-image:linear-gradient(transparent 40%,#000);mask-image:linear-gradient(transparent 40%,#000);margin-top:4px}
+
+.timer{font:200 112px/.85 "RF";font-variation-settings:"opsz" 144;letter-spacing:-.05em;font-variant-numeric:tabular-nums;color:var(--ink);display:flex;align-items:baseline;gap:10px}
+.timer small{font:500 20px/1 "RF";letter-spacing:0;color:var(--ink2)}
+
+.thumb{flex:none;margin-top:auto;padding:0 24px 16px;display:flex;align-items:center;gap:16px}
+.round{width:96px;height:96px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;flex:none;position:relative}
+.round svg{width:34px;height:34px}
+.round.rec{background:var(--rec);color:#fff}
+.round .sq{width:30px;height:30px;border-radius:7px;background:currentColor}
+.round.ring::after{content:"";position:absolute;inset:-9px;border-radius:50%;background:conic-gradient(var(--rec) calc(var(--t)*1turn),var(--line) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3.5px))}
+.tlab{flex:1;min-width:0}
+.tlab .t{font:700 19px/1.15 "RF";color:var(--ink)}
+.tlab .s{font:450 14px/1.35 "RF";color:var(--ink2);margin-top:4px}
+.pill{height:72px;border-radius:36px;background:var(--ink);color:var(--bg);font:700 19px/1 "RF";display:flex;align-items:center;justify-content:center;gap:12px;flex:1}
+.pill svg{width:22px;height:22px}
+.txt{height:56px;padding:0 4px;font:650 15px/1 "RF";color:var(--ink);display:inline-flex;align-items:center;gap:8px;border-bottom:0}
+.txt svg{width:18px;height:18px}
+
+/* mini row */
+.mini{display:flex;align-items:center;gap:14px;padding:12px 14px 12px 12px;border-radius:22px;background:var(--rev-soft);margin:0 24px}
+.mini .pl{width:56px;height:56px;border-radius:50%;background:var(--rev);color:var(--bg);display:grid;place-items:center;flex:none}
+.mini .pl svg{width:22px;height:22px}
+.mini .wv{--wh:40px;flex:1;gap:2px}
+.mini .wv i{background:var(--rev)}
+.mini .n{font:600 13px/1 "RF";font-variant-numeric:tabular-nums;color:var(--rev)}
+
+/* reveal */
+.hold{width:112px;height:112px;border-radius:50%;flex:none;position:relative;display:grid;place-items:center;background:var(--card);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line);--p:0}
+.hold::before{content:"";position:absolute;inset:-8px;border-radius:50%;background:conic-gradient(var(--ink) calc(var(--p)*1turn),var(--line) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5.5px))}
+.hold .core{width:84px;height:84px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;transform:scale(calc(1 - .08*var(--p)))}
+.hold .core svg{width:30px;height:30px}
+.hold.done::before{background:var(--ok)}
+.hold.done .core{background:var(--ok)}
+.unfold{position:relative}
+.unfold .wv.a{position:absolute;inset:0;clip-path:inset(0 calc(100% - 100%*var(--p)) 0 0)}
+.unfold .edge{position:absolute;top:-12px;bottom:-12px;left:calc(var(--p)*100%);width:2px;background:var(--ink)}
+.pct{font:250 30px/1 "RF";font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+/* result */
+.overlay{position:relative}
+.overlay .wv{position:absolute;inset:0}
+.overlay .wv.a i{background:transparent;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.overlay .wv.b i{background:var(--rev);opacity:.85}
+.legend{display:flex;gap:18px;padding:12px 24px 0;font:600 13px/1 "RF";color:var(--ink2)}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend i{width:14px;height:14px;border-radius:4px}
+.nums{display:grid;grid-template-columns:1fr 1fr;padding:0 24px;gap:12px}
+.nums div{border-top:1.5px solid var(--ink);padding-top:10px}
+.nums b{display:block;font:200 76px/.9 "RF";font-variation-settings:"opsz" 144;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.nums span{font:700 12px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:var(--ink2)}
+.nums .ok b{color:var(--ok)}
+.nums sup{font:700 15px/1 "RF";letter-spacing:0;color:var(--ok);vertical-align:42px;margin-left:4px}
+.seg{display:flex;gap:6px;flex:1;padding:5px;border-radius:40px;box-shadow:inset 0 0 0 1.5px var(--line)}
+.seg button{flex:1;height:62px;border-radius:31px;font:700 15px/1 "RF";display:flex;align-items:center;justify-content:center;gap:6px}
+.seg button svg{width:18px;height:18px}
+.seg .sel{background:var(--ok);color:#fff}
+.dk .seg .sel{color:#04170d}
+.go{width:72px;height:72px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;flex:none}
+.go svg{width:26px;height:26px}
+
+@container (max-height:700px){
+  .top{height:46px}
+  .disp{font-size:46px}
+  .timer{font-size:80px}
+  .wv{--wh:130px}
+  .round,.hold{width:84px;height:84px}
+  .hold .core{width:64px;height:64px}
+  .lede{font-size:15px}
+  .thumb{padding-bottom:10px}
+  .hide-s{display:none!important}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="c-rev" viewBox="0 0 24 24"><path d="M11.5 6.2v11.6L3 12zM21 6.2v11.6L12.5 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="c-play" viewBox="0 0 24 24"><path d="M7 4.8v14.4L19 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="c-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1.4" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.4" fill="currentColor"/></symbol>
+    <symbol id="c-mic" viewBox="0 0 24 24"><rect x="8.5" y="3" width="7" height="12" rx="3.5" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></symbol>
+    <symbol id="c-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></symbol>
+    <symbol id="c-menu" viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="1.9" fill="currentColor"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><circle cx="12" cy="18.5" r="1.9" fill="currentColor"/></symbol>
+    <symbol id="c-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="c-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="c-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="doc">
+  <header class="doc-head">
+    <div>
+      <div class="kicker">Reverseur · mockup v2 · concetto C</div>
+      <h1>Specchio</h1>
+      <p class="pitch">Il suono diventa visibile. Una sola grande forma d'onda al centro, che si specchia quando la ascolti al contrario e si "ripiega" quando sveli l'originale.</p>
+    </div>
+    <div>
+      <h3>Concetto</h3>
+      <p>Un approccio editoriale e silenzioso: carta, inchiostro e <strong>un solo colore, il viola, che significa sempre "al contrario"</strong>. La forma d'onda è il protagonista. Si disegna mentre parli, si specchia in viola quando la inverti, e nella rivelazione <strong>l'originale si dispiega sotto il dito</strong> mentre tieni premuto. È il concetto che spiega meglio il trucco del gioco.</p>
+    </div>
+    <div>
+      <h3>Flusso</h3>
+      <ol>
+        <li>Home: punteggio a cifre grandi, "Registra la parola".</li>
+        <li>A: l'onda cresce da sinistra a destra sulla scala 0–10 s.</li>
+        <li>B: l'onda di A in viola (al contrario) in alto, la propria onda che cresce sotto.</li>
+        <li>Indovina: l'onda viola di B. Tieni premuto e l'onda di A si dispiega fino al 100%.</li>
+        <li>Esito: le due onde sovrapposte, cifre e round successivo.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Perché è meglio</h3>
+      <ul>
+        <li>Si capisce a colpo d'occhio cosa si sta ascoltando: l'onda dritta è in nero, quella al contrario in viola.</li>
+        <li>Il progresso della pressione <em>è</em> la rivelazione: il feedback ha un significato, non è solo decorazione.</li>
+        <li>L'aspetto è sobrio e premium, e invecchia bene.</li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="row">
+    <!-- (a) -->
+    <div class="shot"><div class="cap"><b>a</b>Home e round <span>· 390×844 chiaro</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="top"><div class="wm">Rever<span class="m">seur</span></div><button class="icon-btn" aria-label="Menu"><svg><use href="#c-menu"/></svg></button></div>
+        <div class="pad" style="margin-top:22px"><div class="lab">Round 3 · A registra, B indovina</div></div>
+        <div class="pad" style="margin-top:14px"><div class="disp" style="font-size:60px">Di' una parola.<br><em>Sentila</em> al contrario.</div></div>
+        <div class="stage" style="margin-top:30px"><div class="axis"></div><div class="wv" data-wave="44" data-seed="8" style="--wh:110px"></div></div>
+        <div class="stage reflect" style="height:56px;overflow:hidden"><div class="wv rv" data-wave="44" data-seed="8" data-mirror style="--wh:110px"></div></div>
+        <div class="nums" style="margin-top:26px">
+          <div class="ok"><b>4</b><span>Indovinate</span></div>
+          <div><b>2</b><span>Mancate</span></div>
+        </div>
+        <div class="thumb">
+          <button class="pill"><svg><use href="#c-mic"/></svg>A: registra la parola</button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (b) -->
+    <div class="shot"><div class="cap"><b>b</b>A registra <span>· l'onda si disegna live</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="top"><div class="meta">Round <b>3</b> · Passo <b>1/4</b></div><button class="icon-btn" aria-label="Menu"><svg><use href="#c-menu"/></svg></button></div>
+        <div class="pad" style="margin-top:20px"><div class="lab"><span class="dot"></span>A registra · B non ascolta</div></div>
+        <div class="pad" style="margin-top:16px"><div class="timer"><span data-timer="3.4">03,4</span><small>/ 10 s</small></div></div>
+        <div class="stage" style="margin-top:84px"><div class="axis"></div><div class="wv rec" data-wave="48" data-seed="8" data-played=".34" style="--wh:220px"></div><div class="head" style="--x:calc(34% - 8px)"></div></div>
+        <div class="ticks"><span>0</span><span>2</span><span>4</span><span>6</span><span>8</span><span>10 s</span></div>
+        <div class="thumb">
+          <button class="round rec ring" style="--t:.34" aria-label="Ferma la registrazione"><span class="sq"></span></button>
+          <div class="tlab"><div class="t">Tocca per fermare</div><div class="s">Il silenzio prima e dopo si taglia da solo.</div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (c) -->
+    <div class="shot"><div class="cap"><b>c</b>B ascolta al contrario e imita</div>
+      <div class="phone lt"><div class="scr">
+        <div class="top"><div class="meta">Round <b>3</b> · Passo <b>3/4</b></div><button class="icon-btn" aria-label="Menu"><svg><use href="#c-menu"/></svg></button></div>
+        <div class="pad" style="margin-top:20px"><div class="lab rev">Parola di A · al contrario</div></div>
+        <div class="mini" style="margin-top:12px"><button class="pl" aria-label="Riascolta al contrario"><svg><use href="#c-rev"/></svg></button><div class="wv" data-wave="38" data-seed="8" data-mirror></div><span class="n">1,8 s</span></div>
+        <div class="pad" style="margin-top:28px"><div class="lab"><span class="dot"></span>B imita</div></div>
+        <div class="pad" style="margin-top:12px"><div class="timer" style="font-size:88px"><span data-timer="2.1">02,1</span><small>/ 10 s</small></div></div>
+        <div class="stage" style="margin-top:36px"><div class="axis"></div><div class="wv rec" data-wave="48" data-seed="14" data-played=".21" style="--wh:180px"></div><div class="head" style="--x:calc(21% - 6px)"></div></div>
+        <div class="ticks"><span>0</span><span>2</span><span>4</span><span>6</span><span>8</span><span>10 s</span></div>
+        <div class="thumb">
+          <button class="round rec ring" style="--t:.21" aria-label="Ferma la registrazione"><span class="sq"></span></button>
+          <div class="tlab"><div class="t">Rifai i suoni viola</div><div class="s">Tocca per fermare quando hai finito.</div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (d) -->
+    <div class="shot"><div class="cap"><b>d</b>Indovina e rivela <span>· l'originale si dispiega, 62%</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="top"><div class="meta">Round <b>3</b> · Passo <b>4/4</b></div><button class="icon-btn" aria-label="Menu"><svg><use href="#c-menu"/></svg></button></div>
+        <div class="pad" style="margin-top:20px"><div class="disp" style="font-size:54px">Che parola <em>senti?</em></div></div>
+        <div class="pad" style="margin-top:22px"><div class="lab rev">Imitazione di B · al contrario</div></div>
+        <div class="stage" style="margin-top:14px"><div class="axis"></div><div class="wv rv played" data-wave="44" data-seed="14" data-mirror data-played=".5" style="--wh:150px"></div><div class="head rv" style="--x:50%"></div></div>
+        <div class="pad" style="margin-top:28px;display:flex;justify-content:space-between;align-items:baseline"><div class="lab">Originale di A</div><div class="pct">62%</div></div>
+        <div class="stage" style="margin-top:12px"><div class="unfold" style="--p:.62"><div class="wv dim" data-wave="44" data-seed="8" style="--wh:96px"></div><div class="wv a" data-wave="44" data-seed="8" style="--wh:96px"></div><div class="edge"></div></div></div>
+        <div class="thumb">
+          <button class="hold" style="--p:.62" aria-label="Tieni premuto per rivelare l'originale"><span class="core"><svg><use href="#c-eye"/></svg></span></button>
+          <div class="tlab"><div class="t">Tieni premuto per rivelare</div><div class="s">Se lasci prima, l'onda si richiude.</div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (e) -->
+    <div class="shot"><div class="cap"><b>e</b>Esito e punteggio <span>· onde sovrapposte</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="top"><div class="meta">Round <b>3</b> · Fine</div><button class="icon-btn" aria-label="Menu"><svg><use href="#c-menu"/></svg></button></div>
+        <div class="pad" style="margin-top:20px"><div class="lab" style="color:var(--ok)">Confronto</div></div>
+        <div class="pad" style="margin-top:12px"><div class="disp" style="font-size:54px">Ecco <b>l'originale.</b></div></div>
+        <div class="stage" style="margin-top:28px"><div class="overlay" style="height:150px"><div class="wv b" data-wave="40" data-seed="14" style="--wh:150px"></div><div class="wv a" data-wave="40" data-seed="8" style="--wh:150px"></div></div></div>
+        <div class="legend"><span><i style="box-shadow:inset 0 0 0 1.5px var(--ink)"></i>A originale</span><span><i style="background:var(--rev)"></i>B al contrario</span></div>
+        <div class="nums" style="margin-top:28px">
+          <div class="ok"><b>5<sup>+1</sup></b><span>Indovinate</span></div>
+          <div><b>2</b><span>Mancate</span></div>
+        </div>
+        <div class="thumb">
+          <div class="seg" role="radiogroup" aria-label="Esito"><button class="sel" role="radio" aria-checked="true"><svg><use href="#c-check"/></svg>Indovinata</button><button role="radio" aria-checked="false"><svg><use href="#c-x"/></svg>Mancata</button></div>
+          <button class="go" aria-label="Round 4"><svg><use href="#c-arrow"/></svg></button>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="shot"><div class="cap"><b>d</b>Indovina e rivela <span>· scuro · tieni premuto il cerchio</span></div>
+      <div class="phone dk"><div class="scr">
+        <div class="top"><div class="meta">Round <b>3</b> · Passo <b>4/4</b></div><button class="icon-btn" aria-label="Menu"><svg><use href="#c-menu"/></svg></button></div>
+        <div class="pad" style="margin-top:20px"><div class="disp" style="font-size:54px">Che parola <em>senti?</em></div></div>
+        <div class="pad" style="margin-top:22px"><div class="lab rev">Imitazione di B · al contrario</div></div>
+        <div class="stage" style="margin-top:14px"><div class="axis"></div><div class="wv rv played" data-wave="44" data-seed="14" data-mirror data-played=".5" style="--wh:150px"></div><div class="head rv" style="--x:50%"></div></div>
+        <div class="pad" style="margin-top:28px;display:flex;justify-content:space-between;align-items:baseline"><div class="lab">Originale di A</div><div class="pct" id="pctC">0%</div></div>
+        <div class="stage" style="margin-top:12px"><div class="unfold" id="unfC" style="--p:0"><div class="wv dim" data-wave="44" data-seed="8" style="--wh:96px"></div><div class="wv a" data-wave="44" data-seed="8" style="--wh:96px"></div><div class="edge"></div></div></div>
+        <div class="thumb">
+          <button class="hold" id="holdC" aria-label="Tieni premuto per rivelare l'originale"><span class="core"><svg><use href="#c-eye"/></svg></span></button>
+          <div class="tlab"><div class="t" id="tC">Tieni premuto per rivelare</div><div class="s">Se lasci prima, l'onda si richiude.</div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>e</b>Esito <span>· scuro</span></div>
+      <div class="phone dk"><div class="scr">
+        <div class="top"><div class="meta">Round <b>3</b> · Fine</div><button class="icon-btn" aria-label="Menu"><svg><use href="#c-menu"/></svg></button></div>
+        <div class="pad" style="margin-top:20px"><div class="lab" style="color:var(--ok)">Confronto</div></div>
+        <div class="pad" style="margin-top:12px"><div class="disp" style="font-size:54px">Ecco <b>l'originale.</b></div></div>
+        <div class="stage" style="margin-top:28px"><div class="overlay" style="height:150px"><div class="wv b" data-wave="40" data-seed="14" style="--wh:150px"></div><div class="wv a" data-wave="40" data-seed="8" style="--wh:150px"></div></div></div>
+        <div class="legend"><span><i style="box-shadow:inset 0 0 0 1.5px var(--ink)"></i>A originale</span><span><i style="background:var(--rev)"></i>B al contrario</span></div>
+        <div class="nums" style="margin-top:28px">
+          <div class="ok"><b>5<sup>+1</sup></b><span>Indovinate</span></div>
+          <div><b>2</b><span>Mancate</span></div>
+        </div>
+        <div class="thumb">
+          <div class="seg" role="radiogroup" aria-label="Esito"><button class="sel" role="radio" aria-checked="true"><svg><use href="#c-check"/></svg>Indovinata</button><button role="radio" aria-checked="false"><svg><use href="#c-x"/></svg>Mancata</button></div>
+          <button class="go" aria-label="Round 4"><svg><use href="#c-arrow"/></svg></button>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>b</b>A registra <span>· 360×640</span></div>
+      <div class="phone s360 lt"><div class="scr">
+        <div class="top"><div class="meta">Round <b>3</b> · Passo <b>1/4</b></div><button class="icon-btn" aria-label="Menu"><svg><use href="#c-menu"/></svg></button></div>
+        <div class="pad" style="margin-top:10px"><div class="lab"><span class="dot"></span>A registra · B non ascolta</div></div>
+        <div class="pad" style="margin-top:12px"><div class="timer"><span>03,4</span><small>/ 10 s</small></div></div>
+        <div class="stage" style="margin-top:34px"><div class="axis"></div><div class="wv rec" data-wave="44" data-seed="8" data-played=".34"></div><div class="head" style="--x:calc(34% - 8px)"></div></div>
+        <div class="ticks"><span>0</span><span>2</span><span>4</span><span>6</span><span>8</span><span>10 s</span></div>
+        <div class="thumb">
+          <button class="round rec ring" style="--t:.34" aria-label="Ferma la registrazione"><span class="sq"></span></button>
+          <div class="tlab"><div class="t">Tocca per fermare</div><div class="s">Max 10 secondi.</div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="stack">
+      <div class="note">
+        <h4>Movimento</h4>
+        <ul>
+          <li><strong>Specchio:</strong> quando un audio viene invertito, l'onda ruota di 180° sull'asse verticale (rotateY, 360 ms) e diventa viola. È la stessa trasformazione che fa il codice.</li>
+          <li><strong>Registrazione:</strong> ogni 100 ms compare una nuova barra (RMS) sulla scala fissa da 10 s. La testina rossa avanza e l'anello attorno al tasto conta il tempo.</li>
+          <li><strong>Rivela:</strong> tenendo premuto l'anello si riempie e l'onda di A si dispiega da sinistra, mentre la percentuale cresce. Se lasci prima, l'onda si richiude con una molla e compare «Tieni premuto». A fine corsa parte l'originale.</li>
+          <li><strong>Esito:</strong> l'onda viola scivola sopra quella nera per il confronto, poi le cifre ruotano.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="note">
+        <h4>Colore e tipo</h4>
+        <div class="sw"><i style="background:#f4f2ee"></i><i style="background:#121212"></i><i style="background:#5b3df5"></i></div>
+        <div class="sw" style="margin-top:-12px"><i style="background:#0d0d0f"></i><i style="background:#a493ff"></i><i style="background:#e0391f"></i></div>
+        <p>Il colore ha una sola regola: <strong>viola = al contrario</strong>, rosso = registrazione, nero = originale. Il viola #5B3DF5 su carta ha contrasto 5,4:1, il lavanda #A493FF sul nero 7,9:1. Il tipo è Roboto Flex leggero (peso 200–250, opsz 144) per titoli e cifre, tabellare per il timer; le etichette sono in maiuscoletto spaziato a 12 px.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ---------- Presentation shell helpers (shared by all v2 mockups) ---------- */
+(function(){
+  const LIVE = !navigator.webdriver; // static, deterministic frames when screenshotted
+  window.LIVE = LIVE;
+  const SB = '<span>9:41</span><svg viewBox="0 0 74 14" fill="currentColor" aria-hidden="true">'+
+    '<rect x="0" y="9" width="3.4" height="5" rx="1"/><rect x="5" y="6.5" width="3.4" height="7.5" rx="1"/><rect x="10" y="4" width="3.4" height="10" rx="1"/><rect x="15" y="1" width="3.4" height="13" rx="1"/>'+
+    '<path d="M31 4.2a10 10 0 0 1 13.4 0l-1.6 1.7a7.6 7.6 0 0 0-10.2 0zM33.6 7a6.2 6.2 0 0 1 8.2 0l-1.6 1.7a3.9 3.9 0 0 0-5 0zM37.7 13.2l-2.1-2.3a3 3 0 0 1 4.2 0z"/>'+
+    '<rect x="50.5" y="1.5" width="20" height="11" rx="3.4" fill="none" stroke="currentColor" stroke-opacity=".45"/><rect x="52.5" y="3.5" width="14" height="7" rx="1.8"/><rect x="71.8" y="5" width="1.8" height="4" rx=".9" fill-opacity=".45"/></svg>';
+  document.querySelectorAll('.phone').forEach(p=>{
+    const sb=document.createElement('div');sb.className='sb';sb.innerHTML=SB;p.prepend(sb);
+    const hi=document.createElement('div');hi.className='hi';p.append(hi);
+  });
+  // seeded random
+  function rng(seed){let s=seed*9301+49297;return()=>{s=(s*9301+49297)%233280;return s/233280;};}
+  window.rng=rng;
+  // word-like envelope: a few syllable humps
+  function envelope(n,seed){
+    const r=rng(seed),humps=[];const k=2+Math.floor(r()*2);
+    for(let i=0;i<k;i++)humps.push({c:(i+.5)/k+(r()-.5)*.12,w:.08+r()*.07,a:.6+r()*.4});
+    const out=[];for(let i=0;i<n;i++){const x=i/(n-1);let v=0;humps.forEach(h=>{v+=h.a*Math.exp(-((x-h.c)**2)/(2*h.w*h.w));});
+      v=Math.min(1,v)*(.72+r()*.28);out.push(Math.max(.07,v));}
+    return out;
+  }
+  window.envelope=envelope;
+  // [data-wave="n"] data-seed data-mirror data-played="0..1"
+  document.querySelectorAll('[data-wave]').forEach(el=>{
+    const n=+el.dataset.wave,seed=+(el.dataset.seed||1);let e=envelope(n,seed);
+    if('mirror' in el.dataset)e=e.reverse();
+    const played=+(el.dataset.played||0);
+    el.innerHTML=e.map((v,i)=>`<i style="--h:${v.toFixed(3)}"${i/n<played?' class="on"':''}></i>`).join('');
+  });
+  // [data-radial="n"] radial VU ticks
+  document.querySelectorAll('[data-radial]').forEach(el=>{
+    const n=+el.dataset.radial,r=rng(+(el.dataset.seed||4));let h='';
+    for(let i=0;i<n;i++){const v=.25+.75*Math.abs(Math.sin(i*.55))*r();h+=`<i style="--a:${(i*360/n).toFixed(2)}deg;--v:${v.toFixed(3)}"></i>`;}
+    el.innerHTML=h;
+    if(LIVE){const ticks=[...el.children];setInterval(()=>{const t=performance.now()/1000;ticks.forEach((tk,i)=>{const v=.2+.8*Math.abs(Math.sin(t*3.1+i*.7)*Math.sin(t*1.7+i*.31))*(.6+.4*Math.random());tk.style.setProperty('--v',v.toFixed(3));});},90);}
+  });
+  // generic animated bars [data-vu] children get --v
+  document.querySelectorAll('[data-vu]').forEach(el=>{
+    if(!LIVE)return;const bars=[...el.children];
+    setInterval(()=>{const t=performance.now()/1000;bars.forEach((b,i)=>{const v=.15+.85*Math.abs(Math.sin(t*2.7+i*.9)*Math.cos(t*1.3+i*.4))*(.55+.45*Math.random());b.style.setProperty('--v',v.toFixed(3));});},110);
+  });
+  // ticking timers [data-timer="start seconds"]
+  document.querySelectorAll('[data-timer]').forEach(el=>{
+    if(!LIVE)return;let t=+el.dataset.timer;const fmt=v=>{const s=Math.floor(v),d=Math.floor((v-s)*10);return String(s).padStart(2,'0')+','+d;};
+    setInterval(()=>{t+=.1;if(t>=10)t=0;el.textContent=fmt(t);},100);
+  });
+  /* hold-to-confirm demo, same contract as holdButton(el,{ms,onConfirm}) */
+  window.hold=function(el,ms,onConfirm){
+    let t0=0,raf=0,on=false;const set=p=>el.style.setProperty('--p',p.toFixed(3));
+    const start=e=>{if(el.classList.contains('done'))return;if(e.pointerId!=null)el.setPointerCapture(e.pointerId);on=true;t0=performance.now();el.classList.add('holding');
+      const step=now=>{if(!on)return;const p=Math.min(1,(now-t0)/ms);set(p);if(p<1)raf=requestAnimationFrame(step);else{on=false;el.classList.remove('holding');el.classList.add('done');navigator.vibrate&&navigator.vibrate(15);onConfirm&&onConfirm(el);setTimeout(()=>{el.classList.remove('done');set(0);},2600);}};raf=requestAnimationFrame(step);};
+    const stop=()=>{if(!on)return;on=false;cancelAnimationFrame(raf);el.classList.remove('holding');set(0);el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake','hint');setTimeout(()=>el.classList.remove('hint'),1600);};
+    el.addEventListener('pointerdown',start);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,stop));
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+    el.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();start({});}});
+    el.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')stop();});
+  };
+})();
+
+(function(){
+  const h=document.getElementById('holdC'),u=document.getElementById('unfC'),pc=document.getElementById('pctC'),t=document.getElementById('tC');
+  hold(h,600,()=>{t.textContent='Originale di A in riproduzione';setTimeout(()=>t.textContent='Tieni premuto per rivelare',2600);});
+  new MutationObserver(()=>{const p=+(h.style.getPropertyValue('--p')||0);u.style.setProperty('--p',p);pc.textContent=Math.round(p*100)+'%';if(h.classList.contains('hint'))t.textContent='Tieni premuto';}).observe(h,{attributes:true,attributeFilter:['style','class']});
+})();
+</script>
+</body>
+</html>

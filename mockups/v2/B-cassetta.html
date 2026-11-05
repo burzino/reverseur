@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverseur v2 · B · Cassetta</title>
+<style>
+/* ---------- Presentation shell (shared by all v2 mockups) ---------- */
+@font-face{
+  font-family:"RF";
+  src:url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2-variations"),
+      url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2");
+  font-weight:100 1000;font-stretch:25% 151%;font-display:block;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#e7e5ec;color:#17141f;font-family:"RF",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{padding:64px 64px 80px;width:max-content;min-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+svg{display:block}
+
+.doc{width:2110px}
+.doc-head{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:48px;margin-bottom:60px;align-items:start}
+.doc-head .kicker{font:650 13px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.doc-head h1{font-size:76px;line-height:.92;font-weight:880;letter-spacing:-.025em;margin-bottom:18px}
+.doc-head .pitch{font-size:21px;line-height:1.4;color:#2c2838;font-weight:450;max-width:34ch}
+.doc-head h3{font:700 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin:6px 0 14px}
+.doc-head p,.doc-head li{font-size:16px;line-height:1.55;color:#36323f}
+.doc-head ol,.doc-head ul{padding-left:20px;display:grid;gap:6px}
+.doc-head strong{font-weight:700;color:#17141f}
+
+.row{display:flex;gap:40px;align-items:flex-start;margin-bottom:64px}
+.shot{display:flex;flex-direction:column;gap:18px;flex:none}
+.cap{display:flex;align-items:baseline;gap:10px;font:600 15px/1.2 "RF";color:#3d3948;padding-left:6px}
+.cap b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#17141f;color:#fff;font:750 13px/1 "RF"}
+.cap span{color:#7a7588;font-weight:500}
+
+.phone{width:390px;height:844px;border-radius:54px;position:relative;overflow:hidden;flex:none;isolation:isolate;container-type:size;
+  box-shadow:0 0 0 10px #121018,0 0 0 11.5px #3b3846,0 40px 70px -28px rgba(25,12,60,.55);background:var(--bg);color:var(--ink)}
+.phone.s360{width:360px;height:640px;border-radius:40px}
+.sb{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;font:650 16px/1 "RF";z-index:60;pointer-events:none;color:var(--sb,var(--ink))}
+.sb svg{height:13px;width:auto}
+.s360 .sb{height:30px;font-size:13px;padding:2px 20px 0 22px}
+.hi{position:absolute;bottom:8px;left:50%;width:136px;height:5px;border-radius:3px;background:var(--sb,var(--ink));opacity:.8;transform:translateX(-50%);z-index:60;pointer-events:none}
+.s360 .hi{width:100px;height:4px;bottom:6px}
+.scr{position:absolute;inset:0;padding:50px 0 30px;display:flex;flex-direction:column}
+.s360 .scr{padding:30px 0 18px}
+
+.note{width:390px;flex:none;background:#fff;border-radius:28px;padding:30px 30px 28px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 20px 40px -30px rgba(25,12,60,.35)}
+.note h4{font:750 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.note h4+*{margin-top:0}
+.note p,.note li{font-size:15px;line-height:1.5;color:#36323f}
+.note ul{padding-left:18px;display:grid;gap:8px}
+.note .sw{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 22px}
+.note .sw i{display:block;height:64px;border-radius:14px;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.note .sw i::after{content:attr(data-n);position:absolute;left:8px;bottom:6px;font:650 10.5px/1 "RF";font-style:normal;letter-spacing:.02em}
+.note .type{margin:0 0 22px;display:grid;gap:6px}
+.note + .note{margin-left:0}
+.stack{display:flex;flex-direction:column;gap:24px;flex:none}
+
+/* shake used by every hold demo */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .38s cubic-bezier(.36,.07,.19,.97)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+
+/* ================= Concept B · Cassetta ================= */
+.lt{--bg:#e9dfcc;--deck:#e9dfcc;--panel:#f6efe2;--ink:#2a2017;--ink2:#6a5846;--key:#f8f3ea;--key-top:#fffdf8;--key-edge:#b9a98c;--key-shadow:rgba(60,40,10,.28);--well:#d8ccb4;--rec:#d4371c;--amber:#f6d58a;--amber-ink:#3b2a0c;--scale:#3b2a0c;--led-off:#cbbd9f;--led:#e2501f;--ok:#1d7a4c;--ko:#b23043}
+.dk{--bg:#15120e;--deck:#15120e;--panel:#211c16;--ink:#f2e8d7;--ink2:#b3a48e;--key:#2c261f;--key-top:#3a332a;--key-edge:#060504;--key-shadow:rgba(0,0,0,.6);--well:#0d0b08;--rec:#ff5a3c;--amber:#2b1f0b;--amber-ink:#ffbf57;--scale:#ffbf57;--led-off:#3a3127;--led:#ff7a3c;--ok:#55d394;--ko:#ff7b8e}
+.phone{background:var(--deck)}
+.lt .scr{background:radial-gradient(120% 60% at 50% 0%,#f3ebdc 0%,transparent 70%),repeating-linear-gradient(0deg,rgba(0,0,0,.012) 0 2px,transparent 2px 4px)}
+.dk .scr{background:radial-gradient(120% 60% at 50% 0%,#221d17 0%,transparent 70%)}
+
+.top{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 22px;flex:none}
+.brand{font:800 15px/1 "RF";font-variation-settings:"wdth" 151;letter-spacing:.22em;text-transform:uppercase;color:var(--ink);display:flex;align-items:center;gap:10px}
+.brand i{font-style:normal;font-weight:600;letter-spacing:.12em;color:var(--ink2);font-size:12px}
+.icon-btn{width:56px;height:56px;display:grid;place-items:center;color:var(--ink)}
+.icon-btn svg{width:24px;height:24px}
+
+.bay{margin:6px 16px 0;padding:14px;border-radius:26px;background:var(--well);box-shadow:inset 0 2px 6px rgba(0,0,0,.18),inset 0 -1px 0 rgba(255,255,255,.4)}
+.dk .bay{box-shadow:inset 0 2px 8px rgba(0,0,0,.8),inset 0 -1px 0 rgba(255,255,255,.05)}
+.cassette{display:block;width:100%;height:auto;filter:drop-shadow(0 6px 8px rgba(30,10,60,.25))}
+.reel{transform-box:fill-box;transform-origin:center}
+.spin .reel{animation:spin 1.8s linear infinite}
+.spin.rev .reel{animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.dymo{align-self:flex-start;margin:18px 0 0 20px;background:#1c1c1e;color:#f4f4f4;font:750 15px/1 "RF";font-variation-settings:"wdth" 125;letter-spacing:.09em;text-transform:uppercase;padding:9px 14px 9px;border-radius:3px;transform:rotate(-1.2deg);box-shadow:0 2px 0 rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.12);text-shadow:0 1px 0 rgba(0,0,0,.6)}
+.dymo.b{background:#b8361a}
+.dymo.ok{background:#1d6e46}
+.dk .dymo{background:#f2e8d7;color:#15120e;text-shadow:none}
+.dk .dymo.b{background:#ff8a65;color:#2a0f05}
+.say{margin:12px 20px 0;font:500 16px/1.4 "RF";color:var(--ink2);max-width:33ch;text-wrap:pretty}
+.say b{color:var(--ink);font-weight:700}
+
+.module{margin:auto 16px 0;display:grid;grid-template-columns:1.35fr 1fr;gap:10px}
+.vu{border-radius:18px;background:var(--amber);box-shadow:inset 0 0 0 2px rgba(0,0,0,.12),inset 0 8px 20px rgba(255,255,255,.35);padding:8px 10px 6px;position:relative;overflow:hidden}
+.dk .vu{box-shadow:inset 0 0 0 1px rgba(255,191,87,.25),inset 0 0 30px rgba(255,160,40,.18)}
+.vu svg{width:100%;height:auto}
+.vu .needle{transform-origin:100px 108px;transition:transform .1s ease-out}
+.counter{border-radius:18px;background:var(--panel);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px}
+.dk .counter{box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.wheels{display:flex;gap:3px;align-items:center}
+.wheels span{width:26px;height:40px;border-radius:5px;background:linear-gradient(#111 0,#333 45%,#2a2a2a 55%,#0d0d0d 100%);color:#fff;font:600 26px/40px "RF";font-variation-settings:"wdth" 60;text-align:center;font-variant-numeric:tabular-nums;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.wheels em{font-style:normal;font:700 22px/1 "RF";color:var(--ink);margin:0 1px}
+.counter small{font:650 11px/1 "RF";font-variation-settings:"wdth" 125;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+.counter small b{color:var(--rec)}
+
+.leds{display:flex;gap:5px;justify-content:center;margin:12px 0 0}
+.leds i{width:16px;height:6px;border-radius:2px;background:var(--led-off)}
+.leds i.on{background:var(--led);box-shadow:0 0 8px color-mix(in srgb,var(--led) 70%,transparent)}
+
+.keys{flex:none;margin:12px 12px 12px;padding:10px 10px 18px;border-radius:24px;background:var(--well);display:flex;gap:8px;box-shadow:inset 0 2px 6px rgba(0,0,0,.18)}
+.dk .keys{box-shadow:inset 0 2px 8px rgba(0,0,0,.8)}
+.key{flex:1;min-width:0;height:112px;border-radius:12px 12px 16px 16px;background:linear-gradient(var(--key-top),var(--key));box-shadow:0 8px 0 var(--key-edge),0 12px 14px var(--key-shadow),inset 0 1px 0 rgba(255,255,255,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--ink);position:relative;transition:transform .08s,box-shadow .08s;--p:0}
+.dk .key{box-shadow:0 8px 0 var(--key-edge),0 12px 14px var(--key-shadow),inset 0 1px 0 rgba(255,255,255,.08)}
+.key svg{width:30px;height:30px}
+.key .kl{font:780 11.5px/1.15 "RF";font-variation-settings:"wdth" 118;letter-spacing:.1em;text-transform:uppercase;text-align:center}
+.key .kl small{display:block;font-weight:600;letter-spacing:.06em;color:var(--ink2);margin-top:2px;font-size:10.5px}
+.key.down{transform:translateY(6px);box-shadow:0 2px 0 var(--key-edge),0 3px 4px var(--key-shadow),inset 0 2px 4px rgba(0,0,0,.12)}
+.key.off{color:color-mix(in srgb,var(--ink) 38%,transparent)}
+.key.off .kl small{color:inherit}
+.key.rec svg{color:var(--rec)}
+.key.rec::before{content:"";position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--led-off)}
+.key.rec.down::before{background:#ff3b1f;box-shadow:0 0 10px #ff3b1f}
+.key.wide{flex:1.5}
+.key.hero{background:linear-gradient(#ff7a52,#f0602f);color:#2a0f05;box-shadow:0 8px 0 #a83d1a,0 12px 14px var(--key-shadow),inset 0 1px 0 rgba(255,255,255,.5)}
+.key.hero .kl small{color:#4a1a08}
+.key.ink{background:linear-gradient(#3f2b96,#33227f);color:#fff;box-shadow:0 8px 0 #1c1150,0 12px 14px var(--key-shadow),inset 0 1px 0 rgba(255,255,255,.25)}
+.key.ink .kl small{color:#d8d0f5}
+.key.hold{overflow:hidden}
+.key.hold .fill{position:absolute;left:0;right:0;bottom:0;height:calc(100%*var(--p));background:linear-gradient(#ffc24a,#ff9a1f);opacity:.92}
+.key.hold>*:not(.fill):not(.lock){position:relative}
+.key.hold.holding,.key.hold[style*="--p:."]{transform:translateY(4px);box-shadow:0 4px 0 var(--key-edge),0 6px 8px var(--key-shadow)}
+.key.hold.done .fill{background:linear-gradient(#7ee0a6,#3cbf78)}
+.key .lock{position:absolute;top:9px;right:9px;width:16px!important;height:16px!important;color:var(--ink2)}
+
+/* track list (J-card) */
+.jcard{margin:16px 16px 0;border-radius:6px;background:#fbf7ee;color:#2a2017;padding:14px 16px 10px;box-shadow:0 1px 0 rgba(0,0,0,.08),0 10px 20px -12px rgba(60,40,10,.4);position:relative;background-image:repeating-linear-gradient(180deg,transparent 0 31px,#e7dcc7 31px 32px);background-position:0 41px}
+.dk .jcard{background-color:#2a241d;color:#f2e8d7;background-image:repeating-linear-gradient(180deg,transparent 0 31px,#3b3329 31px 32px)}
+.jcard h5{font:800 12px/1 "RF";font-variation-settings:"wdth" 140;letter-spacing:.18em;text-transform:uppercase;display:flex;justify-content:space-between;padding-bottom:12px;border-bottom:2px solid #c9361b;margin-bottom:0}
+.jcard h5 span{color:#8a7558;font-weight:650}
+.dk .jcard h5 span{color:#b3a48e}
+.track{display:flex;align-items:center;gap:10px;height:32px;font:500 15px/1 "RF";font-variation-settings:"slnt" -8,"wdth" 92;font-style:normal}
+.track .n{width:22px;color:#8a7558;font-variant-numeric:tabular-nums;font-variation-settings:"wdth" 100}
+.track .w{flex:1}
+.track .r{font:750 11px/1 "RF";font-variation-settings:"wdth" 120;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;border-radius:4px}
+.track .r.ok{background:#d9efe2;color:#14603b}
+.track .r.ko{background:#f7dadf;color:#962335}
+.dk .track .r.ok{background:#173b29;color:#7ee0a6}
+.dk .track .r.ko{background:#3e1820;color:#ff9aa9}
+.track.new{background:linear-gradient(90deg,rgba(255,138,101,.18),transparent);margin:0 -16px;padding:0 16px}
+.tally{display:flex;gap:10px;margin:14px 16px 0}
+.tally div{flex:1;border-radius:16px;background:var(--panel);padding:12px 14px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07)}
+.tally b{display:block;font:700 36px/1 "RF";font-variation-settings:"wdth" 60;font-variant-numeric:tabular-nums}
+.tally span{font:700 11px/1 "RF";font-variation-settings:"wdth" 125;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+.tally .ok b{color:var(--ok)}
+.stamp{position:absolute;right:16px;top:44px;transform:rotate(-9deg);border:3px solid var(--ok);color:var(--ok);font:850 22px/1 "RF";font-variation-settings:"wdth" 125;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--panel) 80%,transparent)}
+
+@container (max-height:700px){
+  .top{height:46px}
+  .bay{margin-top:2px;padding:10px;border-radius:20px}
+  .dymo{margin-top:12px;font-size:13px}
+  .say{font-size:14px;margin-top:8px}
+  .module{gap:8px}
+  .wheels span{width:22px;height:34px;font-size:22px;line-height:34px}
+  .key{height:92px;gap:6px}
+  .key svg{width:26px;height:26px}
+  .keys{margin:10px 10px 6px;padding:8px 8px 14px}
+  .hide-s{display:none!important}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="k-rec" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="currentColor"/></symbol>
+    <symbol id="k-rev" viewBox="0 0 24 24"><path d="M11.5 6.2v11.6L3 12zM21 6.2v11.6L12.5 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="k-play" viewBox="0 0 24 24"><path d="M7 4.8v14.4L19 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="k-stop" viewBox="0 0 24 24"><rect x="5.5" y="5.5" width="13" height="13" rx="2.2" fill="currentColor"/></symbol>
+    <symbol id="k-eject" viewBox="0 0 24 24"><path d="M12 4.5 20 14H4z" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="4" y="16.5" width="16" height="3.2" rx="1.2" fill="currentColor"/></symbol>
+    <symbol id="k-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.6" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2.4"/></symbol>
+    <symbol id="k-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="k-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+    <symbol id="k-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="k-new" viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.1-5M5 4v4h4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="doc">
+  <header class="doc-head">
+    <div>
+      <div class="kicker">Reverseur · mockup v2 · concetto B</div>
+      <h1>Cassetta</h1>
+      <p class="pitch">Un mangianastri tascabile: lato A la parola, lato B l'imitazione, e tasti a pianoforte che si sentono sotto il pollice.</p>
+    </div>
+    <div>
+      <h3>Concetto</h3>
+      <p>La metafora spiega il gioco da sola: <strong>il nastro gira all'indietro</strong> quando si ascolta al contrario. Una cassetta per round, con il <strong>lato A</strong> (lavanda) per la parola e il <strong>lato B</strong> (corallo) per l'imitazione. In basso c'è sempre la stessa <strong>pulsantiera a tasti</strong>, che cambia solo le etichette. Le istruzioni sono etichette Dymo, il punteggio è la scaletta scritta sulla copertina.</p>
+    </div>
+    <div>
+      <h3>Flusso</h3>
+      <ol>
+        <li>Copertina: scaletta dei round, "Inserisci cassetta".</li>
+        <li>Lato A: REC giù, VU ad ago, contanastro.</li>
+        <li>La cassetta si gira: lato B. ◀◀ fa sentire A al contrario, REC registra B.</li>
+        <li>Indovina: ◀◀ suona B al contrario. Per <strong>▶ Originale</strong> si tiene premuto finché la barra LED si riempie.</li>
+        <li>Esito: timbro sulla copertina, nuova traccia in scaletta, ⏏ espelli.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Perché è meglio</h3>
+      <ul>
+        <li>Ha un'identità fortissima e memorabile, perfetta per una festa.</li>
+        <li>La pulsantiera resta sempre nello stesso posto, nella zona del pollice. La memoria muscolare si forma al primo round.</li>
+        <li>"Tieni premuto" è naturale su un tasto meccanico: la barra LED è il feedback.</li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="row">
+    <!-- (a) home -->
+    <div class="shot"><div class="cap"><b>a</b>Copertina e round <span>· 390×844 chiaro</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="top"><div class="brand">Reverseur <i>C-10</i></div><button class="icon-btn" aria-label="Menu"><svg><use href="#k-menu"/></svg></button></div>
+        <div class="bay"><div data-cassette data-side="A" data-title="Round 3" data-sub="Pronta da registrare" data-pack="0"></div></div>
+        <div class="jcard">
+          <h5>Scaletta <span>Stasera</span></h5>
+          <div class="track"><span class="n">01</span><span class="w">A → B · 1,6 s</span><span class="r ok">Indovinata</span></div>
+          <div class="track"><span class="n">02</span><span class="w">B → A · 2,3 s</span><span class="r ko">Mancata</span></div>
+          <div class="track"><span class="n">03</span><span class="w" style="color:#8a7558">A → B · da registrare</span></div>
+        </div>
+        <div class="tally hide-s">
+          <div class="ok"><b>1</b><span>indovinate</span></div><div><b>1</b><span>mancate</span></div><div><b>3</b><span>round</span></div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="keys">
+          <button class="key"><svg><use href="#k-new"/></svg><span class="kl">Nuova<small>partita</small></span></button>
+          <button class="key hero wide"><svg><use href="#k-play"/></svg><span class="kl">Inserisci<small>tocca ad A</small></span></button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (b) A records -->
+    <div class="shot"><div class="cap"><b>b</b>Lato A: registra <span>· VU ad ago + contanastro</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="top"><div class="brand">Reverseur <i>Round 3</i></div><button class="icon-btn" aria-label="Menu"><svg><use href="#k-menu"/></svg></button></div>
+        <div class="bay"><div data-cassette data-side="A" data-title="Parola segreta" data-sub="Registra A" data-pack=".35" data-spin></div></div>
+        <div class="dymo">A: di' una parola</div>
+        <p class="say">B si tappa le orecchie. <b>Premi STOP</b> quando hai finito, dopo 10 secondi si ferma da sola.</p>
+        <div class="module">
+          <div class="vu" data-vu-needle="12"></div>
+          <div class="counter"><div class="wheels"><span>0</span><span>3</span><em>,</em><span>4</span></div><small><b>● REC</b> · max 10 s</small></div>
+        </div>
+        <div class="keys">
+          <button class="key rec down"><svg><use href="#k-rec"/></svg><span class="kl">Rec<small>in corso</small></span></button>
+          <button class="key off"><svg><use href="#k-rev"/></svg><span class="kl">Al<small>contrario</small></span></button>
+          <button class="key ink wide"><svg><use href="#k-stop"/></svg><span class="kl">Stop<small>fine parola</small></span></button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (c) B -->
+    <div class="shot"><div class="cap"><b>c</b>Lato B: ascolta e imita</div>
+      <div class="phone lt"><div class="scr">
+        <div class="top"><div class="brand">Reverseur <i>Round 3</i></div><button class="icon-btn" aria-label="Menu"><svg><use href="#k-menu"/></svg></button></div>
+        <div class="bay"><div data-cassette data-side="B" data-title="Imitazione" data-sub="Registra B" data-pack=".2" data-spin></div></div>
+        <div class="dymo b">B: rifai i suoni</div>
+        <p class="say">Hai sentito A al contrario <b>2 volte</b>. Ora imita esattamente quei suoni.</p>
+        <div class="module">
+          <div class="vu" data-vu-needle="-4"></div>
+          <div class="counter"><div class="wheels"><span>0</span><span>2</span><em>,</em><span>1</span></div><small><b>● REC</b> · max 10 s</small></div>
+        </div>
+        <div class="keys">
+          <button class="key rec down"><svg><use href="#k-rec"/></svg><span class="kl">Rec<small>in corso</small></span></button>
+          <button class="key"><svg><use href="#k-rev"/></svg><span class="kl">A al<small>contrario</small></span></button>
+          <button class="key ink wide"><svg><use href="#k-stop"/></svg><span class="kl">Stop<small>fine imitazione</small></span></button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (d) reveal -->
+    <div class="shot"><div class="cap"><b>d</b>Indovina e rivela <span>· tasto tenuto al 60%</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="top"><div class="brand">Reverseur <i>Round 3</i></div><button class="icon-btn" aria-label="Menu"><svg><use href="#k-menu"/></svg></button></div>
+        <div class="bay"><div data-cassette data-side="B" data-title="Imitazione" data-sub="◀◀ al contrario" data-pack=".55" data-spin data-rev></div></div>
+        <div class="dymo b">B: che parola senti?</div>
+        <p class="say">◀◀ fa suonare la tua imitazione al contrario. Quando hai detto la parola, <b>tieni premuto ▶</b>.</p>
+        <div class="module">
+          <div class="vu" data-vu-needle="11"></div>
+          <div class="counter"><div class="wheels"><span>0</span><span>1</span><em>,</em><span>0</span></div><small>◀◀ di 1,9 s</small></div>
+        </div>
+        <div class="leds" style="margin-top:14px" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+        <div class="keys">
+          <button class="key down"><svg><use href="#k-rev"/></svg><span class="kl">B al<small>contrario</small></span></button>
+          <button class="key hold hero wide" style="--p:.6" aria-label="Tieni premuto: ascolta l'originale di A"><span class="fill"></span><svg class="lock"><use href="#k-lock"/></svg><svg><use href="#k-play"/></svg><span class="kl">Tieni premuto<small>originale di A</small></span></button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (e) result -->
+    <div class="shot"><div class="cap"><b>e</b>Esito in scaletta</div>
+      <div class="phone lt"><div class="scr">
+        <div class="top"><div class="brand">Reverseur <i>Round 3</i></div><button class="icon-btn" aria-label="Menu"><svg><use href="#k-menu"/></svg></button></div>
+        <div class="bay"><div data-cassette data-side="A" data-title="Parola segreta" data-sub="▶ originale" data-pack=".7"></div></div>
+        <div class="jcard" style="position:relative">
+          <h5>Scaletta <span>Stasera</span></h5>
+          <div class="track"><span class="n">01</span><span class="w">A → B · 1,6 s</span><span class="r ok">Indovinata</span></div>
+          <div class="track"><span class="n">02</span><span class="w">B → A · 2,3 s</span><span class="r ko">Mancata</span></div>
+          <div class="track new"><span class="n">03</span><span class="w">A → B · 1,8 s</span><span class="r ok">Indovinata</span></div>
+        </div>
+        <div class="tally">
+          <div class="ok"><b>2</b><span>indovinate</span></div><div><b>1</b><span>mancate</span></div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="keys">
+          <button class="key down" style="color:var(--ok)"><svg><use href="#k-check"/></svg><span class="kl" style="color:var(--ink)">Indovinata<small>scelto</small></span></button>
+          <button class="key"><svg style="color:var(--ko)"><use href="#k-x"/></svg><span class="kl">Mancata<small>correggi</small></span></button>
+          <button class="key hero wide"><svg><use href="#k-eject"/></svg><span class="kl">Espelli<small>round 4 · tocca a B</small></span></button>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="shot"><div class="cap"><b>d</b>Indovina e rivela <span>· scuro · prova a tenere premuto ▶</span></div>
+      <div class="phone dk"><div class="scr">
+        <div class="top"><div class="brand">Reverseur <i>Round 3</i></div><button class="icon-btn" aria-label="Menu"><svg><use href="#k-menu"/></svg></button></div>
+        <div class="bay"><div data-cassette data-side="B" data-title="Imitazione" data-sub="◀◀ al contrario" data-pack=".55" data-spin data-rev></div></div>
+        <div class="dymo b">B: che parola senti?</div>
+        <p class="say">◀◀ fa suonare la tua imitazione al contrario. Quando hai detto la parola, <b>tieni premuto ▶</b>.</p>
+        <div class="module">
+          <div class="vu" data-vu-needle="11"></div>
+          <div class="counter"><div class="wheels"><span>0</span><span>1</span><em>,</em><span>0</span></div><small>◀◀ di 1,9 s</small></div>
+        </div>
+        <div class="leds" style="margin-top:14px" id="ledsB" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="keys">
+          <button class="key"><svg><use href="#k-rev"/></svg><span class="kl">B al<small>contrario</small></span></button>
+          <button class="key hold hero wide" id="holdB" aria-label="Tieni premuto: ascolta l'originale di A"><span class="fill"></span><svg class="lock" style="color:#4a1a08"><use href="#k-lock"/></svg><svg><use href="#k-play"/></svg><span class="kl">Tieni premuto<small>originale di A</small></span></button>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>b</b>Lato A: registra <span>· scuro</span></div>
+      <div class="phone dk"><div class="scr">
+        <div class="top"><div class="brand">Reverseur <i>Round 3</i></div><button class="icon-btn" aria-label="Menu"><svg><use href="#k-menu"/></svg></button></div>
+        <div class="bay"><div data-cassette data-side="A" data-title="Parola segreta" data-sub="Registra A" data-pack=".35" data-spin></div></div>
+        <div class="dymo">A: di' una parola</div>
+        <p class="say">B si tappa le orecchie. <b>Premi STOP</b> quando hai finito, dopo 10 secondi si ferma da sola.</p>
+        <div class="module">
+          <div class="vu" data-vu-needle="0"></div>
+          <div class="counter"><div class="wheels" data-wheels="3.4"><span>0</span><span>3</span><em>,</em><span>4</span></div><small><b>● REC</b> · max 10 s</small></div>
+        </div>
+        <div class="keys">
+          <button class="key rec down"><svg><use href="#k-rec"/></svg><span class="kl">Rec<small>in corso</small></span></button>
+          <button class="key off"><svg><use href="#k-rev"/></svg><span class="kl">Al<small>contrario</small></span></button>
+          <button class="key ink wide"><svg><use href="#k-stop"/></svg><span class="kl">Stop<small>fine parola</small></span></button>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>c</b>Lato B <span>· 360×640</span></div>
+      <div class="phone s360 lt"><div class="scr">
+        <div class="top"><div class="brand">Reverseur <i>Round 3</i></div><button class="icon-btn" aria-label="Menu"><svg><use href="#k-menu"/></svg></button></div>
+        <div class="bay"><div data-cassette data-side="B" data-title="Imitazione" data-sub="Registra B" data-pack=".2"></div></div>
+        <div class="dymo b">B: rifai i suoni</div>
+        <div class="module" style="margin-top:auto">
+          <div class="vu" data-vu-needle="-4"></div>
+          <div class="counter"><div class="wheels"><span>0</span><span>2</span><em>,</em><span>1</span></div><small><b>● REC</b></small></div>
+        </div>
+        <div class="keys">
+          <button class="key rec down"><svg><use href="#k-rec"/></svg><span class="kl">Rec</span></button>
+          <button class="key"><svg><use href="#k-rev"/></svg><span class="kl">A al<small>contrario</small></span></button>
+          <button class="key ink wide"><svg><use href="#k-stop"/></svg><span class="kl">Stop</span></button>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="stack">
+      <div class="note">
+        <h4>Movimento</h4>
+        <ul>
+          <li><strong>Bobine:</strong> girano in senso orario mentre registri o ascolti dritto, in senso antiorario per l'audio al contrario. Il nastro passa da una bobina all'altra in base alla durata.</li>
+          <li><strong>Cambio lato:</strong> al passaggio a B la cassetta si capovolge con una rotazione 3D di 180° (420 ms) e l'etichetta diventa corallo.</li>
+          <li><strong>Tasti:</strong> si abbassano di 6 px con un rimbalzo a molla. REC resta giù con il LED acceso.</li>
+          <li><strong>VU:</strong> l'ago segue l'RMS con inerzia (attacco 30 ms, rilascio 300 ms), come un vero VU.</li>
+          <li><strong>Rivela:</strong> la barra LED si accende un segmento ogni 60 ms. Se rilasci prima, il tasto risale e la Dymo dice «Tieni premuto».</li>
+        </ul>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="note">
+        <h4>Colore e tipo</h4>
+        <div class="sw"><i style="background:#3f2b96"></i><i style="background:#e6def8"></i><i style="background:#ff8a65"></i></div>
+        <div class="sw" style="margin-top:-12px"><i style="background:#e9dfcc"></i><i style="background:#f6d58a"></i><i style="background:#15120e"></i></div>
+        <p>La cassetta usa i colori dell'icona attuale: guscio viola #3F2B96, lato A lavanda, lato B corallo. La plancia è color avorio (chiaro) o nera opaca (scuro), con il VU retroilluminato in ambra. Le etichette sono in Roboto Flex larghezza 118–151, maiuscolo spaziato come le serigrafie degli apparecchi. La scaletta usa l'asse slant −8 come una scritta a penna.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ---------- Presentation shell helpers (shared by all v2 mockups) ---------- */
+(function(){
+  const LIVE = !navigator.webdriver; // static, deterministic frames when screenshotted
+  window.LIVE = LIVE;
+  const SB = '<span>9:41</span><svg viewBox="0 0 74 14" fill="currentColor" aria-hidden="true">'+
+    '<rect x="0" y="9" width="3.4" height="5" rx="1"/><rect x="5" y="6.5" width="3.4" height="7.5" rx="1"/><rect x="10" y="4" width="3.4" height="10" rx="1"/><rect x="15" y="1" width="3.4" height="13" rx="1"/>'+
+    '<path d="M31 4.2a10 10 0 0 1 13.4 0l-1.6 1.7a7.6 7.6 0 0 0-10.2 0zM33.6 7a6.2 6.2 0 0 1 8.2 0l-1.6 1.7a3.9 3.9 0 0 0-5 0zM37.7 13.2l-2.1-2.3a3 3 0 0 1 4.2 0z"/>'+
+    '<rect x="50.5" y="1.5" width="20" height="11" rx="3.4" fill="none" stroke="currentColor" stroke-opacity=".45"/><rect x="52.5" y="3.5" width="14" height="7" rx="1.8"/><rect x="71.8" y="5" width="1.8" height="4" rx=".9" fill-opacity=".45"/></svg>';
+  document.querySelectorAll('.phone').forEach(p=>{
+    const sb=document.createElement('div');sb.className='sb';sb.innerHTML=SB;p.prepend(sb);
+    const hi=document.createElement('div');hi.className='hi';p.append(hi);
+  });
+  // seeded random
+  function rng(seed){let s=seed*9301+49297;return()=>{s=(s*9301+49297)%233280;return s/233280;};}
+  window.rng=rng;
+  // word-like envelope: a few syllable humps
+  function envelope(n,seed){
+    const r=rng(seed),humps=[];const k=2+Math.floor(r()*2);
+    for(let i=0;i<k;i++)humps.push({c:(i+.5)/k+(r()-.5)*.12,w:.08+r()*.07,a:.6+r()*.4});
+    const out=[];for(let i=0;i<n;i++){const x=i/(n-1);let v=0;humps.forEach(h=>{v+=h.a*Math.exp(-((x-h.c)**2)/(2*h.w*h.w));});
+      v=Math.min(1,v)*(.72+r()*.28);out.push(Math.max(.07,v));}
+    return out;
+  }
+  window.envelope=envelope;
+  // [data-wave="n"] data-seed data-mirror data-played="0..1"
+  document.querySelectorAll('[data-wave]').forEach(el=>{
+    const n=+el.dataset.wave,seed=+(el.dataset.seed||1);let e=envelope(n,seed);
+    if('mirror' in el.dataset)e=e.reverse();
+    const played=+(el.dataset.played||0);
+    el.innerHTML=e.map((v,i)=>`<i style="--h:${v.toFixed(3)}"${i/n<played?' class="on"':''}></i>`).join('');
+  });
+  // [data-radial="n"] radial VU ticks
+  document.querySelectorAll('[data-radial]').forEach(el=>{
+    const n=+el.dataset.radial,r=rng(+(el.dataset.seed||4));let h='';
+    for(let i=0;i<n;i++){const v=.25+.75*Math.abs(Math.sin(i*.55))*r();h+=`<i style="--a:${(i*360/n).toFixed(2)}deg;--v:${v.toFixed(3)}"></i>`;}
+    el.innerHTML=h;
+    if(LIVE){const ticks=[...el.children];setInterval(()=>{const t=performance.now()/1000;ticks.forEach((tk,i)=>{const v=.2+.8*Math.abs(Math.sin(t*3.1+i*.7)*Math.sin(t*1.7+i*.31))*(.6+.4*Math.random());tk.style.setProperty('--v',v.toFixed(3));});},90);}
+  });
+  // generic animated bars [data-vu] children get --v
+  document.querySelectorAll('[data-vu]').forEach(el=>{
+    if(!LIVE)return;const bars=[...el.children];
+    setInterval(()=>{const t=performance.now()/1000;bars.forEach((b,i)=>{const v=.15+.85*Math.abs(Math.sin(t*2.7+i*.9)*Math.cos(t*1.3+i*.4))*(.55+.45*Math.random());b.style.setProperty('--v',v.toFixed(3));});},110);
+  });
+  // ticking timers [data-timer="start seconds"]
+  document.querySelectorAll('[data-timer]').forEach(el=>{
+    if(!LIVE)return;let t=+el.dataset.timer;const fmt=v=>{const s=Math.floor(v),d=Math.floor((v-s)*10);return String(s).padStart(2,'0')+','+d;};
+    setInterval(()=>{t+=.1;if(t>=10)t=0;el.textContent=fmt(t);},100);
+  });
+  /* hold-to-confirm demo, same contract as holdButton(el,{ms,onConfirm}) */
+  window.hold=function(el,ms,onConfirm){
+    let t0=0,raf=0,on=false;const set=p=>el.style.setProperty('--p',p.toFixed(3));
+    const start=e=>{if(el.classList.contains('done'))return;if(e.pointerId!=null)el.setPointerCapture(e.pointerId);on=true;t0=performance.now();el.classList.add('holding');
+      const step=now=>{if(!on)return;const p=Math.min(1,(now-t0)/ms);set(p);if(p<1)raf=requestAnimationFrame(step);else{on=false;el.classList.remove('holding');el.classList.add('done');navigator.vibrate&&navigator.vibrate(15);onConfirm&&onConfirm(el);setTimeout(()=>{el.classList.remove('done');set(0);},2600);}};raf=requestAnimationFrame(step);};
+    const stop=()=>{if(!on)return;on=false;cancelAnimationFrame(raf);el.classList.remove('holding');set(0);el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake','hint');setTimeout(()=>el.classList.remove('hint'),1600);};
+    el.addEventListener('pointerdown',start);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,stop));
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+    el.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();start({});}});
+    el.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')stop();});
+  };
+})();
+
+(function(){
+  // cassette builder
+  document.querySelectorAll('[data-cassette]').forEach(el=>{
+    const d=el.dataset,B=d.side==='B',pack=+(d.pack||0);
+    const label=B?'#ff8a65':'#e6def8',band=B?'#2a0f05':'#3f2b96',ink=B?'#2a0f05':'#2a1d5c';
+    const rL=14+28*(1-pack),rR=14+28*pack; // tape packs
+    const reel=(cx,r)=>`<g><circle cx="${cx}" cy="96" r="${r}" fill="#3a271c"/><g class="reel"><circle cx="${cx}" cy="96" r="13" fill="#f3efe6"/><circle cx="${cx}" cy="96" r="5.5" fill="#1a1230"/>${[0,60,120,180,240,300].map(a=>`<rect x="${cx-1.6}" y="${96-12}" width="3.2" height="5" rx="1" fill="#1a1230" transform="rotate(${a} ${cx} 96)"/>`).join('')}</g></g>`;
+    el.innerHTML=`<svg class="cassette ${'spin' in d?'spin':''} ${'rev' in d?'rev':''}" viewBox="0 0 340 212" role="img" aria-label="Cassetta lato ${d.side}: ${d.title}">
+      <rect x="1" y="1" width="338" height="210" rx="14" fill="#3f2b96"/>
+      <rect x="1" y="1" width="338" height="210" rx="14" fill="url(#gl${d.side})" opacity=".5"/>
+      <defs><linearGradient id="gl${d.side}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <clipPath id="win${d.side}${Math.random().toString(36).slice(2,6)}"><rect x="92" y="72" width="156" height="48" rx="24"/></clipPath></defs>
+      ${[[12,12],[328,12],[12,200],[328,200]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4" fill="#2a1d6e"/><path d="M${x-2.4} ${y}h4.8" stroke="#8b7fd0" stroke-width="1.2"/>`).join('')}
+      <rect x="18" y="14" width="304" height="134" rx="9" fill="${label}"/>
+      <rect x="18" y="14" width="304" height="10" rx="0" fill="${band}" opacity=".9"/>
+      <rect x="28" y="34" width="38" height="38" rx="7" fill="${band}"/>
+      <text x="47" y="63" text-anchor="middle" font-family="RF" font-weight="850" font-size="30" fill="${label}" style="font-variation-settings:'wdth' 60">${d.side}</text>
+      <text x="78" y="50" font-family="RF" font-weight="750" font-size="18" fill="${ink}" style="font-variation-settings:'wdth' 100,'slnt' -8">${d.title}</text>
+      <text x="78" y="66" font-family="RF" font-weight="700" font-size="10" letter-spacing="1.6" fill="${ink}" opacity=".7" style="font-variation-settings:'wdth' 125;text-transform:uppercase">${d.sub.toUpperCase()}</text>
+      <rect x="86" y="66" width="168" height="60" rx="30" fill="#1a1230" transform="translate(0 8)"/>
+      <rect x="92" y="72" width="156" height="48" rx="24" fill="#2a2140" transform="translate(0 8)"/>
+      <g transform="translate(0 6)">${reel(130,Math.min(rL,30))}${reel(210,Math.min(rR,30))}</g>
+      
+      <text x="300" y="142" text-anchor="end" font-family="RF" font-weight="700" font-size="9" letter-spacing="1.5" fill="${ink}" opacity=".6" style="font-variation-settings:'wdth' 125">C-10 · 10 S</text>
+      <text x="40" y="142" font-family="RF" font-weight="700" font-size="9" letter-spacing="1.5" fill="${ink}" opacity=".6" style="font-variation-settings:'wdth' 125">REVERSEUR</text>
+      <path d="M64 211 L80 168 H260 L276 211" fill="#33227f"/>
+      <circle cx="112" cy="192" r="6" fill="#1a1230"/><circle cx="228" cy="192" r="6" fill="#1a1230"/>
+      <rect x="150" y="182" width="12" height="12" rx="2" fill="#1a1230"/><rect x="178" y="182" width="12" height="12" rx="2" fill="#1a1230"/>
+    </svg>`;
+  });
+  // analog VU meter
+  document.querySelectorAll('[data-vu-needle]').forEach(el=>{
+    const db=[-20,-10,-7,-5,-3,-2,-1,0,1,2,3];const ang=v=>{const a=Math.pow(10,Math.max(-20,Math.min(3,v))/20);return -48+96*((a-.1)/(1.4125-.1));};
+    let ticks='';db.forEach(v=>{const a=ang(v)*Math.PI/180,x1=100+Math.sin(a)*78,y1=108-Math.cos(a)*78,x2=100+Math.sin(a)*90,y2=108-Math.cos(a)*90,xl=100+Math.sin(a)*100,yl=108-Math.cos(a)*100;
+      ticks+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${v>0?'#d4371c':'var(--scale)'}" stroke-width="${v%5===0||v>0?2:1.2}"/>`;
+      if([-20,-10,-7,-5,-3,0,3].includes(v))ticks+=`<text x="${xl}" y="${yl+3}" text-anchor="middle" font-family="RF" font-size="9" font-weight="700" fill="${v>0?'#d4371c':'var(--scale)'}">${v>0?'+'+v:v}</text>`;});
+    const a0=ang(0)*Math.PI/180,a3=ang(3)*Math.PI/180;
+    el.innerHTML=`<svg viewBox="0 0 200 118" aria-hidden="true">
+      <path d="M${100+Math.sin(a0)*84} ${108-Math.cos(a0)*84} A84 84 0 0 1 ${100+Math.sin(a3)*84} ${108-Math.cos(a3)*84}" stroke="#d4371c" stroke-width="6" fill="none"/>
+      <path d="M${100+Math.sin(ang(-20)*Math.PI/180)*84} ${108-Math.cos(ang(-20)*Math.PI/180)*84} A84 84 0 0 1 ${100+Math.sin(a0)*84} ${108-Math.cos(a0)*84}" stroke="var(--scale)" stroke-width="1.2" fill="none"/>${ticks}<text x="100" y="80" text-anchor="middle" font-family="RF" font-weight="850" font-size="15" letter-spacing="2" fill="var(--scale)">VU</text>
+      <line class="needle" x1="100" y1="108" x2="100" y2="22" stroke="var(--scale)" stroke-width="2.2" stroke-linecap="round" style="transform:rotate(${ang(+el.dataset.vuNeedle-14).toFixed(1)}deg)"/>
+      <circle cx="100" cy="108" r="7" fill="var(--scale)"/></svg>`;
+    if(LIVE){const n=el.querySelector('.needle');let v=-10;setInterval(()=>{const t=performance.now()/1000;const target=-14+16*Math.abs(Math.sin(t*2.3)*Math.sin(t*.9+1))+Math.random()*3;v+=(target-v)*(target>v?.6:.2);n.style.transform=`rotate(${ang(v).toFixed(1)}deg)`;},60);}
+  });
+  if(!LIVE)document.querySelectorAll('.spin').forEach(s=>s.classList.remove('spin'));
+  // hold demo with LED bar
+  const hb=document.getElementById('holdB'),leds=[...document.querySelectorAll('#ledsB i')];
+  hold(hb,600,()=>{leds.forEach(l=>l.classList.add('on'));setTimeout(()=>leds.forEach(l=>l.classList.remove('on')),2600);});
+  new MutationObserver(()=>{const p=+getComputedStyle(hb).getPropertyValue('--p')||0;leds.forEach((l,i)=>l.classList.toggle('on',p>=(i+1)/10||hb.classList.contains('done')));}).observe(hb,{attributes:true,attributeFilter:['style','class']});
+  const dy=hb.closest('.scr').querySelector('.dymo');
+  new MutationObserver(()=>{dy.textContent=hb.classList.contains('hint')?'Tieni premuto ▶':hb.classList.contains('done')?'Originale di A ▶':'B: che parola senti?';}).observe(hb,{attributes:true,attributeFilter:['class']});
+})();
+</script>
+</body>
+</html>

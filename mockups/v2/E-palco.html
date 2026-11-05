@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverseur v2 · E · Palco</title>
+<style>
+/* ---------- Presentation shell (shared by all v2 mockups) ---------- */
+@font-face{
+  font-family:"RF";
+  src:url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2-variations"),
+      url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2");
+  font-weight:100 1000;font-stretch:25% 151%;font-display:block;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#e7e5ec;color:#17141f;font-family:"RF",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{padding:64px 64px 80px;width:max-content;min-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+svg{display:block}
+
+.doc{width:2110px}
+.doc-head{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:48px;margin-bottom:60px;align-items:start}
+.doc-head .kicker{font:650 13px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.doc-head h1{font-size:76px;line-height:.92;font-weight:880;letter-spacing:-.025em;margin-bottom:18px}
+.doc-head .pitch{font-size:21px;line-height:1.4;color:#2c2838;font-weight:450;max-width:34ch}
+.doc-head h3{font:700 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin:6px 0 14px}
+.doc-head p,.doc-head li{font-size:16px;line-height:1.55;color:#36323f}
+.doc-head ol,.doc-head ul{padding-left:20px;display:grid;gap:6px}
+.doc-head strong{font-weight:700;color:#17141f}
+
+.row{display:flex;gap:40px;align-items:flex-start;margin-bottom:64px}
+.shot{display:flex;flex-direction:column;gap:18px;flex:none}
+.cap{display:flex;align-items:baseline;gap:10px;font:600 15px/1.2 "RF";color:#3d3948;padding-left:6px}
+.cap b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#17141f;color:#fff;font:750 13px/1 "RF"}
+.cap span{color:#7a7588;font-weight:500}
+
+.phone{width:390px;height:844px;border-radius:54px;position:relative;overflow:hidden;flex:none;isolation:isolate;container-type:size;
+  box-shadow:0 0 0 10px #121018,0 0 0 11.5px #3b3846,0 40px 70px -28px rgba(25,12,60,.55);background:var(--bg);color:var(--ink)}
+.phone.s360{width:360px;height:640px;border-radius:40px}
+.sb{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;font:650 16px/1 "RF";z-index:60;pointer-events:none;color:var(--sb,var(--ink))}
+.sb svg{height:13px;width:auto}
+.s360 .sb{height:30px;font-size:13px;padding:2px 20px 0 22px}
+.hi{position:absolute;bottom:8px;left:50%;width:136px;height:5px;border-radius:3px;background:var(--sb,var(--ink));opacity:.8;transform:translateX(-50%);z-index:60;pointer-events:none}
+.s360 .hi{width:100px;height:4px;bottom:6px}
+.scr{position:absolute;inset:0;padding:50px 0 30px;display:flex;flex-direction:column}
+.s360 .scr{padding:30px 0 18px}
+
+.note{width:390px;flex:none;background:#fff;border-radius:28px;padding:30px 30px 28px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 20px 40px -30px rgba(25,12,60,.35)}
+.note h4{font:750 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.note h4+*{margin-top:0}
+.note p,.note li{font-size:15px;line-height:1.5;color:#36323f}
+.note ul{padding-left:18px;display:grid;gap:8px}
+.note .sw{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 22px}
+.note .sw i{display:block;height:64px;border-radius:14px;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.note .sw i::after{content:attr(data-n);position:absolute;left:8px;bottom:6px;font:650 10.5px/1 "RF";font-style:normal;letter-spacing:.02em}
+.note .type{margin:0 0 22px;display:grid;gap:6px}
+.note + .note{margin-left:0}
+.stack{display:flex;flex-direction:column;gap:24px;flex:none}
+
+/* shake used by every hold demo */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .38s cubic-bezier(.36,.07,.19,.97)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+
+/* ================= Concept E · Palco ================= */
+.lt{--bg:#fff3e2;--ink:#2a0a14;--ink2:#6e4450;--stage:#ffe6c7;--panel:#fffaf2;--red:#c8102e;--on-red:#fff;--gold:#b87a00;--gold-hi:#ffcf4a;--bulb:#ffb800;--bulb-off:#ecd2b0;--mag:#d1145a;--spot:rgba(255,214,120,.45);--seg-off:#f0dcc4;--ok:#137a49;--ko:#b3213e}
+.dk{--bg:#0e0820;--ink:#fff3e6;--ink2:#c3b2cf;--stage:#1a1033;--panel:#1d1238;--red:#ff3d5e;--on-red:#2a0010;--gold:#ffc94d;--gold-hi:#ffe08a;--bulb:#ffd25a;--bulb-off:#3a2b55;--mag:#ff4f97;--spot:rgba(255,201,77,.22);--seg-off:#2c2048;--ok:#5ee3a0;--ko:#ff7b93}
+.lt .scr{background:radial-gradient(70% 45% at 50% 0%,#ffe0b8 0,transparent 70%),var(--bg)}
+.dk .scr{background:radial-gradient(70% 45% at 50% 0%,#2a1650 0,transparent 70%),var(--bg)}
+.curtain{position:absolute;top:0;width:12px;height:100%;z-index:0;pointer-events:none;background:repeating-linear-gradient(90deg,#9e0c25 0 8px,#c8102e 8px 18px,#a50d27 18px 22px);opacity:.95}
+.dk .curtain{background:repeating-linear-gradient(90deg,#4a0718 0 8px,#6c0b24 8px 18px,#52081b 18px 22px)}
+.curtain.l{left:0}
+.curtain.r{right:0;transform:scaleX(-1)}
+.star{align-self:center;margin:auto 0 0;font:1000 150px/.9 "RF";font-variation-settings:"wdth" 125,"opsz" 144;color:var(--red);text-shadow:0 0 0 var(--gold),5px 5px 0 var(--gold-hi);position:relative}
+.dk .star{color:var(--gold);text-shadow:0 0 30px rgba(255,201,77,.5)}
+.star.b{color:var(--gold);text-shadow:5px 5px 0 var(--red)}
+.star small{position:absolute;left:50%;bottom:-18px;transform:translateX(-50%);white-space:nowrap;font:800 12px/1 "RF";font-variation-settings:"wdth" 130;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);text-shadow:none}
+@container (max-height:700px){.star{display:none}}
+.scr>*:not(.curtain):not(.spot){position:relative;z-index:1}
+.spot{width:100%!important}
+
+.top{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 22px;flex:none}
+.onair{height:34px;display:inline-flex;align-items:center;gap:8px;padding:0 12px;border-radius:8px;background:var(--panel);box-shadow:inset 0 0 0 2px var(--ink2);font:900 13px/1 "RF";font-variation-settings:"wdth" 151;letter-spacing:.14em;color:var(--ink2)}
+.onair.live{background:var(--red);color:var(--on-red);box-shadow:0 0 0 2px var(--red),0 0 22px color-mix(in srgb,var(--red) 70%,transparent)}
+.onair i{width:9px;height:9px;border-radius:50%;background:currentColor}
+.manche{font:800 13px/1 "RF";font-variation-settings:"wdth" 130;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+.icon-btn{width:56px;height:56px;display:grid;place-items:center;color:var(--ink)}
+.icon-btn svg{width:24px;height:24px}
+
+.marquee{position:relative;margin:10px 24px 0;border-radius:22px;padding:22px 18px 20px;background:var(--red);color:#fff;text-align:center}
+.dk .marquee{background:#2a0f3f;color:var(--gold)}
+.marquee::before{content:"";position:absolute;inset:0;border-radius:22px;padding:8px;background:radial-gradient(circle,var(--bulb) 0 3.2px,transparent 3.8px) 4px 4px/17px 17px;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;filter:drop-shadow(0 0 3px var(--bulb))}
+.marquee .t{font:1000 40px/.9 "RF";font-variation-settings:"wdth" 125,"opsz" 144;letter-spacing:-.01em;text-transform:uppercase}
+.dk .marquee .t{text-shadow:0 0 18px rgba(255,201,77,.55)}
+.marquee .s{font:700 14px/1.2 "RF";letter-spacing:.06em;margin-top:8px;opacity:.92}
+
+.host{margin:18px 24px 0;font:600 19px/1.32 "RF";color:var(--ink);text-wrap:pretty}
+.host b{color:var(--mag);font-weight:800}
+.host small{display:block;font:800 12px/1 "RF";font-variation-settings:"wdth" 130;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);margin-bottom:8px}
+
+.podiums{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 24px 0}
+.pod{border-radius:20px 20px 8px 8px;background:var(--panel);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--ink) 14%,transparent);padding:14px 14px 12px;text-align:center}
+.pod .who{font:800 12px/1 "RF";font-variation-settings:"wdth" 130;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+.pod .L{font:1000 58px/1 "RF";font-variation-settings:"wdth" 120,"opsz" 144;margin:6px 0 4px}
+.pod.a .L{color:var(--red)}
+.pod.b .L{color:var(--gold)}
+.pod .r{font:650 13px/1 "RF";color:var(--ink2)}
+
+.flip{display:flex;gap:4px;justify-content:center}
+.flip span{width:40px;height:56px;border-radius:8px;background:linear-gradient(#2b2238 0 49%,#16101f 51%);color:#fff;font:800 38px/56px "RF";font-variation-settings:"wdth" 60;text-align:center;font-variant-numeric:tabular-nums;position:relative;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.flip span::after{content:"";position:absolute;left:0;right:0;top:50%;height:1.5px;background:rgba(0,0,0,.6)}
+.flip.gold span{color:var(--gold-hi)}
+
+/* applause meter */
+.meter{display:flex;flex-direction:column;align-items:center;margin-top:auto}
+.meter svg{width:300px;height:auto}
+.meter .lbl{font:800 12px/1 "RF";font-variation-settings:"wdth" 130;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);margin-top:-6px}
+.big-timer{font:900 72px/1 "RF";font-variation-settings:"wdth" 40,"opsz" 144;font-variant-numeric:tabular-nums;letter-spacing:0;color:var(--ink);margin-top:-84px;display:flex;align-items:baseline;gap:6px}
+.big-timer small{font:800 18px/1 "RF";font-variation-settings:"wdth" 100;color:var(--ink2)}
+
+.thumb{flex:none;padding:0 20px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:auto}
+.stopbtn{width:104px;height:104px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff6b7f,var(--red) 55%,#8c0a20);display:grid;place-items:center;box-shadow:0 0 0 6px var(--panel),0 0 0 8px color-mix(in srgb,var(--ink) 18%,transparent),0 14px 24px -8px rgba(120,0,20,.6)}
+.dk .stopbtn{background:radial-gradient(circle at 35% 30%,#ff8aa0,#ff3d5e 55%,#9b1032)}
+.stopbtn i{width:32px;height:32px;border-radius:7px;background:#fff}
+.under{font:700 15px/1.2 "RF";color:var(--ink2);text-align:center}
+.pill{width:100%;height:76px;border-radius:38px;background:linear-gradient(#ffd86b,#f2b31c);color:#2a1300;font:1000 21px/1 "RF";font-variation-settings:"wdth" 125;letter-spacing:.02em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:inset 0 -4px 0 rgba(120,60,0,.35),0 12px 24px -10px rgba(180,110,0,.6)}
+.pill svg{width:24px;height:24px}
+.gold-chip{height:60px;padding:0 22px 0 8px;border-radius:30px;background:var(--panel);box-shadow:inset 0 0 0 2px var(--gold);display:inline-flex;align-items:center;gap:12px;font:800 16px/1 "RF";color:var(--ink)}
+.gold-chip i{width:46px;height:46px;border-radius:50%;background:linear-gradient(#ffd86b,#f2b31c);color:#2a1300;display:grid;place-items:center}
+.gold-chip i svg{width:20px;height:20px}
+.gold-chip.playing{box-shadow:inset 0 0 0 2px var(--gold),0 0 0 4px color-mix(in srgb,var(--gold) 25%,transparent)}
+.gold-chip small{font:650 13px/1 "RF";color:var(--ink2);margin-left:2px}
+
+/* buzzer */
+.buzz{position:relative;width:236px;height:236px;display:grid;place-items:center;--p:0}
+.buzz .bulbs{position:absolute;inset:0}
+.buzz .bulbs i{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--bulb-off);transform:rotate(var(--a)) translateY(-108px)}
+.buzz .bulbs i.on{background:var(--bulb);box-shadow:0 0 10px 2px color-mix(in srgb,var(--bulb) 75%,transparent)}
+.buzz .base{width:176px;height:176px;border-radius:50%;background:linear-gradient(#e9e4ee,#9e98a8);display:grid;place-items:center;box-shadow:0 16px 26px -10px rgba(40,0,20,.55)}
+.dk .buzz .base{background:linear-gradient(#5a5070,#2a2340)}
+.buzz .dome{width:146px;height:146px;border-radius:50%;background:radial-gradient(circle at 38% 28%,#ff9aa8 0,#ff3d5e 30%,#c8102e 62%,#7a0518 100%);box-shadow:inset 0 -10px 18px rgba(80,0,10,.5),0 calc(10px - 8px*var(--p)) 0 #7a0518;transform:translateY(calc(-8px + 8px*var(--p)));display:grid;place-items:center;color:#fff}
+.buzz .dome svg{width:40px;height:40px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
+.buzz.done .dome{background:radial-gradient(circle at 38% 28%,#b4ffd6 0,#2fd283 35%,#108a50 70%,#06492a 100%)}
+.spot{position:absolute;left:50%;top:0;width:420px;height:100%;transform:translateX(-50%);background:conic-gradient(from 165deg at 50% 0%,transparent 0,var(--spot) 12deg,var(--spot) 18deg,transparent 30deg);z-index:0;pointer-events:none;-webkit-mask:linear-gradient(#000 40%,transparent 92%);mask:linear-gradient(#000 40%,transparent 92%)}
+
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.choice button{height:64px;border-radius:20px;font:900 17px/1 "RF";font-variation-settings:"wdth" 115;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--panel);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--ink) 18%,transparent)}
+.choice svg{width:20px;height:20px}
+.choice .sel{background:var(--ok);color:#fff;box-shadow:none}
+.dk .choice .sel{color:#04210f}
+
+@container (max-height:700px){
+  .top{height:46px}
+  .marquee{padding:16px 14px}.marquee .t{font-size:34px}
+  .host{font-size:16px;margin-top:12px}
+  .meter svg{width:240px}
+  .big-timer{font-size:56px;margin-top:-66px}
+  .stopbtn{width:88px;height:88px}
+  .thumb{padding-bottom:8px}
+  .hide-s{display:none!important}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="e-rev" viewBox="0 0 24 24"><path d="M11.5 6.2v11.6L3 12zM21 6.2v11.6L12.5 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="e-play" viewBox="0 0 24 24"><path d="M7 4.8v14.4L19 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="e-star" viewBox="0 0 24 24"><path d="m12 2.8 2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 17l-5.8 3.3 1.4-6.4-4.9-4.4 6.5-.7z" fill="currentColor"/></symbol>
+    <symbol id="e-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="3.3" fill="currentColor"/></symbol>
+    <symbol id="e-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="e-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="e-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+    <symbol id="e-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="doc">
+  <header class="doc-head">
+    <div>
+      <div class="kicker">Reverseur · mockup v2 · concetto E</div>
+      <h1>Palco</h1>
+      <p class="pitch">Un quiz televisivo in salotto: insegna a lampadine, applausometro, e un grande pulsante rosso da tenere premuto per la rivelazione.</p>
+    </div>
+    <div>
+      <h3>Concetto</h3>
+      <p>Il telefono "conduce" lo show: ogni schermata è una battuta del presentatore ("A, al microfono!"). Si gioca a <strong>manche</strong>, con un tabellone a cifre ribaltabili. Il gesto di rivelazione è il <strong>buzzer</strong>, l'oggetto più iconico dei quiz. Mentre lo tieni premuto, l'anello di lampadine si accende una alla volta. Il tema scuro è la "prima serata", quello chiaro la "matinée".</p>
+    </div>
+    <div>
+      <h3>Flusso</h3>
+      <ol>
+        <li>Sigla: insegna, podi di A e B, "Si va in onda!".</li>
+        <li>ON AIR: A parla, l'applausometro segue la voce.</li>
+        <li>B ascolta il "nastro misterioso" al contrario e imita.</li>
+        <li>Momento della verità: occhio di bue, buzzer da tenere premuto.</li>
+        <li>Tabellone: indovinata o mancata, prossima manche.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Perché è meglio</h3>
+      <ul>
+        <li>Trasforma l'attesa della rivelazione in <strong>suspense</strong>: è il concetto più "da festa".</li>
+        <li>Il buzzer da 176 px al centro in basso è il bersaglio più grande e più ovvio possibile.</li>
+        <li>I testi del presentatore insegnano le regole senza un tutorial.</li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="row">
+    <!-- (a) -->
+    <div class="shot"><div class="cap"><b>a</b>Sigla e manche <span>· 390×844 chiaro</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="curtain l"></div><div class="curtain r"></div>
+        <div class="top"><span class="manche" style="margin-left:24px">Manche 3</span><button class="icon-btn" aria-label="Menu"><svg><use href="#e-menu"/></svg></button></div>
+        <div class="marquee"><div class="t">Reverseur</div><div class="s">Lo show della parola al contrario</div></div>
+        <div class="host"><small>Il presentatore</small>Signore e signori, stasera <b>A</b> dice una parola e <b>B</b> deve indovinarla… sentendola al contrario!</div>
+        <div class="podiums">
+          <div class="pod a"><div class="who">Concorrente</div><div class="L">A</div><div class="r">registra</div></div>
+          <div class="pod b"><div class="who">Concorrente</div><div class="L">B</div><div class="r">indovina</div></div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:26px;margin-top:20px" class="hide-s">
+          <div style="text-align:center"><div class="flip"><span>0</span><span>4</span></div><div class="manche" style="margin-top:8px;color:var(--ok)">Indovinate</div></div>
+          <div style="text-align:center"><div class="flip"><span>0</span><span>2</span></div><div class="manche" style="margin-top:8px">Mancate</div></div>
+        </div>
+        <div class="thumb"><button class="pill"><svg><use href="#e-star"/></svg>Si va in onda!</button></div>
+      </div></div>
+    </div>
+
+    <!-- (b) -->
+    <div class="shot"><div class="cap"><b>b</b>ON AIR: A registra <span>· applausometro = VU</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="curtain l"></div><div class="curtain r"></div>
+        <div class="top"><span class="onair live" style="margin-left:24px"><i></i>ON AIR</span><button class="icon-btn" aria-label="Menu"><svg><use href="#e-menu"/></svg></button></div>
+        <div class="host" style="margin-top:14px"><small>Manche 3 · Concorrente A</small>A, al microfono: <b>di' la parola segreta</b>. B, orecchie tappate!</div>
+        <div class="star">A<small>al microfono</small></div>
+        <div class="meter" style="margin-top:34px"><div data-applause="15" data-lit="10"></div><div class="big-timer"><span data-timer="3.4">03,4</span><small>/10 s</small></div><div class="lbl" style="margin-top:16px">Applausometro</div></div>
+        <div class="thumb" style="margin-top:30px"><button class="stopbtn" aria-label="Ferma la registrazione"><i></i></button><div class="under">Tocca per chiudere la registrazione</div></div>
+      </div></div>
+    </div>
+
+    <!-- (c) -->
+    <div class="shot"><div class="cap"><b>c</b>B: nastro misterioso e imitazione</div>
+      <div class="phone lt"><div class="scr">
+        <div class="curtain l"></div><div class="curtain r"></div>
+        <div class="top"><span class="onair live" style="margin-left:24px"><i></i>ON AIR</span><button class="icon-btn" aria-label="Menu"><svg><use href="#e-menu"/></svg></button></div>
+        <div class="host" style="margin-top:14px"><small>Manche 3 · Concorrente B</small>Ecco il <b>nastro misterioso</b>, al contrario. Rifallo uguale!</div>
+        <div style="margin:16px 24px 0"><button class="gold-chip"><i><svg><use href="#e-rev"/></svg></i>Riascolta<small>· 2 volte</small></button></div>
+        <div class="star b">B<small>imita</small></div>
+        <div class="meter" style="margin-top:34px"><div data-applause="15" data-lit="7"></div><div class="big-timer"><span data-timer="2.1">02,1</span><small>/10 s</small></div><div class="lbl" style="margin-top:16px">Applausometro</div></div>
+        <div class="thumb" style="margin-top:30px"><button class="stopbtn" aria-label="Ferma la registrazione"><i></i></button><div class="under">Tocca quando hai finito</div></div>
+      </div></div>
+    </div>
+
+    <!-- (d) -->
+    <div class="shot"><div class="cap"><b>d</b>Il momento della verità <span>· buzzer tenuto al 60%</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="spot"></div>
+        <div class="curtain l"></div><div class="curtain r"></div>
+        <div class="top"><span class="manche" style="margin-left:24px">Manche 3 · Verità</span><button class="icon-btn" aria-label="Menu"><svg><use href="#e-menu"/></svg></button></div>
+        <div class="host" style="margin-top:14px;font-size:22px"><small>Il presentatore</small>B, ascolta la tua imitazione al contrario. <b>Che parola senti?</b></div>
+        <div style="margin:18px 24px 0"><button class="gold-chip playing"><i><svg><use href="#e-rev"/></svg></i>Imitazione al contrario</button></div>
+        <div class="thumb">
+          <div class="buzz" style="--p:.6" data-buzz data-lit="12" role="button" aria-label="Tieni premuto il pulsante per rivelare l'originale di A"><div class="bulbs"></div><div class="base"><div class="dome"><svg><use href="#e-eye"/></svg></div></div></div>
+          <div class="under" style="font-size:17px;color:var(--ink)">Tieni premuto il pulsante<br><span style="color:var(--ink2);font-size:14px">si accendono tutte le luci… e si rivela</span></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (e) -->
+    <div class="shot"><div class="cap"><b>e</b>Tabellone</div>
+      <div class="phone lt"><div class="scr">
+        <div class="curtain l"></div><div class="curtain r"></div>
+        <div class="top"><span class="manche" style="margin-left:24px">Manche 3 · Esito</span><button class="icon-btn" aria-label="Menu"><svg><use href="#e-menu"/></svg></button></div>
+        <div class="marquee" style="padding:20px 18px 18px"><div class="t" style="font-size:38px">Indovinata!</div><div class="s">Applausi per B</div></div>
+        <div style="display:flex;gap:10px;margin:18px 24px 0;flex-wrap:wrap"><button class="gold-chip"><i><svg><use href="#e-play"/></svg></i>Originale di A</button><button class="gold-chip"><i><svg><use href="#e-rev"/></svg></i>B al contrario</button></div>
+        <div style="display:flex;justify-content:center;gap:30px;margin-top:26px">
+          <div style="text-align:center"><div class="flip gold"><span>0</span><span>5</span></div><div class="manche" style="margin-top:8px;color:var(--ok)">Indovinate</div></div>
+          <div style="text-align:center"><div class="flip"><span>0</span><span>2</span></div><div class="manche" style="margin-top:8px">Mancate</div></div>
+        </div>
+        <div class="thumb">
+          <div class="choice" role="radiogroup" aria-label="Esito"><button class="sel" role="radio" aria-checked="true"><svg><use href="#e-check"/></svg>Indovinata</button><button role="radio" aria-checked="false"><svg style="color:var(--ko)"><use href="#e-x"/></svg>Mancata</button></div>
+          <button class="pill">Prossima manche <svg><use href="#e-arrow"/></svg></button>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="shot"><div class="cap"><b>d</b>Il momento della verità <span>· scuro · tieni premuto il buzzer</span></div>
+      <div class="phone dk"><div class="scr">
+        <div class="spot"></div>
+        <div class="curtain l"></div><div class="curtain r"></div>
+        <div class="top"><span class="manche" style="margin-left:24px">Manche 3 · Verità</span><button class="icon-btn" aria-label="Menu"><svg><use href="#e-menu"/></svg></button></div>
+        <div class="host" style="margin-top:14px;font-size:22px"><small>Il presentatore</small>B, ascolta la tua imitazione al contrario. <b>Che parola senti?</b></div>
+        <div style="margin:18px 24px 0"><button class="gold-chip"><i><svg><use href="#e-rev"/></svg></i>Imitazione al contrario</button></div>
+        <div class="thumb">
+          <div class="buzz" id="buzzE" tabindex="0" data-buzz data-lit="0" role="button" aria-label="Tieni premuto il pulsante per rivelare l'originale di A"><div class="bulbs"></div><div class="base"><div class="dome"><svg><use href="#e-eye"/></svg></div></div></div>
+          <div class="under" style="font-size:17px;color:var(--ink)" id="underE">Tieni premuto il pulsante<br><span style="color:var(--ink2);font-size:14px">si accendono tutte le luci… e si rivela</span></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>b</b>ON AIR <span>· scuro</span></div>
+      <div class="phone dk"><div class="scr">
+        <div class="curtain l"></div><div class="curtain r"></div>
+        <div class="top"><span class="onair live" style="margin-left:24px"><i></i>ON AIR</span><button class="icon-btn" aria-label="Menu"><svg><use href="#e-menu"/></svg></button></div>
+        <div class="host" style="margin-top:14px"><small>Manche 3 · Concorrente A</small>A, al microfono: <b>di' la parola segreta</b>. B, orecchie tappate!</div>
+        <div class="star">A<small>al microfono</small></div>
+        <div class="meter" style="margin-top:34px"><div data-applause="15" data-lit="10"></div><div class="big-timer"><span>03,4</span><small>/10 s</small></div><div class="lbl" style="margin-top:16px">Applausometro</div></div>
+        <div class="thumb" style="margin-top:30px"><button class="stopbtn" aria-label="Ferma la registrazione"><i></i></button><div class="under">Tocca per chiudere la registrazione</div></div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>d</b>Verità <span>· 360×640</span></div>
+      <div class="phone s360 lt"><div class="scr">
+        <div class="spot"></div>
+        <div class="curtain l"></div><div class="curtain r"></div>
+        <div class="top"><span class="manche" style="margin-left:24px">Manche 3 · Verità</span><button class="icon-btn" aria-label="Menu"><svg><use href="#e-menu"/></svg></button></div>
+        <div class="host" style="margin-top:6px"><b>Che parola senti?</b></div>
+        <div style="margin:12px 24px 0"><button class="gold-chip"><i><svg><use href="#e-rev"/></svg></i>Imitazione al contrario</button></div>
+        <div class="thumb">
+          <div class="buzz" style="--p:.6;transform:scale(.86);margin:-16px 0" data-buzz data-lit="12"><div class="bulbs"></div><div class="base"><div class="dome"><svg><use href="#e-eye"/></svg></div></div></div>
+          <div class="under" style="color:var(--ink)">Tieni premuto il pulsante</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="stack">
+      <div class="note">
+        <h4>Movimento</h4>
+        <ul>
+          <li><strong>Insegna:</strong> le lampadine fanno un "chase" lento (una ogni 120 ms) in attesa, poi lampeggiano tutte insieme all'esito.</li>
+          <li><strong>ON AIR:</strong> la spia rossa pulsa. I 15 segmenti dell'applausometro seguono l'RMS con picco trattenuto per 400 ms.</li>
+          <li><strong>Buzzer:</strong> la cupola scende di 8 px sotto il dito e le 20 lampadine si accendono in senso orario, una ogni 30 ms. Se lasci prima si spengono a ritroso con un "buuu" visivo (shake) e «Tieni premuto». A fine corsa l'occhio di bue si allarga, la cupola diventa verde e parte l'originale.</li>
+          <li><strong>Tabellone:</strong> le cifre si ribaltano (flip 3D, 280 ms per cifra).</li>
+        </ul>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="note">
+        <h4>Colore e tipo</h4>
+        <div class="sw"><i style="background:#c8102e"></i><i style="background:#ffc94d"></i><i style="background:#d1145a"></i></div>
+        <div class="sw" style="margin-top:-12px"><i style="background:#fff3e2"></i><i style="background:#0e0820"></i><i style="background:#1d1238"></i></div>
+        <p>Rosso sipario #C8102E con testo bianco (5,9:1), oro per le azioni principali (testo #2A1300 sull'oro, oltre 9:1), magenta per le parole chiave. Il tipo è Roboto Flex a larghezza 151 e peso 1000 per l'insegna, a larghezza 50 per il timer gigante; il presentatore parla in 19–22 px semibold.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ---------- Presentation shell helpers (shared by all v2 mockups) ---------- */
+(function(){
+  const LIVE = !navigator.webdriver; // static, deterministic frames when screenshotted
+  window.LIVE = LIVE;
+  const SB = '<span>9:41</span><svg viewBox="0 0 74 14" fill="currentColor" aria-hidden="true">'+
+    '<rect x="0" y="9" width="3.4" height="5" rx="1"/><rect x="5" y="6.5" width="3.4" height="7.5" rx="1"/><rect x="10" y="4" width="3.4" height="10" rx="1"/><rect x="15" y="1" width="3.4" height="13" rx="1"/>'+
+    '<path d="M31 4.2a10 10 0 0 1 13.4 0l-1.6 1.7a7.6 7.6 0 0 0-10.2 0zM33.6 7a6.2 6.2 0 0 1 8.2 0l-1.6 1.7a3.9 3.9 0 0 0-5 0zM37.7 13.2l-2.1-2.3a3 3 0 0 1 4.2 0z"/>'+
+    '<rect x="50.5" y="1.5" width="20" height="11" rx="3.4" fill="none" stroke="currentColor" stroke-opacity=".45"/><rect x="52.5" y="3.5" width="14" height="7" rx="1.8"/><rect x="71.8" y="5" width="1.8" height="4" rx=".9" fill-opacity=".45"/></svg>';
+  document.querySelectorAll('.phone').forEach(p=>{
+    const sb=document.createElement('div');sb.className='sb';sb.innerHTML=SB;p.prepend(sb);
+    const hi=document.createElement('div');hi.className='hi';p.append(hi);
+  });
+  // seeded random
+  function rng(seed){let s=seed*9301+49297;return()=>{s=(s*9301+49297)%233280;return s/233280;};}
+  window.rng=rng;
+  // word-like envelope: a few syllable humps
+  function envelope(n,seed){
+    const r=rng(seed),humps=[];const k=2+Math.floor(r()*2);
+    for(let i=0;i<k;i++)humps.push({c:(i+.5)/k+(r()-.5)*.12,w:.08+r()*.07,a:.6+r()*.4});
+    const out=[];for(let i=0;i<n;i++){const x=i/(n-1);let v=0;humps.forEach(h=>{v+=h.a*Math.exp(-((x-h.c)**2)/(2*h.w*h.w));});
+      v=Math.min(1,v)*(.72+r()*.28);out.push(Math.max(.07,v));}
+    return out;
+  }
+  window.envelope=envelope;
+  // [data-wave="n"] data-seed data-mirror data-played="0..1"
+  document.querySelectorAll('[data-wave]').forEach(el=>{
+    const n=+el.dataset.wave,seed=+(el.dataset.seed||1);let e=envelope(n,seed);
+    if('mirror' in el.dataset)e=e.reverse();
+    const played=+(el.dataset.played||0);
+    el.innerHTML=e.map((v,i)=>`<i style="--h:${v.toFixed(3)}"${i/n<played?' class="on"':''}></i>`).join('');
+  });
+  // [data-radial="n"] radial VU ticks
+  document.querySelectorAll('[data-radial]').forEach(el=>{
+    const n=+el.dataset.radial,r=rng(+(el.dataset.seed||4));let h='';
+    for(let i=0;i<n;i++){const v=.25+.75*Math.abs(Math.sin(i*.55))*r();h+=`<i style="--a:${(i*360/n).toFixed(2)}deg;--v:${v.toFixed(3)}"></i>`;}
+    el.innerHTML=h;
+    if(LIVE){const ticks=[...el.children];setInterval(()=>{const t=performance.now()/1000;ticks.forEach((tk,i)=>{const v=.2+.8*Math.abs(Math.sin(t*3.1+i*.7)*Math.sin(t*1.7+i*.31))*(.6+.4*Math.random());tk.style.setProperty('--v',v.toFixed(3));});},90);}
+  });
+  // generic animated bars [data-vu] children get --v
+  document.querySelectorAll('[data-vu]').forEach(el=>{
+    if(!LIVE)return;const bars=[...el.children];
+    setInterval(()=>{const t=performance.now()/1000;bars.forEach((b,i)=>{const v=.15+.85*Math.abs(Math.sin(t*2.7+i*.9)*Math.cos(t*1.3+i*.4))*(.55+.45*Math.random());b.style.setProperty('--v',v.toFixed(3));});},110);
+  });
+  // ticking timers [data-timer="start seconds"]
+  document.querySelectorAll('[data-timer]').forEach(el=>{
+    if(!LIVE)return;let t=+el.dataset.timer;const fmt=v=>{const s=Math.floor(v),d=Math.floor((v-s)*10);return String(s).padStart(2,'0')+','+d;};
+    setInterval(()=>{t+=.1;if(t>=10)t=0;el.textContent=fmt(t);},100);
+  });
+  /* hold-to-confirm demo, same contract as holdButton(el,{ms,onConfirm}) */
+  window.hold=function(el,ms,onConfirm){
+    let t0=0,raf=0,on=false;const set=p=>el.style.setProperty('--p',p.toFixed(3));
+    const start=e=>{if(el.classList.contains('done'))return;if(e.pointerId!=null)el.setPointerCapture(e.pointerId);on=true;t0=performance.now();el.classList.add('holding');
+      const step=now=>{if(!on)return;const p=Math.min(1,(now-t0)/ms);set(p);if(p<1)raf=requestAnimationFrame(step);else{on=false;el.classList.remove('holding');el.classList.add('done');navigator.vibrate&&navigator.vibrate(15);onConfirm&&onConfirm(el);setTimeout(()=>{el.classList.remove('done');set(0);},2600);}};raf=requestAnimationFrame(step);};
+    const stop=()=>{if(!on)return;on=false;cancelAnimationFrame(raf);el.classList.remove('holding');set(0);el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake','hint');setTimeout(()=>el.classList.remove('hint'),1600);};
+    el.addEventListener('pointerdown',start);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,stop));
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+    el.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();start({});}});
+    el.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')stop();});
+  };
+})();
+
+(function(){
+  // applause meter
+  document.querySelectorAll('[data-applause]').forEach(el=>{
+    const n=+el.dataset.applause,lit=+el.dataset.lit;let segs='';
+    const col=i=>i<n*.55?'#22b46a':i<n*.8?'#f2b31c':'#e8245e';
+    for(let i=0;i<n;i++){const a0=Math.PI*(1+i/n)+.025,a1=Math.PI*(1+(i+1)/n)-.025,R=130,r=96,cx=150,cy=146;
+      const p=(a,rr)=>[cx+Math.cos(a)*rr,cy+Math.sin(a)*rr].map(v=>v.toFixed(1)).join(' ');
+      segs+=`<path d="M${p(a0,r)} L${p(a0,R)} A${R} ${R} 0 0 1 ${p(a1,R)} L${p(a1,r)} A${r} ${r} 0 0 0 ${p(a0,r)}Z" fill="${i<lit?col(i):'var(--seg-off)'}" data-c="${col(i)}"/>`;}
+    el.innerHTML=`<svg viewBox="0 0 300 150" aria-hidden="true">${segs}</svg>`;
+    if(LIVE){const ps=[...el.querySelectorAll('path')];setInterval(()=>{const t=performance.now()/1000;const k=Math.round(n*(.25+.7*Math.abs(Math.sin(t*2.1)*Math.sin(t*.8+1))));ps.forEach((p,i)=>p.setAttribute('fill',i<k?p.dataset.c:'var(--seg-off)'));},90);}
+  });
+  // buzzer bulbs
+  document.querySelectorAll('[data-buzz]').forEach(el=>{
+    const n=20,lit=+el.dataset.lit;el.querySelector('.bulbs').innerHTML=Array.from({length:n},(_,i)=>`<i style="--a:${i*360/n}deg"${i<lit?' class="on"':''}></i>`).join('');
+  });
+  const b=document.getElementById('buzzE'),u=document.getElementById('underE'),bulbs=[...b.querySelectorAll('.bulbs i')];
+  hold(b,600,()=>{u.firstChild.textContent='Ecco l\'originale di A!';setTimeout(()=>u.firstChild.textContent='Tieni premuto il pulsante',2600);});
+  new MutationObserver(()=>{const p=+(b.style.getPropertyValue('--p')||0);bulbs.forEach((x,i)=>x.classList.toggle('on',p>=(i+1)/20||b.classList.contains('done')));if(b.classList.contains('hint'))u.firstChild.textContent='Tieni premuto!';}).observe(b,{attributes:true,attributeFilter:['style','class']});
+})();
+</script>
+</body>
+</html>

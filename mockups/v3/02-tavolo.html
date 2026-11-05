@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverseur v3 · 02 · Tavolo</title>
+<style>
+/* ---------- Presentation shell (shared by v3 mockups 01-05) ---------- */
+@font-face{
+  font-family:"RF";
+  src:url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2-variations"),
+      url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2");
+  font-weight:100 1000;font-stretch:25% 151%;font-display:block;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#e7e5ec;color:#17141f;font-family:"RF",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{padding:64px 64px 80px;width:max-content;min-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+svg{display:block}
+
+.doc{width:2110px}
+.doc-head{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:48px;margin-bottom:60px;align-items:start}
+.doc-head .kicker{font:650 13px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.doc-head h1{font-size:76px;line-height:.92;font-weight:880;letter-spacing:-.025em;margin-bottom:18px}
+.doc-head .pitch{font-size:21px;line-height:1.4;color:#2c2838;font-weight:450;max-width:34ch}
+.doc-head h3{font:700 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin:6px 0 14px}
+.doc-head p,.doc-head li{font-size:16px;line-height:1.55;color:#36323f}
+.doc-head ol,.doc-head ul{padding-left:20px;display:grid;gap:6px}
+.doc-head strong{font-weight:700;color:#17141f}
+
+.row{display:flex;gap:40px;align-items:flex-start;margin-bottom:64px}
+.shot{display:flex;flex-direction:column;gap:18px;flex:none}
+.cap{display:flex;align-items:baseline;gap:10px;font:600 15px/1.2 "RF";color:#3d3948;padding-left:6px}
+.cap b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#17141f;color:#fff;font:750 13px/1 "RF"}
+.cap span{color:#7a7588;font-weight:500}
+
+.phone{width:390px;height:844px;border-radius:54px;position:relative;overflow:hidden;flex:none;isolation:isolate;container-type:size;
+  box-shadow:0 0 0 10px #121018,0 0 0 11.5px #3b3846,0 40px 70px -28px rgba(25,12,60,.55);background:var(--bg);color:var(--ink)}
+.phone.s360{width:360px;height:640px;border-radius:40px}
+.sb{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;font:650 16px/1 "RF";z-index:60;pointer-events:none;color:var(--sb,var(--ink))}
+.sb svg{height:13px;width:auto}
+.s360 .sb{height:30px;font-size:13px;padding:2px 20px 0 22px}
+.hi{position:absolute;bottom:8px;left:50%;width:136px;height:5px;border-radius:3px;background:var(--sb,var(--ink));opacity:.8;transform:translateX(-50%);z-index:60;pointer-events:none}
+.s360 .hi{width:100px;height:4px;bottom:6px}
+.scr{position:absolute;inset:0;padding:50px 0 30px;display:flex;flex-direction:column}
+.s360 .scr{padding:30px 0 18px}
+
+.note{width:390px;flex:none;background:#fff;border-radius:28px;padding:30px 30px 28px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 20px 40px -30px rgba(25,12,60,.35)}
+.note h4{font:750 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.note h4+*{margin-top:0}
+.note p,.note li{font-size:15px;line-height:1.5;color:#36323f}
+.note ul{padding-left:18px;display:grid;gap:8px}
+.note .sw{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 22px}
+.note .sw i{display:block;height:64px;border-radius:14px;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.note .sw i::after{content:attr(data-n);position:absolute;left:8px;bottom:6px;font:650 10.5px/1 "RF";font-style:normal;letter-spacing:.02em}
+.note .type{margin:0 0 22px;display:grid;gap:6px}
+.note + .note{margin-left:0}
+.stack{display:flex;flex-direction:column;gap:24px;flex:none}
+
+/* shake used by every hold demo */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .38s cubic-bezier(.36,.07,.19,.97)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ---------- v3 additions ---------- */
+.phone.land{width:844px;height:390px;border-radius:54px}
+.land .sb{display:none}
+.land .scr{padding:0 54px 18px}
+.land .hi{bottom:7px}
+.desk{width:1040px;height:650px;border-radius:18px;position:relative;overflow:hidden;flex:none;isolation:isolate;background:var(--bg);color:var(--ink);
+  box-shadow:0 0 0 1px rgba(0,0,0,.12),0 40px 70px -30px rgba(25,12,60,.45)}
+.desk .bar{height:38px;display:flex;align-items:center;gap:8px;padding:0 16px;background:#e3e1e6;border-bottom:1px solid rgba(0,0,0,.08)}
+.desk .bar i{width:12px;height:12px;border-radius:50%;background:#c9c6cf}
+.desk .bar span{margin-left:18px;flex:1;max-width:420px;height:24px;border-radius:12px;background:#fff;font:500 12.5px/24px "RF";color:#5b5766;padding:0 14px}
+.metrics{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.metrics div{background:#fff;border-radius:16px;padding:12px 16px 11px;min-width:96px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.metrics b{display:block;font:820 30px/1 "RF";font-stretch:80%;letter-spacing:-.01em;color:#17141f}
+.metrics em{display:block;font:600 11.5px/1.25 "RF";font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:#6a6579;margin-top:6px}
+/* thumb-zone map: mini phone with zones, targets drawn as absolutely positioned boxes */
+.tzwrap{display:flex;gap:18px;align-items:flex-start}
+.tz{width:132px;height:286px;border-radius:22px;position:relative;flex:none;overflow:hidden;box-shadow:0 0 0 4px #17141f;
+  background:radial-gradient(130% 62% at 78% 104%,#bfe8c8 0 58%,#f6e7a8 58% 80%,#f5c9c1 80%)}
+.tz i{position:absolute;border-radius:7px;background:#17141f;color:#fff;font:700 9px/1.1 "RF";font-style:normal;display:grid;place-items:center;text-align:center;padding:2px}
+.tz i.o{background:transparent;box-shadow:inset 0 0 0 2px #17141f;color:#17141f}
+.tzleg{display:grid;gap:7px;font-size:13px!important;line-height:1.35}
+.tzleg span{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:6px}
+
+
+/* ---------- 02 · Tavolo: face-to-face, phone flat between players ---------- */
+.phone{--net:#FBFAF7;--netink:#1A1A18;--netline:rgba(26,26,24,.12);--disc:#1A1A18;--discink:#FBFAF7;background:var(--net)}
+.dk{--ink:#F1EFE9;--net:#121211;--netink:#F1EFE9;--netline:rgba(241,239,233,.14);--disc:#F1EFE9;--discink:#121211}
+.scr{padding:0}
+/* halves: A (teal) faces the far edge, B (saffron) faces the near edge */
+.half{position:absolute;left:0;right:0;display:flex;flex-direction:column;padding:18px 22px 20px;color:var(--ink);background:var(--bg);overflow:hidden}
+.half.top{top:0;height:calc(50% - 38px);padding-bottom:62px;transform:rotate(180deg)}   /* status bar sits over its outer edge */
+.half.bot{bottom:0;height:calc(50% - 38px);padding-bottom:40px}
+.s360 .half.top,.s360 .half.bot{height:calc(50% - 32px)}
+.s360 .half.top{padding-bottom:40px}.s360 .half.bot{padding-bottom:26px}
+.s360 .half{padding-left:18px;padding-right:18px;padding-top:12px}
+
+.pa{--bg:#DCEDEA;--ink:#0A3532;--mute:#2E5B57;--act:#0E6A64;--on:#FFFFFF;--soft:rgba(10,53,50,.08)}
+.pa.live{--bg:#0E6A64;--ink:#FFFFFF;--mute:#CBE9E4;--act:#FFFFFF;--on:#0A3532;--soft:rgba(255,255,255,.14)}
+.pb{--bg:#FBEBD0;--ink:#4A2C05;--mute:#6E4A17;--act:#B86A00;--on:#FFFFFF;--soft:rgba(74,44,5,.08)}
+.pb.live{--bg:#F4A62A;--ink:#2E1A00;--mute:#4F3306;--act:#2E1A00;--on:#FFE7BC;--soft:rgba(46,26,0,.12)}
+.dk .pa{--bg:#0B2523;--ink:#BFE6E0;--mute:#86B5AE;--soft:rgba(191,230,224,.08)}
+.dk .pa.live{--bg:#0E5652;--ink:#E9FBF8;--mute:#A9DCD5;--act:#E9FBF8;--on:#062624;--soft:rgba(233,251,248,.12)}
+.dk .pb{--bg:#2A1C07;--ink:#F7D9A6;--mute:#C9A46A;--soft:rgba(247,217,166,.08)}
+.dk .pb.live{--bg:#8A5410;--ink:#FFF1DA;--mute:#F3CF95;--act:#FFF1DA;--on:#3A2200;--soft:rgba(255,241,218,.14)}
+
+.hd{display:flex;align-items:center;gap:12px;height:40px;font:700 14px/1.15 "RF";letter-spacing:.02em}
+.mono{width:40px;height:40px;border-radius:14px;background:var(--ink);color:var(--bg);display:grid;place-items:center;font:900 22px/1 "RF";font-stretch:85%;flex:none}
+.hd .st{display:flex;flex-direction:column;gap:3px}
+.hd .st small{font:600 11px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.hd .chip{margin-left:auto;height:28px;padding:0 12px;border-radius:14px;background:var(--soft);display:flex;align-items:center;gap:7px;font:700 12px/1 "RF";letter-spacing:.08em;text-transform:uppercase}
+.hd .chip.rec::before{content:"";width:9px;height:9px;border-radius:50%;background:#FF4B3E}
+.title{margin-top:14px;font:820 31px/1.02 "RF";font-stretch:88%;letter-spacing:-.015em}
+.title.sm{font-size:26px}
+.sub{margin-top:8px;font:500 15px/1.35 "RF";color:var(--mute)}
+.sub b{color:var(--ink);font-weight:700}
+.grow{flex:1;min-height:0}
+.acts{display:flex;gap:10px}
+.btn{height:96px;border-radius:30px;flex:1;display:flex;align-items:center;gap:14px;padding:0 22px;font:800 21px/1.1 "RF";font-stretch:92%;background:var(--act);color:var(--on);text-align:left}
+.btn svg{width:30px;height:30px;flex:none}
+.btn small{display:block;font:550 13px/1.2 "RF";font-stretch:100%;opacity:.82;margin-top:3px}
+.btn.ghost{background:var(--soft);color:var(--ink)}
+.btn.sq{flex:none;width:96px;padding:0;justify-content:center}
+.btn .dot{width:30px;height:30px;border-radius:50%;background:#E5372B;flex:none;box-shadow:0 0 0 5px rgba(229,55,43,.18)}
+.btn .stop{width:28px;height:28px;border-radius:7px;background:currentColor}
+.s360 .btn{height:80px;border-radius:26px;font-size:19px}
+.s360 .btn.sq{width:80px}
+.s360 .title{font-size:25px;margin-top:8px}
+.s360 .sub{font-size:13.5px}
+
+/* reversed listen tile with waveform */
+.tile{height:96px;border-radius:30px;display:flex;align-items:center;gap:14px;padding:0 20px 0 14px;background:var(--soft);flex:1;min-width:0}
+.tile .pl{width:64px;height:64px;border-radius:50%;background:var(--act);color:var(--on);display:grid;place-items:center;flex:none}
+.tile .pl svg{width:26px;height:26px}
+.tile .tx{flex:1;min-width:0}
+.tile b{display:block;font:800 17px/1.1 "RF";font-stretch:92%}
+.tile small{display:block;font:550 12.5px/1.2 "RF";color:var(--mute);margin-top:2px}
+.tile .wave{height:24px;margin-top:7px}
+.s360 .tile{height:80px;border-radius:26px}.s360 .tile .pl{width:54px;height:54px}
+.wave{display:flex;align-items:center;gap:2.5px}
+.wave i{flex:1;height:calc(var(--h) * 100%);min-height:3px;border-radius:2px;background:currentColor;opacity:.3}
+.wave i.on{opacity:1}
+
+/* recording row */
+.recrow{display:flex;gap:14px;align-items:center}
+.timer{font:300 74px/.9 "RF";font-stretch:70%;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.timer small{font:600 15px/1 "RF";font-stretch:100%;margin-left:4px;color:var(--mute);letter-spacing:0}
+.vu{flex:1;height:64px;display:flex;align-items:center;gap:3px}
+.vu i{flex:1;height:calc(var(--v,var(--h)) * 100%);min-height:5px;border-radius:3px;background:currentColor}
+.bar10{height:8px;border-radius:4px;background:var(--soft);margin:12px 0 14px;overflow:hidden}
+.bar10 i{display:block;height:100%;width:var(--t);background:currentColor;border-radius:4px}
+
+/* waiting state */
+.wait{display:flex;align-items:center;gap:16px;margin-top:18px;padding:16px 18px;border-radius:24px;background:var(--soft)}
+.wait svg{width:34px;height:34px;flex:none}
+.wait b{display:block;font:780 17px/1.2 "RF"}
+.wait span{display:block;font:500 13.5px/1.3 "RF";color:var(--mute)}
+
+/* the net: centre band with shared reveal disc and score read from both sides */
+.net{position:absolute;left:0;right:0;top:calc(50% - 38px);height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;color:var(--netink);z-index:5}
+.s360 .net{top:calc(50% - 32px);height:64px;padding:0 16px}
+.net::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1.5px dashed var(--netline)}
+.sc{position:relative;display:flex;flex-direction:column;gap:3px;background:var(--net);padding:0 6px}
+.sc b{font:850 24px/1 "RF";font-stretch:110%;font-variant-numeric:tabular-nums}
+.sc small{font:650 10px/1 "RF";letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.sc.flip{transform:rotate(180deg)}
+.disc{position:absolute;left:50%;top:50%;width:116px;height:116px;margin:-58px 0 0 -58px;border-radius:50%;background:var(--disc);color:var(--discink);display:grid;place-items:center;
+  box-shadow:0 0 0 6px var(--net),0 14px 30px -10px rgba(0,0,0,.45)}
+.disc svg.ic{width:30px;height:30px}
+.disc .ring{position:absolute;inset:-6px;width:128px;height:128px;transform:rotate(-90deg)}
+.disc .lb{position:absolute;left:0;right:0;font:800 10.5px/1 "RF";letter-spacing:.16em;text-transform:uppercase;text-align:center}
+.disc .lb.u{top:24px;transform:rotate(180deg)}.disc .lb.d{bottom:24px}
+.disc.off{background:var(--net);color:var(--netink);box-shadow:0 0 0 6px var(--net),inset 0 0 0 2px var(--netline)}
+.disc.off svg.ic{opacity:.45}
+.disc .pct{font:850 26px/1 "RF";font-stretch:85%;font-variant-numeric:tabular-nums}
+.s360 .disc{width:96px;height:96px;margin:-48px 0 0 -48px}
+.s360 .disc .ring{width:108px;height:108px}
+.s360 .disc .lb.u{top:18px}.s360 .disc .lb.d{bottom:18px}
+button.disc{z-index:6}
+
+/* reveal hint bubble next to the disc */
+.near{font:700 13px/1.25 "RF";display:flex;align-items:center;gap:8px;margin-top:auto;margin-bottom:-6px;justify-content:center;color:var(--ink)}
+.near svg{width:16px;height:16px}
+
+/* result */
+.big{font:900 62px/.9 "RF";font-stretch:82%;letter-spacing:-.025em}
+.okrow{display:flex;gap:10px}
+.okrow .btn{height:88px}
+.btn.sel{box-shadow:inset 0 0 0 3px var(--ink)}
+.btn.ok{background:#0F7A3E;color:#fff}
+.btn.no{background:var(--soft);color:var(--ink)}
+.dk .btn.ok{background:#1E9E57}
+
+/* landscape: halves turn sideways, each faces its own long edge */
+.land .half.l,.land .half.r{width:390px;height:384px;top:3px;bottom:auto;left:auto;right:auto;padding:16px 22px 22px}
+.land .half.l{left:calc(25% - 19px - 195px);transform:rotate(90deg)}
+.land .half.r{left:calc(75% + 19px - 195px);transform:rotate(-90deg)}
+.land .net{top:0;bottom:0;left:calc(50% - 38px);width:76px;height:auto;flex-direction:column;padding:26px 0}
+.land .net::before{left:50%;right:auto;top:0;bottom:0;border-top:0;border-left:1.5px dashed var(--netline)}
+.land .sc.l{transform:rotate(90deg)}.land .sc.r{transform:rotate(-90deg)}
+
+/* diagram */
+.tbl{width:100%;height:auto;display:block;margin:4px 0 14px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-rev" viewBox="0 0 24 24"><path d="M11.5 6.2v11.6L3 12zM21 6.2v11.6L12.5 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.8v14.4L19 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.6" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2.2"/></symbol>
+    <symbol id="i-ear" viewBox="0 0 24 24"><path d="M7 9a5 5 0 0 1 10 0c0 3-3 4-3 7a3 3 0 0 1-5.6 1.5M10 9.5a2 2 0 0 1 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7 4.5 11.5 9 16M4.5 11.5H15a4.5 4.5 0 0 1 0 9h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-shh" viewBox="0 0 24 24"><path d="M12 3v11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="15.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 15.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M12 20V6M6 12l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v14M6 12l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="doc">
+  <header class="doc-head">
+    <div>
+      <div class="kicker">Reverseur · mockup v3 · concetto 02</div>
+      <h1>Tavolo</h1>
+      <p class="pitch">Il telefono sta sul tavolo tra i due giocatori. Metà schermo guarda A, metà guarda B: nessuno deve passarlo, girarlo o leggerlo al contrario.</p>
+      <div class="metrics">
+        <div><b>6</b><em>tap per round</em></div>
+        <div><b>0</b><em>passaggi</em></div>
+        <div><b>96 px</b><em>comandi</em></div>
+        <div><b>1</b><em>condiviso</em></div>
+      </div>
+    </div>
+    <div>
+      <h3>Concetto</h3>
+      <p>Due metà ruotate di 180°. <strong>La metà di A è verde acqua, quella di B è zafferano</strong>, e il turno si vede dalla metà accesa (colore pieno), mentre l'altra è pallida e mostra solo cosa sta succedendo. Ogni metà contiene <strong>solo i comandi del suo giocatore</strong>. Al centro, sulla «rete», c'è il disco di rivelazione: si raggiunge da entrambi i lati e si legge da entrambi i lati.</p>
+    </div>
+    <div>
+      <h3>Flusso</h3>
+      <ol>
+        <li>La metà di A si accende: «Registra». B legge «Tappati le orecchie».</li>
+        <li>A registra e ferma (timer, VU, barra dei 10 s). La metà di B si accende.</li>
+        <li>B tocca «Al contrario» (quante volte vuole), poi «Imita» e ferma.</li>
+        <li>B ascolta l'imitazione al contrario e dice la sua risposta. Uno dei due tiene premuto il disco centrale: l'originale suona per tutti e due.</li>
+        <li><strong>Giudica A</strong>, che conosce la parola: «Giusta» o «Sbagliata» nella sua metà. I posti restano e i ruoli si scambiano: ora registra B.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Perché il layout è ottimale</h3>
+      <ul>
+        <li>Ogni comando principale sta sul <strong>bordo esterno della propria metà</strong>, cioè il più vicino alla mano di chi gioca.</li>
+        <li>Il round si gioca con 6 tocchi (A: registra e stop; B: al contrario, imita e stop; tutti e due: rivela). Più 1 per il giudizio, che però si può saltare.</li>
+        <li>Niente schermata «Passa il telefono»: i posti fissi tolgono un passo al flusso a turni.</li>
+        <li>Il disco al centro (Ø 116 px) è <strong>l'unico</strong> comando condiviso: è lo spoiler, ed è a metà strada tra i due.</li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="row">
+    <!-- a: round start -->
+    <div class="shot"><div class="cap"><b>a</b>Inizio round <span>· 390×844 chiaro · A in alto (capovolto)</span></div>
+      <div class="phone lt" style="--sb:#fff"><div class="scr">
+        <div class="half top pa live">
+          <div class="hd"><div class="mono">A</div><div class="st"><small>Round 3</small>Tocca a te</div></div>
+          <div class="title">Scegli una parola segreta.</div>
+          <p class="sub">Massimo 10 secondi. B non deve sentirla.</p>
+          <div class="grow"></div>
+          <div class="acts"><button class="btn"><i class="dot"></i><span>Registra<small>tocca per iniziare</small></span></button></div>
+        </div>
+        <div class="net"><div class="sc flip"><b>4·2</b><small>ok · no</small></div><button class="disc off" aria-label="Rivela (non ancora disponibile)"><svg class="ic"><use href="#i-lock"/></svg></button><div class="sc"><b>4·2</b><small>ok · no</small></div></div>
+        <div class="half bot pb">
+          <div class="hd"><div class="mono">B</div><div class="st"><small>Round 3</small>Indovini tu</div></div>
+          <div class="wait"><svg><use href="#i-ear"/></svg><div><b>Tappati le orecchie</b><span>A sta per registrare la parola.</span></div></div>
+          <div class="grow"></div>
+          <p class="sub" style="text-align:center">La tua metà si accende quando tocca a te.</p>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- b: A records -->
+    <div class="shot"><div class="cap"><b>b</b>A registra <span>· timer, VU, barra 10 s</span></div>
+      <div class="phone lt live" style="--sb:#fff"><div class="scr">
+        <div class="half top pa live">
+          <div class="hd"><div class="mono">A</div><div class="st"><small>Round 3</small>Registro…</div><span class="chip rec">rec</span></div>
+          <div class="grow"></div>
+          <div class="recrow"><div class="timer"><span data-timer="3.4">03,4</span><small>/10 s</small></div><div class="vu" data-wave="22" data-seed="7" data-vu></div></div>
+          <div class="bar10" style="--t:34%"><i></i></div>
+          <div class="acts"><button class="btn"><i class="stop"></i><span>Fine<small>tocca per fermare</small></span></button></div>
+        </div>
+        <div class="net"><div class="sc flip"><b>4·2</b><small>ok · no</small></div><button class="disc off" aria-label="Rivela (non ancora disponibile)"><svg class="ic"><use href="#i-lock"/></svg></button><div class="sc"><b>4·2</b><small>ok · no</small></div></div>
+        <div class="half bot pb">
+          <div class="hd"><div class="mono">B</div><div class="st"><small>Round 3</small>Aspetta</div></div>
+          <div class="wait"><svg><use href="#i-ear"/></svg><div><b>A sta registrando · 3,4 s</b><span>Non ascoltare. Tocca a te tra poco.</span></div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- c: B listens reversed + imitates -->
+    <div class="shot"><div class="cap"><b>c</b>B ascolta al contrario e imita <span>· la metà di B è accesa</span></div>
+      <div class="phone lt live"><div class="scr">
+        <div class="half top pa">
+          <div class="hd"><div class="mono">A</div><div class="st"><small>Round 3</small>Parola registrata · 1,8 s</div></div>
+          <div class="wait"><svg><use href="#i-shh"/></svg><div><b>Non suggerire!</b><span>B sta imitando. Il tuo originale resta chiuso fino alla rivelazione.</span></div></div>
+          <div class="grow"></div>
+          <div class="acts"><button class="btn ghost" style="height:64px"><svg><use href="#i-undo"/></svg><span style="font-size:17px">Rifai la parola</span></button></div>
+        </div>
+        <div class="net"><div class="sc flip"><b>4·2</b><small>ok · no</small></div><button class="disc off" aria-label="Rivela (non ancora disponibile)"><svg class="ic"><use href="#i-lock"/></svg></button><div class="sc"><b>4·2</b><small>ok · no</small></div></div>
+        <div class="half bot pb live">
+          <div class="hd"><div class="mono">B</div><div class="st"><small>Round 3</small>Imita i suoni</div><span class="chip rec">rec 02,1</span></div>
+          <div class="grow"></div>
+          <div class="vu" style="height:46px;margin-bottom:12px" data-wave="40" data-seed="19" data-vu></div>
+          <div class="acts">
+            <div class="tile"><div class="pl"><svg><use href="#i-rev"/></svg></div><div class="tx"><b>Al contrario</b><small>parola di A · 2×</small></div></div>
+            <button class="btn sq" aria-label="Ferma l'imitazione"><i class="stop"></i></button>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- d: guess + reveal -->
+    <div class="shot"><div class="cap"><b>d</b>Indovina e rivela <span>· disco al centro · 62%</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="half top pa">
+          <div class="hd"><div class="mono">A</div><div class="st"><small>Round 3</small>Ascolta la risposta</div></div>
+          <p class="sub" style="margin-top:14px">Quando B ha detto la sua, <b>tenete premuto il disco al centro</b>: l'originale suona per tutti e due.</p>
+          <div class="grow"></div>
+        </div>
+        <div class="net"><div class="sc flip"><b>4·2</b><small>ok · no</small></div>
+          <button class="disc" style="--p:.62" aria-label="Tieni premuto per rivelare">
+            <svg class="ring" viewBox="0 0 128 128"><circle cx="64" cy="64" r="60" fill="none" stroke="currentColor" stroke-opacity=".0" stroke-width="8"/><defs><linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0E6A64"/><stop offset="1" stop-color="#F4A62A"/></linearGradient></defs><circle cx="64" cy="64" r="60" fill="none" stroke="url(#gr)" stroke-width="8" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="143"/></svg>
+            <span class="lb u">rivela</span><span class="pct">62%</span><span class="lb d">rivela</span>
+          </button>
+          <div class="sc"><b>4·2</b><small>ok · no</small></div></div>
+        <div class="half bot pb live">
+          <div class="title sm" style="margin-top:44px">Che parola senti?</div>
+          <p class="sub">Dilla ad alta voce, poi <b>tieni premuto il disco</b>.</p>
+          <div class="grow"></div>
+          <div class="acts">
+            <div class="tile" style="background:rgba(46,26,0,.12)"><div class="pl"><svg><use href="#i-rev"/></svg></div><div class="tx"><b>La tua imitazione, al contrario</b><div class="wave" data-wave="30" data-seed="11" data-mirror data-played=".6"></div></div></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- e: result -->
+    <div class="shot"><div class="cap"><b>e</b>Esito e punteggio <span>· giudica A, ruoli scambiati</span></div>
+      <div class="phone lt" style="--sb:#fff"><div class="scr">
+        <div class="half top pa live">
+          <div class="hd"><div class="mono">A</div><div class="st"><small>Round 3 · giudichi tu</small>B ha indovinato?</div></div>
+          <div class="grow"></div>
+          <div class="okrow"><button class="btn ok sel"><svg><use href="#i-check"/></svg>Giusta</button><button class="btn no"><svg><use href="#i-x"/></svg>Sbagliata</button></div>
+        </div>
+        <div class="net"><div class="sc flip"><b>5·2</b><small>ok · no</small></div><button class="disc" aria-label="Riascolta l'originale"><svg class="ic"><use href="#i-play"/></svg></button><div class="sc"><b>5·2</b><small>ok · no</small></div></div>
+        <div class="half bot pb live">
+          <div class="hd"><div class="mono">B</div><div class="st"><small>Round 3</small>Indovinata!</div><span class="chip">+1</span></div>
+          <div class="big" style="margin-top:10px">5 su 7</div>
+          <p class="sub">Il centro ora riascolta l'originale. <b>Round 4: registri tu</b>.</p>
+          <div class="grow"></div>
+          <div class="acts"><button class="btn" style="background:#2E1A00;color:#FFE7BC"><i class="dot"></i><span>Registra<small>round 4 · la tua parola</small></span></button></div>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="shot"><div class="cap"><b>d</b>Rivela <span>· scuro · tieni premuto il disco (demo)</span></div>
+      <div class="phone dk"><div class="scr">
+        <div class="half top pa">
+          <div class="hd"><div class="mono">A</div><div class="st"><small>Round 3</small>Ascolta la risposta</div></div>
+          <p class="sub" style="margin-top:14px">Quando B ha detto la sua, <b>tenete premuto il disco al centro</b>.</p>
+          <div class="grow"></div>
+        </div>
+        <div class="net"><div class="sc flip"><b>4·2</b><small>ok · no</small></div>
+          <button class="disc" id="hold" style="--p:.62" aria-label="Tieni premuto per rivelare">
+            <svg class="ring" viewBox="0 0 128 128"><circle id="hr" cx="64" cy="64" r="60" fill="none" stroke="url(#gr)" stroke-width="8" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="143"/></svg>
+            <span class="lb u">rivela</span><span class="pct" id="hp">62%</span><span class="lb d">rivela</span>
+          </button>
+          <div class="sc"><b>4·2</b><small>ok · no</small></div></div>
+        <div class="half bot pb live">
+          <div class="title sm" style="margin-top:44px">Che parola senti?</div>
+          <p class="sub">Dilla ad alta voce, poi <b>tieni premuto il disco</b>.</p>
+          <div class="grow"></div>
+          <div class="acts"><div class="tile"><div class="pl"><svg><use href="#i-rev"/></svg></div><div class="tx"><b>La tua imitazione, al contrario</b><div class="wave" data-wave="30" data-seed="11" data-mirror data-played=".6"></div></div></div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>c</b>B imita <span>· 360×640</span></div>
+      <div class="phone lt s360 live"><div class="scr">
+        <div class="half top pa">
+          <div class="hd"><div class="mono">A</div><div class="st"><small>Round 3</small>Parola registrata</div></div>
+          <div class="wait" style="margin-top:10px;padding:12px 14px"><svg><use href="#i-shh"/></svg><div><b>Non suggerire!</b><span>Originale chiuso fino alla rivelazione.</span></div></div>
+        </div>
+        <div class="net"><div class="sc flip"><b>4·2</b><small>ok · no</small></div><button class="disc off" aria-label="Rivela (non ancora disponibile)"><svg class="ic"><use href="#i-lock"/></svg></button><div class="sc"><b>4·2</b><small>ok · no</small></div></div>
+        <div class="half bot pb live">
+          <div class="hd"><div class="mono">B</div><div class="st"><small>Round 3</small>Imita i suoni</div><span class="chip rec">rec 02,1</span></div>
+          <div class="grow"></div>
+          <div class="vu" style="height:36px;margin-bottom:10px" data-wave="34" data-seed="19" data-vu></div>
+          <div class="acts"><div class="tile"><div class="pl"><svg><use href="#i-rev"/></svg></div><div class="tx"><b>Al contrario</b><small>parola di A · 2×</small></div></div><button class="btn sq" aria-label="Ferma"><i class="stop"></i></button></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>+</b>Orizzontale <span>· 844×390 · metà ai lati lunghi, ruotate di ±90°</span></div>
+      <div class="phone lt land"><div class="scr">
+        <div class="half l pa live">
+          <div class="hd"><div class="mono">A</div><div class="st"><small>Round 3</small>Tocca a te</div></div>
+          <div class="title">Scegli una parola segreta.</div>
+          <p class="sub">Massimo 10 secondi.</p>
+          <div class="grow"></div>
+          <div class="acts"><button class="btn"><i class="dot"></i><span>Registra<small>tocca per iniziare</small></span></button></div>
+        </div>
+        <div class="net"><div class="sc l"><b>4·2</b><small>ok · no</small></div><button class="disc off" aria-label="Rivela (non ancora disponibile)"><svg class="ic"><use href="#i-lock"/></svg></button><div class="sc r"><b>4·2</b><small>ok · no</small></div></div>
+        <div class="half r pb">
+          <div class="hd"><div class="mono">B</div><div class="st"><small>Round 3</small>Indovini tu</div></div>
+          <div class="wait"><svg><use href="#i-ear"/></svg><div><b>Tappati le orecchie</b><span>A sta per registrare la parola.</span></div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="note">
+      <h4>Il tavolo visto dall'alto</h4>
+      <svg class="tbl" viewBox="0 0 330 260" aria-label="Schema: telefono tra due giocatori">
+        <rect x="0" y="0" width="330" height="260" rx="20" fill="#F3EFE6"/>
+        <circle cx="165" cy="26" r="16" fill="#0E6A64"/><text x="165" y="31" text-anchor="middle" font-family="RF" font-weight="900" font-size="15" fill="#fff">A</text>
+        <circle cx="165" cy="234" r="16" fill="#F4A62A"/><text x="165" y="239" text-anchor="middle" font-family="RF" font-weight="900" font-size="15" fill="#2E1A00">B</text>
+        <g transform="translate(125 58)"><rect width="80" height="144" rx="14" fill="#1A1A18"/><rect x="5" y="5" width="70" height="64" rx="10" fill="#0E6A64"/><rect x="5" y="75" width="70" height="64" rx="10" fill="#F4A62A"/><circle cx="40" cy="72" r="11" fill="#FBFAF7" stroke="#1A1A18" stroke-width="3"/></g>
+        <path d="M165 46v8M165 206v8" stroke="#1A1A18" stroke-width="2.5" stroke-linecap="round"/>
+        <text x="20" y="128" font-family="RF" font-weight="650" font-size="12" fill="#4a4655">metà di A</text><text x="20" y="143" font-family="RF" font-size="11.5" fill="#6a6579">ruotata 180°</text>
+        <text x="228" y="128" font-family="RF" font-weight="650" font-size="12" fill="#4a4655">disco</text><text x="228" y="143" font-family="RF" font-size="11.5" fill="#6a6579">a metà strada</text>
+      </svg>
+      <ul>
+        <li>All'avvio si sceglie una volta «Tavolo» o «Mano» (il flusso a turni di v2). In modalità Tavolo si blocca la rotazione e si chiede di appoggiare il telefono.</li>
+        <li>Un solo altoparlante per tutti e due: per questo l'originale di A è chiuso anche nella metà di A. Lo spoiler sarebbe per l'orecchio, non per gli occhi.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="note">
+      <h4>Mappa del pollice (due mani, due lati)</h4>
+      <div class="tzwrap">
+        <div class="tz" style="background:linear-gradient(180deg,#bfe8c8 0 26%,#f6e7a8 26% 42%,#f5c9c1 42% 58%,#f6e7a8 58% 74%,#bfe8c8 74%)">
+          <i style="left:10px;right:10px;top:10px;height:30px">A: registra</i>
+          <i style="left:44px;width:44px;top:121px;height:44px;border-radius:50%">rivela</i>
+          <i style="left:10px;width:74px;bottom:10px;height:30px">B: ◂◂</i>
+          <i style="right:10px;width:30px;bottom:10px;height:30px">■</i>
+        </div>
+        <div class="tzleg">
+          <p>Sul tavolo ognuno arriva comodo al <strong>proprio bordo</strong> (verde). Il centro è a un braccio di distanza per tutti e due.</p>
+          <p>Per questo lì c'è solo il disco di rivelazione: un gesto raro, voluto e da fare insieme.</p>
+          <p>Comandi 96 px (80 px a 360×640), disco Ø 116 px (96 px), «Rifai» 64 px.</p>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <h4>Movimento</h4>
+      <ul>
+        <li><strong>Cambio turno:</strong> il colore pieno «scivola» attraverso la rete, dalla metà che ha finito a quella che inizia (280 ms). È l'unico movimento grande e dice di chi è il turno senza testo.</li>
+        <li><strong>Registrazione:</strong> barre del VU a 60 fps e barra dei 10 s lineare. Negli ultimi 2 s la barra diventa rossa.</li>
+        <li><strong>Disco:</strong> l'anello si riempie in 600 ms con una sfumatura dal verde acqua allo zafferano. Al 100% il disco si apre come un otturatore e le due metà si accendono insieme per l'esito.</li>
+        <li><strong>Rilascio anticipato:</strong> l'anello si svuota in 160 ms e compare «Tieni premuto» su tutti e due i lati.</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h4>Colore e accessibilità</h4>
+      <div class="sw"><i style="background:#0E6A64;color:#fff" data-n="A acceso"></i><i style="background:#DCEDEA;color:#0A3532" data-n="A in attesa"></i><i style="background:#FBFAF7;color:#1A1A18" data-n="rete"></i><i style="background:#F4A62A;color:#2E1A00" data-n="B acceso"></i><i style="background:#FBEBD0;color:#4A2C05" data-n="B in attesa"></i><i style="background:#1A1A18;color:#FBFAF7" data-n="disco"></i></div>
+      <p>Bianco su verde acqua 6,4:1, marrone su zafferano 8,6:1. Le metà in attesa hanno testo a 9:1, quindi «spento» non vuol dire illeggibile. Il turno non si capisce solo dal colore: c'è anche la lettera A/B e il testo «Tocca a te».</p>
+    </div>
+    <div class="note">
+      <h4>Impatto</h4>
+      <p>Il flusso a fasi resta quello di v2, cambia solo la vista: <code>VistaTavolo</code> mostra due <code>Meta</code> (una con <code>rotate(180deg)</code>) e una <code>Rete</code>. Per lo screen reader l'ordine del DOM segue il turno (prima la metà accesa). Si consiglia <code>screen.orientation.lock</code> e Wake Lock per tenere lo schermo acceso sul tavolo.</p>
+    </div>
+  </section>
+</div>
+<script>
+/* ---------- Presentation shell helpers (shared by v3 mockups 01-05) ---------- */
+(function(){
+  const LIVE = !navigator.webdriver; // static, deterministic frames when screenshotted
+  window.LIVE = LIVE;
+  const SB = '<span>9:41</span><svg viewBox="0 0 74 14" fill="currentColor" aria-hidden="true">'+
+    '<rect x="0" y="9" width="3.4" height="5" rx="1"/><rect x="5" y="6.5" width="3.4" height="7.5" rx="1"/><rect x="10" y="4" width="3.4" height="10" rx="1"/><rect x="15" y="1" width="3.4" height="13" rx="1"/>'+
+    '<path d="M31 4.2a10 10 0 0 1 13.4 0l-1.6 1.7a7.6 7.6 0 0 0-10.2 0zM33.6 7a6.2 6.2 0 0 1 8.2 0l-1.6 1.7a3.9 3.9 0 0 0-5 0zM37.7 13.2l-2.1-2.3a3 3 0 0 1 4.2 0z"/>'+
+    '<rect x="50.5" y="1.5" width="20" height="11" rx="3.4" fill="none" stroke="currentColor" stroke-opacity=".45"/><rect x="52.5" y="3.5" width="14" height="7" rx="1.8"/><rect x="71.8" y="5" width="1.8" height="4" rx=".9" fill-opacity=".45"/></svg>';
+  document.querySelectorAll('.phone').forEach(p=>{
+    const sb=document.createElement('div');sb.className='sb';sb.innerHTML=SB;p.prepend(sb);
+    const hi=document.createElement('div');hi.className='hi';p.append(hi);
+  });
+  // seeded random
+  function rng(seed){let s=seed*9301+49297;return()=>{s=(s*9301+49297)%233280;return s/233280;};}
+  window.rng=rng;
+  // word-like envelope: a few syllable humps
+  function envelope(n,seed){
+    const r=rng(seed),humps=[];const k=2+Math.floor(r()*2);
+    for(let i=0;i<k;i++)humps.push({c:(i+.5)/k+(r()-.5)*.12,w:.08+r()*.07,a:.6+r()*.4});
+    const out=[];for(let i=0;i<n;i++){const x=i/(n-1);let v=0;humps.forEach(h=>{v+=h.a*Math.exp(-((x-h.c)**2)/(2*h.w*h.w));});
+      v=Math.min(1,v)*(.72+r()*.28);out.push(Math.max(.07,v));}
+    return out;
+  }
+  window.envelope=envelope;
+  // [data-wave="n"] data-seed data-mirror data-played="0..1"
+  document.querySelectorAll('[data-wave]').forEach(el=>{
+    const n=+el.dataset.wave,seed=+(el.dataset.seed||1);let e=envelope(n,seed);
+    if('mirror' in el.dataset)e=e.reverse();
+    const played=+(el.dataset.played||0);
+    el.innerHTML=e.map((v,i)=>`<i style="--h:${v.toFixed(3)}"${i/n<played?' class="on"':''}></i>`).join('');
+  });
+  // [data-radial="n"] radial VU ticks
+  document.querySelectorAll('[data-radial]').forEach(el=>{
+    const n=+el.dataset.radial,r=rng(+(el.dataset.seed||4));let h='';
+    for(let i=0;i<n;i++){const v=.25+.75*Math.abs(Math.sin(i*.55))*r();h+=`<i style="--a:${(i*360/n).toFixed(2)}deg;--v:${v.toFixed(3)}"></i>`;}
+    el.innerHTML=h;
+    if(LIVE){const ticks=[...el.children];setInterval(()=>{const t=performance.now()/1000;ticks.forEach((tk,i)=>{const v=.2+.8*Math.abs(Math.sin(t*3.1+i*.7)*Math.sin(t*1.7+i*.31))*(.6+.4*Math.random());tk.style.setProperty('--v',v.toFixed(3));});},90);}
+  });
+  // generic animated bars [data-vu] children get --v
+  document.querySelectorAll('[data-vu]').forEach(el=>{
+    if(!LIVE)return;const bars=[...el.children];
+    setInterval(()=>{const t=performance.now()/1000;bars.forEach((b,i)=>{const v=.15+.85*Math.abs(Math.sin(t*2.7+i*.9)*Math.cos(t*1.3+i*.4))*(.55+.45*Math.random());b.style.setProperty('--v',v.toFixed(3));});},110);
+  });
+  // ticking timers [data-timer="start seconds"]
+  document.querySelectorAll('[data-timer]').forEach(el=>{
+    if(!LIVE)return;let t=+el.dataset.timer;const fmt=v=>{const s=Math.floor(v),d=Math.floor((v-s)*10);return String(s).padStart(2,'0')+','+d;};
+    setInterval(()=>{t+=.1;if(t>=10)t=0;el.textContent=fmt(t);},100);
+  });
+  /* hold-to-confirm demo, same contract as holdButton(el,{ms,onConfirm}) */
+  window.hold=function(el,ms,onConfirm){
+    let t0=0,raf=0,on=false;const set=p=>el.style.setProperty('--p',p.toFixed(3));
+    const start=e=>{if(el.classList.contains('done'))return;if(e.pointerId!=null)el.setPointerCapture(e.pointerId);on=true;t0=performance.now();el.classList.add('holding');
+      const step=now=>{if(!on)return;const p=Math.min(1,(now-t0)/ms);set(p);if(p<1)raf=requestAnimationFrame(step);else{on=false;el.classList.remove('holding');el.classList.add('done');navigator.vibrate&&navigator.vibrate(15);onConfirm&&onConfirm(el);setTimeout(()=>{el.classList.remove('done');set(0);},2600);}};raf=requestAnimationFrame(step);};
+    const stop=()=>{if(!on)return;on=false;cancelAnimationFrame(raf);el.classList.remove('holding');set(0);el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake','hint');setTimeout(()=>el.classList.remove('hint'),1600);};
+    el.addEventListener('pointerdown',start);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,stop));
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+    el.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();start({});}});
+    el.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')stop();});
+  };
+})();
+
+(function(){const el=document.getElementById('hold');if(!el)return;const c=document.getElementById('hr'),t=document.getElementById('hp');
+  const draw=()=>{const p=parseFloat(getComputedStyle(el).getPropertyValue('--p'))||0;c.setAttribute('stroke-dashoffset',(377*(1-p)).toFixed(1));t.textContent=Math.round(p*100)+'%';};
+  if(!window.LIVE)return;el.style.setProperty('--p','0');draw();
+  new MutationObserver(draw).observe(el,{attributes:true,attributeFilter:['style','class']});
+  hold(el,600,()=>{t.textContent='▶';});})();
+</script>
+</body>
+</html>

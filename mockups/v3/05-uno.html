@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverseur v3 · 05 · Uno</title>
+<style>
+/* ---------- Presentation shell (shared by v3 mockups 01-05) ---------- */
+@font-face{
+  font-family:"RF";
+  src:url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2-variations"),
+      url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2");
+  font-weight:100 1000;font-stretch:25% 151%;font-display:block;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#e7e5ec;color:#17141f;font-family:"RF",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{padding:64px 64px 80px;width:max-content;min-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+svg{display:block}
+
+.doc{width:2110px}
+.doc-head{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:48px;margin-bottom:60px;align-items:start}
+.doc-head .kicker{font:650 13px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.doc-head h1{font-size:76px;line-height:.92;font-weight:880;letter-spacing:-.025em;margin-bottom:18px}
+.doc-head .pitch{font-size:21px;line-height:1.4;color:#2c2838;font-weight:450;max-width:34ch}
+.doc-head h3{font:700 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin:6px 0 14px}
+.doc-head p,.doc-head li{font-size:16px;line-height:1.55;color:#36323f}
+.doc-head ol,.doc-head ul{padding-left:20px;display:grid;gap:6px}
+.doc-head strong{font-weight:700;color:#17141f}
+
+.row{display:flex;gap:40px;align-items:flex-start;margin-bottom:64px}
+.shot{display:flex;flex-direction:column;gap:18px;flex:none}
+.cap{display:flex;align-items:baseline;gap:10px;font:600 15px/1.2 "RF";color:#3d3948;padding-left:6px}
+.cap b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#17141f;color:#fff;font:750 13px/1 "RF"}
+.cap span{color:#7a7588;font-weight:500}
+
+.phone{width:390px;height:844px;border-radius:54px;position:relative;overflow:hidden;flex:none;isolation:isolate;container-type:size;
+  box-shadow:0 0 0 10px #121018,0 0 0 11.5px #3b3846,0 40px 70px -28px rgba(25,12,60,.55);background:var(--bg);color:var(--ink)}
+.phone.s360{width:360px;height:640px;border-radius:40px}
+.sb{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;font:650 16px/1 "RF";z-index:60;pointer-events:none;color:var(--sb,var(--ink))}
+.sb svg{height:13px;width:auto}
+.s360 .sb{height:30px;font-size:13px;padding:2px 20px 0 22px}
+.hi{position:absolute;bottom:8px;left:50%;width:136px;height:5px;border-radius:3px;background:var(--sb,var(--ink));opacity:.8;transform:translateX(-50%);z-index:60;pointer-events:none}
+.s360 .hi{width:100px;height:4px;bottom:6px}
+.scr{position:absolute;inset:0;padding:50px 0 30px;display:flex;flex-direction:column}
+.s360 .scr{padding:30px 0 18px}
+
+.note{width:390px;flex:none;background:#fff;border-radius:28px;padding:30px 30px 28px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 20px 40px -30px rgba(25,12,60,.35)}
+.note h4{font:750 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.note h4+*{margin-top:0}
+.note p,.note li{font-size:15px;line-height:1.5;color:#36323f}
+.note ul{padding-left:18px;display:grid;gap:8px}
+.note .sw{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 22px}
+.note .sw i{display:block;height:64px;border-radius:14px;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.note .sw i::after{content:attr(data-n);position:absolute;left:8px;bottom:6px;font:650 10.5px/1 "RF";font-style:normal;letter-spacing:.02em}
+.note .type{margin:0 0 22px;display:grid;gap:6px}
+.note + .note{margin-left:0}
+.stack{display:flex;flex-direction:column;gap:24px;flex:none}
+
+/* shake used by every hold demo */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .38s cubic-bezier(.36,.07,.19,.97)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ---------- v3 additions ---------- */
+.phone.land{width:844px;height:390px;border-radius:54px}
+.land .sb{display:none}
+.land .scr{padding:0 54px 18px}
+.land .hi{bottom:7px}
+.desk{width:1040px;height:650px;border-radius:18px;position:relative;overflow:hidden;flex:none;isolation:isolate;background:var(--bg);color:var(--ink);
+  box-shadow:0 0 0 1px rgba(0,0,0,.12),0 40px 70px -30px rgba(25,12,60,.45)}
+.desk .bar{height:38px;display:flex;align-items:center;gap:8px;padding:0 16px;background:#e3e1e6;border-bottom:1px solid rgba(0,0,0,.08)}
+.desk .bar i{width:12px;height:12px;border-radius:50%;background:#c9c6cf}
+.desk .bar span{margin-left:18px;flex:1;max-width:420px;height:24px;border-radius:12px;background:#fff;font:500 12.5px/24px "RF";color:#5b5766;padding:0 14px}
+.metrics{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.metrics div{background:#fff;border-radius:16px;padding:12px 16px 11px;min-width:96px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.metrics b{display:block;font:820 30px/1 "RF";font-stretch:80%;letter-spacing:-.01em;color:#17141f}
+.metrics em{display:block;font:600 11.5px/1.25 "RF";font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:#6a6579;margin-top:6px}
+/* thumb-zone map: mini phone with zones, targets drawn as absolutely positioned boxes */
+.tzwrap{display:flex;gap:18px;align-items:flex-start}
+.tz{width:132px;height:286px;border-radius:22px;position:relative;flex:none;overflow:hidden;box-shadow:0 0 0 4px #17141f;
+  background:radial-gradient(130% 62% at 78% 104%,#bfe8c8 0 58%,#f6e7a8 58% 80%,#f5c9c1 80%)}
+.tz i{position:absolute;border-radius:7px;background:#17141f;color:#fff;font:700 9px/1.1 "RF";font-style:normal;display:grid;place-items:center;text-align:center;padding:2px}
+.tz i.o{background:transparent;box-shadow:inset 0 0 0 2px #17141f;color:#17141f}
+.tzleg{display:grid;gap:7px;font-size:13px!important;line-height:1.35}
+.tzleg span{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:6px}
+
+
+/* ---------- 05 · Uno: one giant contextual button, huge type, nothing else ---------- */
+.lt{--bg:#F4F1EA;--ink:#0F0F0F;--mute:#5A564E;--yel:#FFD21F;--red:#D8211A;--blu:#1E3FD8;--grn:#0A7B47;--blk:#0F0F0F;--line:rgba(15,15,15,.14)}
+.dk{--bg:#0F0F0F;--ink:#F4F1EA;--mute:#A8A399;--yel:#FFD21F;--red:#E8372C;--blu:#5B78FF;--grn:#1FA866;--blk:#F4F1EA;--line:rgba(244,241,234,.16)}
+.scr{padding:50px 22px 30px}
+.s360 .scr{padding:30px 16px 18px}
+.meta{display:flex;justify-content:space-between;align-items:center;height:36px;font:700 13px/1 "RF";letter-spacing:.16em;text-transform:uppercase}
+.meta span{color:var(--mute)}
+.meta b{font:850 15px/1 "RF";letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.top{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:18px;position:relative}
+.fit{display:inline-block;align-self:flex-start;font:900 100px/.8 "RF";font-stretch:28%;text-transform:uppercase;letter-spacing:-.005em;white-space:nowrap}
+.fit.m{color:var(--mute)}
+.say{margin-top:16px;font:500 17px/1.35 "RF";color:var(--mute);max-width:32ch}
+.say b{color:var(--ink);font-weight:700}
+.lp{position:absolute;top:10px;left:0;right:0;display:flex;align-items:center;gap:8px;font:650 11.5px/1 "RF";letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.lp i{width:18px;height:18px;border-radius:50%;border:1.5px dashed currentColor}
+
+/* THE button */
+.one{position:relative;flex:none;height:var(--bh,52%);border-radius:44px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:26px 28px 28px;text-align:left;background:var(--c);color:var(--on)}
+.s360 .one{border-radius:34px;padding:18px 20px 20px}
+.one .lb{position:relative;font:850 68px/.88 "RF";font-stretch:52%;letter-spacing:-.01em;text-transform:uppercase}
+.one .sl{position:relative;font:600 16px/1.3 "RF";opacity:.86;display:flex;align-items:center;gap:10px}
+.one .sl svg{width:20px;height:20px}
+.one .tag{position:relative;display:flex;justify-content:space-between;align-items:center;font:750 12.5px/1 "RF";letter-spacing:.16em;text-transform:uppercase;opacity:.8}
+.one .glyph{position:absolute;right:24px;top:62px;width:96px;height:96px;opacity:.95}
+.s360 .one .lb{font-size:54px}.s360 .one .glyph{width:64px;height:64px;top:46px}
+.y{--c:var(--yel);--on:#0F0F0F}
+.r{--c:var(--red);--on:#fff}
+.k{--c:var(--blk);--on:var(--bg)}
+.b{--c:var(--blu);--on:#fff}
+.g{--c:var(--grn);--on:#fff}
+.dk .k{--on:#0F0F0F}
+.fillv{position:absolute;left:0;right:0;bottom:0;height:calc(var(--p) * 100%);background:rgba(0,0,0,.28)}
+.fillv::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:rgba(255,255,255,.7)}
+.fillh{position:absolute;top:0;bottom:0;left:0;width:calc(var(--p) * 100%);background:rgba(255,255,255,.16)}
+.dk .fillh{background:rgba(0,0,0,.12)}
+.tm{position:relative;font:250 150px/.8 "RF";font-stretch:40%;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tm small{font:650 18px/1 "RF";font-stretch:100%;letter-spacing:.04em;margin-left:6px;opacity:.85}
+.s360 .tm{font-size:110px}
+.vu{position:relative;display:flex;gap:4px;height:54px;align-items:flex-end}
+.vu i{flex:1;height:calc(var(--v,var(--h)) * 100%);min-height:4px;border-radius:3px;background:currentColor;opacity:.9}
+.wave{display:flex;align-items:center;gap:3px;height:100%;position:relative}
+.wave i{flex:1;height:calc(var(--h) * 100%);min-height:4px;border-radius:2px;background:currentColor;opacity:.35}
+.wave i.on{opacity:1}
+.big-p{position:relative;font:850 44px/1 "RF";font-stretch:60%;font-variant-numeric:tabular-nums}
+
+/* split verdict (the only time the button splits: a yes/no question) */
+.split{flex:none;height:var(--bh,52%);display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.split .one{height:auto}
+.split .one .lb{font-size:76px}
+.s360 .split .one .lb{font-size:58px}
+
+/* long-press menu */
+.scrim{position:absolute;inset:0;background:rgba(15,15,15,.55);z-index:20;display:flex;flex-direction:column;justify-content:flex-end;padding:0 14px 34px}
+.menu{background:var(--bg);border-radius:36px;padding:12px;display:grid;gap:6px;box-shadow:0 30px 60px -20px rgba(0,0,0,.6)}
+.menu h5{font:700 12px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:var(--mute);padding:12px 14px 6px}
+.mi{height:64px;border-radius:22px;display:flex;align-items:center;gap:14px;padding:0 18px;font:750 18px/1 "RF";color:var(--ink);text-align:left}
+.mi svg{width:22px;height:22px;flex:none}
+.mi small{margin-left:auto;font:600 12.5px/1 "RF";color:var(--mute)}
+.mi.hl{background:var(--yel);color:#0F0F0F}
+.mi.off{color:var(--mute)}
+.mi.dn{color:var(--red)}
+.press{position:absolute;width:96px;height:96px;border-radius:50%;transform:translate(-50%,-50%);border:3px solid #fff;box-shadow:0 0 0 14px rgba(255,255,255,.2);z-index:21}
+
+/* landscape */
+.land .scr{flex-direction:row;gap:22px;padding:18px 54px 20px}
+.land .top{flex:1;padding-bottom:4px}
+.land .one{height:auto;width:380px}
+
+/* state machine diagram */
+.sm{display:grid;gap:6px;margin:4px 0 14px}
+.sm div{display:flex;align-items:center;gap:10px;font-size:13.5px;line-height:1.3;color:#36323f}
+.sm i{flex:none;width:118px;height:34px;border-radius:12px;display:grid;place-items:center;font:850 13px/1 "RF";font-style:normal;letter-spacing:.06em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-rev" viewBox="0 0 24 24"><path d="M11.5 6.2v11.6L3 12zM21 6.2v11.6L12.5 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.8v14.4L19 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.6" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2.2"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7 4.5 11.5 9 16M4.5 11.5H15a4.5 4.5 0 0 1 0 9h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5v.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-new" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="8.5" y="3" width="7" height="12" rx="3.5" fill="currentColor"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="doc">
+  <header class="doc-head">
+    <div>
+      <div class="kicker">Reverseur · mockup v3 · concetto 05</div>
+      <h1>Uno</h1>
+      <p class="pitch">Un pulsante. Una parola gigante che dice cosa fare. Il pulsante cambia nome e colore a ogni passo e non si sposta mai di un pixel.</p>
+      <div class="metrics">
+        <div><b>7</b><em>tap per round</em></div>
+        <div><b>0 px</b><em>movimento</em></div>
+        <div><b>346×410</b><em>bersaglio</em></div>
+        <div><b>1</b><em>menu</em></div>
+      </div>
+    </div>
+    <div>
+      <h3>Concetto</h3>
+      <p>Una macchina a stati resa visibile. In alto una sola parola in Roboto Flex compresso al massimo (wdth 28, peso 900), adattata alla larghezza: <strong>PARLA. ASCOLTA. IMITA. INDOVINA.</strong> In basso <strong>un unico pulsante</strong>, grande quanto metà dello schermo. Il colore dice il tipo di azione: <strong>giallo</strong> = registra, <strong>rosso</strong> = stop, <strong>nero</strong> = ascolta, <strong>blu</strong> = rivela (tieni premuto), <strong>verde</strong> = avanti. Tutto il resto (riascolta, rifai, nuova partita) sta in <strong>un menu</strong> che si apre tenendo premuta la parola in alto.</p>
+    </div>
+    <div>
+      <h3>Flusso (7 tap, sempre nello stesso punto)</h3>
+      <ol>
+        <li>REGISTRA (giallo) → STOP (rosso, con il timer gigante dentro).</li>
+        <li>ASCOLTA ◀◀ (nero): B sente la parola al contrario. Il riempimento mostra l'avanzamento.</li>
+        <li>IMITA (giallo) → STOP. L'imitazione al contrario parte da sola.</li>
+        <li>RIVELA (blu, tieni premuto 600 ms): il riempimento sale dal basso.</li>
+        <li>INDOVINATA? È l'unico momento in cui il pulsante si divide in due, SÌ / NO. Poi «ROUND 4 →».</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Perché il layout è ottimale</h3>
+      <ul>
+        <li><strong>Movimento del pollice: zero.</strong> Il comando è sempre lo stesso rettangolo nella metà bassa. Fitts al minimo e memoria muscolare immediata.</li>
+        <li>Non ci sono scelte da fare: l'app fa sempre la cosa giusta dopo (per esempio suona da sola l'imitazione al contrario). Per questo bastano 7 tap invece di 9.</li>
+        <li>Lo stato si legge da 2 metri: una parola alta 100–150 px e un colore.</li>
+        <li>Lo spoiler è un colore diverso (blu) e un gesto diverso (tenere premuto). Il menu è dall'altra parte dello schermo, quindi non si apre per sbaglio.</li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="row">
+    <div class="shot"><div class="cap"><b>a</b>Inizio round <span>· 390×844 chiaro · REGISTRA</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="meta"><span>Round 3 · A</span><b>4—2</b></div>
+        <div class="top"><div class="lp"><i></i>Tieni premuta la parola: menu</div>
+          <span class="fit">A, parla.</span>
+          <p class="say">Una parola segreta, massimo 10 secondi. <b>B si tappa le orecchie.</b></p></div>
+        <button class="one y"><span class="tag"><span>tocca</span><span>1 / 7</span></span><svg class="glyph" viewBox="0 0 24 24"><use href="#i-mic"/></svg><span class="lb">Registra</span></button>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>b</b>A registra <span>· STOP, il timer è dentro il pulsante</span></div>
+      <div class="phone lt live"><div class="scr">
+        <div class="meta"><span>Round 3 · A</span><b style="color:var(--red)">● rec</b></div>
+        <div class="top">
+          <span class="fit">Parla.</span>
+          <p class="say">Tocca il pulsante quando hai finito. <b>Si ferma da solo a 10 s.</b></p></div>
+        <button class="one r" style="--p:.34"><span class="fillv"></span><span class="tag"><span>registro</span><span>2 / 7</span></span>
+          <span class="tm"><span data-timer="3.4">03,4</span><small>/10 s</small></span>
+          <span class="vu" data-wave="24" data-seed="7" data-vu></span>
+          <span class="lb" style="font-size:56px">■ Stop</span></button>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>c</b>B ascolta al contrario <span>· ASCOLTA in riproduzione</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="meta"><span>Round 3 · B</span><b>4—2</b></div>
+        <div class="top">
+          <span class="fit">B, ascolta.</span>
+          <p class="say">È la parola di A <b>al contrario</b>. Dopo, il pulsante diventa IMITA.</p></div>
+        <button class="one k" style="--p:.55"><span class="fillh"></span><span class="tag"><span>in riproduzione · 2×</span><span>3 / 7</span></span>
+          <span style="position:relative;height:110px;display:block"><span class="wave" data-wave="30" data-seed="3" data-mirror data-played=".55"></span></span>
+          <span class="lb">◀◀ Ascolta</span></button>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>d</b>Indovina e rivela <span>· RIVELA, tieni premuto · 62%</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="meta"><span>Round 3 · B</span><b>4—2</b></div>
+        <div class="top">
+          <span class="fit">Cos'è?</span>
+          <p class="say">Hai sentito la tua imitazione al contrario. <b>Dilla ad alta voce</b>, poi tieni premuto.</p></div>
+        <button class="one b" style="--p:.62"><span class="fillv"></span><span class="tag"><span>tieni premuto · 0,6 s</span><span>6 / 7</span></span>
+          <span class="big-p">62%</span>
+          <span class="lb"><svg style="width:46px;height:46px;display:inline-block;vertical-align:-2px;margin-right:6px"><use href="#i-lock"/></svg>Rivela</span></button>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>e</b>Esito e punteggio <span>· AVANTI, ruoli scambiati</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="meta"><span>Round 3 · fatto</span><b style="color:var(--grn)">+1</b></div>
+        <div class="top">
+          <span class="fit">5—2</span>
+          <p class="say"><b>Indovinata.</b> 5 indovinate, 2 mancate. Riascolta l'originale dal menu.</p></div>
+        <button class="one g"><span class="tag"><span>round 4 · registra B</span><span>7 / 7</span></span><svg class="glyph" viewBox="0 0 24 24"><use href="#i-arrow"/></svg><span class="lb">Avanti</span></button>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="shot"><div class="cap"><b>c</b>B imita <span>· scuro · STOP</span></div>
+      <div class="phone dk live"><div class="scr">
+        <div class="meta"><span>Round 3 · B</span><b style="color:var(--red)">● rec</b></div>
+        <div class="top">
+          <span class="fit">Imita.</span>
+          <p class="say">Rifai i suoni che hai sentito. <b>Allo stop suona da sola al contrario.</b></p></div>
+        <button class="one r" style="--p:.21"><span class="fillv"></span><span class="tag"><span>registro</span><span>5 / 7</span></span>
+          <span class="tm"><span data-timer="2.1">02,1</span><small>/10 s</small></span>
+          <span class="vu" data-wave="24" data-seed="19" data-vu></span>
+          <span class="lb" style="font-size:56px">■ Stop</span></button>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>+</b>Menu <span>· tieni premuta la parola in alto</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="meta"><span>Round 3 · B</span><b>4—2</b></div>
+        <div class="top"><span class="fit">Imita.</span><p class="say">Rifai i suoni che hai sentito.</p></div>
+        <button class="one y"><span class="tag"><span>tocca</span><span>4 / 7</span></span><svg class="glyph" viewBox="0 0 24 24"><use href="#i-mic"/></svg><span class="lb">Imita</span></button>
+        <div class="press" style="left:120px;top:250px"></div>
+        <div class="scrim">
+          <div class="menu">
+            <h5>Altre azioni</h5>
+            <button class="mi hl"><svg><use href="#i-rev"/></svg>Riascolta al contrario<small>2×</small></button>
+            <button class="mi off"><svg><use href="#i-lock"/></svg>Originale di A<small>dopo la rivelazione</small></button>
+            <button class="mi"><svg><use href="#i-undo"/></svg>Rifai la parola (A)</button>
+            <button class="mi"><svg><use href="#i-q"/></svg>Regole</button>
+            <button class="mi dn"><svg><use href="#i-new"/></svg>Nuova partita<small>azzera 4—2</small></button>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>e</b>Verdetto <span>· 360×640 · l'unico pulsante diviso</span></div>
+      <div class="phone lt s360"><div class="scr">
+        <div class="meta"><span>Round 3 · rivelato</span><b>4—2</b></div>
+        <div class="top"><span class="fit">Giusta?</span><p class="say" style="font-size:15px">L'originale di A sta suonando.</p></div>
+        <div class="split" style="--bh:48%"><button class="one g"><span class="tag"><span>indovinata</span></span><span class="lb">Sì</span></button><button class="one k"><span class="tag"><span>mancata</span></span><span class="lb">No</span></button></div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>+</b>Orizzontale e desktop <span>· 844×390 · parola a sinistra, pulsante a destra</span></div>
+      <div class="phone lt land"><div class="scr">
+        <div class="top">
+          <div class="meta" style="margin-bottom:auto"><span>Round 3 · B</span><b>4—2</b></div>
+          <span class="fit">Cos'è?</span>
+          <p class="say">Dilla ad alta voce, poi tieni premuto. Su desktop: <b>tieni premuto Spazio</b>.</p></div>
+        <button class="one b" style="--p:.62"><span class="fillv"></span><span class="tag"><span>tieni premuto · 0,6 s</span><span>6 / 7</span></span>
+          <span class="big-p">62%</span>
+          <span class="lb"><svg style="width:46px;height:46px;display:inline-block;vertical-align:-2px;margin-right:6px"><use href="#i-lock"/></svg>Rivela</span></button>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="note">
+      <h4>La macchina a stati</h4>
+      <div class="sm">
+        <div><i style="background:#FFD21F">Registra</i>A: inizia a registrare</div>
+        <div><i style="background:#D8211A;color:#fff">Stop</i>timer e VU dentro il pulsante</div>
+        <div><i style="background:#0F0F0F;color:#F4F1EA">◀◀ Ascolta</i>B: parola di A al contrario</div>
+        <div><i style="background:#FFD21F">Imita</i>B: registra l'imitazione</div>
+        <div><i style="background:#D8211A;color:#fff">Stop</i>poi suona da sola al contrario</div>
+        <div><i style="background:#1E3FD8;color:#fff">Rivela</i>tieni premuto 600 ms</div>
+        <div><i style="background:linear-gradient(90deg,#0A7B47 50%,#0F0F0F 50%);color:#fff">Sì · No</i>verdetto</div>
+        <div><i style="background:#0A7B47;color:#fff">Avanti</i>round dopo, ruoli scambiati</div>
+      </div>
+      <p>Ogni stato è un'etichetta e un colore: in <code>main</code> diventa una tabella <code>fase → {etichetta, colore, azione}</code>. È il codice di interfaccia più piccolo possibile.</p>
+    </div>
+    <div class="note">
+      <h4>Mappa del pollice</h4>
+      <div class="tzwrap">
+        <div class="tz">
+          <i class="o" style="left:8px;right:8px;top:30px;height:90px">parola (tieni = menu)</i>
+          <i style="left:8px;right:8px;bottom:8px;height:140px;border-radius:16px;background:#FFD21F;color:#0F0F0F">UN pulsante</i>
+        </div>
+        <div class="tzleg">
+          <p>Il pulsante copre la zona verde e quasi tutta la gialla: <strong>346×410 px</strong> a 390×844 e 328×280 a 360×640. Non si può mancare, nemmeno con il pollice sinistro.</p>
+          <p>Il menu è in alto, nella zona difficile, <strong>apposta</strong>: si usa di rado e non deve aprirsi per sbaglio.</p>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <h4>Movimento</h4>
+      <ul>
+        <li><strong>Cambio di stato:</strong> la parola in alto scorre verso l'alto e la nuova entra dal basso (180 ms, una «tendina» tipografica). Il colore del pulsante cambia con una dissolvenza di 120 ms, mentre forma e posizione restano ferme: è proprio questa immobilità a far funzionare la memoria muscolare.</li>
+        <li><strong>Pressione:</strong> scala a 0,98 al tocco, e una vibrazione da 8 ms a ogni cambio di stato.</li>
+        <li><strong>Rivela:</strong> il riempimento scuro sale dal basso in 600 ms. Se lasci prima, ricade e la parola in alto fa lo shake: «TIENI!».</li>
+        <li><strong>Esito:</strong> il punteggio sostituisce la parola con un conteggio rapido (4—2 → 5—2).</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h4>Colore, tipo, accessibilità</h4>
+      <div class="sw"><i style="background:#F4F1EA" data-n="carta"></i><i style="background:#FFD21F" data-n="registra 14:1"></i><i style="background:#D8211A;color:#fff" data-n="stop 5,3:1"></i><i style="background:#0F0F0F;color:#F4F1EA" data-n="ascolta 17:1"></i><i style="background:#1E3FD8;color:#fff" data-n="rivela 7,2:1"></i><i style="background:#0A7B47;color:#fff" data-n="avanti 5,6:1"></i></div>
+      <p>La parola in alto si adatta alla larghezza con <code>wdth</code> tra 25 e 60, così «ASCOLTA.» e «A, PARLA.» riempiono la riga senza andare a capo. Il pulsante ha <code>aria-live</code> sull'etichetta, e lo screen reader annuncia «Registra, 1 di 7». Il menu si apre anche da tastiera con il tasto Menu o Maiusc+F10.</p>
+    </div>
+  </section>
+</div>
+<script>
+/* ---------- Presentation shell helpers (shared by v3 mockups 01-05) ---------- */
+(function(){
+  const LIVE = !navigator.webdriver; // static, deterministic frames when screenshotted
+  window.LIVE = LIVE;
+  const SB = '<span>9:41</span><svg viewBox="0 0 74 14" fill="currentColor" aria-hidden="true">'+
+    '<rect x="0" y="9" width="3.4" height="5" rx="1"/><rect x="5" y="6.5" width="3.4" height="7.5" rx="1"/><rect x="10" y="4" width="3.4" height="10" rx="1"/><rect x="15" y="1" width="3.4" height="13" rx="1"/>'+
+    '<path d="M31 4.2a10 10 0 0 1 13.4 0l-1.6 1.7a7.6 7.6 0 0 0-10.2 0zM33.6 7a6.2 6.2 0 0 1 8.2 0l-1.6 1.7a3.9 3.9 0 0 0-5 0zM37.7 13.2l-2.1-2.3a3 3 0 0 1 4.2 0z"/>'+
+    '<rect x="50.5" y="1.5" width="20" height="11" rx="3.4" fill="none" stroke="currentColor" stroke-opacity=".45"/><rect x="52.5" y="3.5" width="14" height="7" rx="1.8"/><rect x="71.8" y="5" width="1.8" height="4" rx=".9" fill-opacity=".45"/></svg>';
+  document.querySelectorAll('.phone').forEach(p=>{
+    const sb=document.createElement('div');sb.className='sb';sb.innerHTML=SB;p.prepend(sb);
+    const hi=document.createElement('div');hi.className='hi';p.append(hi);
+  });
+  // seeded random
+  function rng(seed){let s=seed*9301+49297;return()=>{s=(s*9301+49297)%233280;return s/233280;};}
+  window.rng=rng;
+  // word-like envelope: a few syllable humps
+  function envelope(n,seed){
+    const r=rng(seed),humps=[];const k=2+Math.floor(r()*2);
+    for(let i=0;i<k;i++)humps.push({c:(i+.5)/k+(r()-.5)*.12,w:.08+r()*.07,a:.6+r()*.4});
+    const out=[];for(let i=0;i<n;i++){const x=i/(n-1);let v=0;humps.forEach(h=>{v+=h.a*Math.exp(-((x-h.c)**2)/(2*h.w*h.w));});
+      v=Math.min(1,v)*(.72+r()*.28);out.push(Math.max(.07,v));}
+    return out;
+  }
+  window.envelope=envelope;
+  // [data-wave="n"] data-seed data-mirror data-played="0..1"
+  document.querySelectorAll('[data-wave]').forEach(el=>{
+    const n=+el.dataset.wave,seed=+(el.dataset.seed||1);let e=envelope(n,seed);
+    if('mirror' in el.dataset)e=e.reverse();
+    const played=+(el.dataset.played||0);
+    el.innerHTML=e.map((v,i)=>`<i style="--h:${v.toFixed(3)}"${i/n<played?' class="on"':''}></i>`).join('');
+  });
+  // [data-radial="n"] radial VU ticks
+  document.querySelectorAll('[data-radial]').forEach(el=>{
+    const n=+el.dataset.radial,r=rng(+(el.dataset.seed||4));let h='';
+    for(let i=0;i<n;i++){const v=.25+.75*Math.abs(Math.sin(i*.55))*r();h+=`<i style="--a:${(i*360/n).toFixed(2)}deg;--v:${v.toFixed(3)}"></i>`;}
+    el.innerHTML=h;
+    if(LIVE){const ticks=[...el.children];setInterval(()=>{const t=performance.now()/1000;ticks.forEach((tk,i)=>{const v=.2+.8*Math.abs(Math.sin(t*3.1+i*.7)*Math.sin(t*1.7+i*.31))*(.6+.4*Math.random());tk.style.setProperty('--v',v.toFixed(3));});},90);}
+  });
+  // generic animated bars [data-vu] children get --v
+  document.querySelectorAll('[data-vu]').forEach(el=>{
+    if(!LIVE)return;const bars=[...el.children];
+    setInterval(()=>{const t=performance.now()/1000;bars.forEach((b,i)=>{const v=.15+.85*Math.abs(Math.sin(t*2.7+i*.9)*Math.cos(t*1.3+i*.4))*(.55+.45*Math.random());b.style.setProperty('--v',v.toFixed(3));});},110);
+  });
+  // ticking timers [data-timer="start seconds"]
+  document.querySelectorAll('[data-timer]').forEach(el=>{
+    if(!LIVE)return;let t=+el.dataset.timer;const fmt=v=>{const s=Math.floor(v),d=Math.floor((v-s)*10);return String(s).padStart(2,'0')+','+d;};
+    setInterval(()=>{t+=.1;if(t>=10)t=0;el.textContent=fmt(t);},100);
+  });
+  /* hold-to-confirm demo, same contract as holdButton(el,{ms,onConfirm}) */
+  window.hold=function(el,ms,onConfirm){
+    let t0=0,raf=0,on=false;const set=p=>el.style.setProperty('--p',p.toFixed(3));
+    const start=e=>{if(el.classList.contains('done'))return;if(e.pointerId!=null)el.setPointerCapture(e.pointerId);on=true;t0=performance.now();el.classList.add('holding');
+      const step=now=>{if(!on)return;const p=Math.min(1,(now-t0)/ms);set(p);if(p<1)raf=requestAnimationFrame(step);else{on=false;el.classList.remove('holding');el.classList.add('done');navigator.vibrate&&navigator.vibrate(15);onConfirm&&onConfirm(el);setTimeout(()=>{el.classList.remove('done');set(0);},2600);}};raf=requestAnimationFrame(step);};
+    const stop=()=>{if(!on)return;on=false;cancelAnimationFrame(raf);el.classList.remove('holding');set(0);el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake','hint');setTimeout(()=>el.classList.remove('hint'),1600);};
+    el.addEventListener('pointerdown',start);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,stop));
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+    el.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();start({});}});
+    el.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')stop();});
+  };
+})();
+
+// fit each .fit headline to its container width by tuning size (font-stretch stays condensed)
+function fitAll(){document.querySelectorAll('.fit').forEach(el=>{const w=el.parentElement.clientWidth;el.style.fontSize='100px';
+  const r=el.getBoundingClientRect().width;el.style.fontSize=Math.min(+(el.dataset.max||200),Math.floor(100*w/r*.99))+'px';});}
+fitAll();document.fonts.ready.then(fitAll);
+</script>
+</body>
+</html>

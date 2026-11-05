@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverseur v2 · D · Mazzo</title>
+<style>
+/* ---------- Presentation shell (shared by all v2 mockups) ---------- */
+@font-face{
+  font-family:"RF";
+  src:url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2-variations"),
+      url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2");
+  font-weight:100 1000;font-stretch:25% 151%;font-display:block;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#e7e5ec;color:#17141f;font-family:"RF",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{padding:64px 64px 80px;width:max-content;min-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+svg{display:block}
+
+.doc{width:2110px}
+.doc-head{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:48px;margin-bottom:60px;align-items:start}
+.doc-head .kicker{font:650 13px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.doc-head h1{font-size:76px;line-height:.92;font-weight:880;letter-spacing:-.025em;margin-bottom:18px}
+.doc-head .pitch{font-size:21px;line-height:1.4;color:#2c2838;font-weight:450;max-width:34ch}
+.doc-head h3{font:700 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin:6px 0 14px}
+.doc-head p,.doc-head li{font-size:16px;line-height:1.55;color:#36323f}
+.doc-head ol,.doc-head ul{padding-left:20px;display:grid;gap:6px}
+.doc-head strong{font-weight:700;color:#17141f}
+
+.row{display:flex;gap:40px;align-items:flex-start;margin-bottom:64px}
+.shot{display:flex;flex-direction:column;gap:18px;flex:none}
+.cap{display:flex;align-items:baseline;gap:10px;font:600 15px/1.2 "RF";color:#3d3948;padding-left:6px}
+.cap b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#17141f;color:#fff;font:750 13px/1 "RF"}
+.cap span{color:#7a7588;font-weight:500}
+
+.phone{width:390px;height:844px;border-radius:54px;position:relative;overflow:hidden;flex:none;isolation:isolate;container-type:size;
+  box-shadow:0 0 0 10px #121018,0 0 0 11.5px #3b3846,0 40px 70px -28px rgba(25,12,60,.55);background:var(--bg);color:var(--ink)}
+.phone.s360{width:360px;height:640px;border-radius:40px}
+.sb{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;font:650 16px/1 "RF";z-index:60;pointer-events:none;color:var(--sb,var(--ink))}
+.sb svg{height:13px;width:auto}
+.s360 .sb{height:30px;font-size:13px;padding:2px 20px 0 22px}
+.hi{position:absolute;bottom:8px;left:50%;width:136px;height:5px;border-radius:3px;background:var(--sb,var(--ink));opacity:.8;transform:translateX(-50%);z-index:60;pointer-events:none}
+.s360 .hi{width:100px;height:4px;bottom:6px}
+.scr{position:absolute;inset:0;padding:50px 0 30px;display:flex;flex-direction:column}
+.s360 .scr{padding:30px 0 18px}
+
+.note{width:390px;flex:none;background:#fff;border-radius:28px;padding:30px 30px 28px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 20px 40px -30px rgba(25,12,60,.35)}
+.note h4{font:750 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.note h4+*{margin-top:0}
+.note p,.note li{font-size:15px;line-height:1.5;color:#36323f}
+.note ul{padding-left:18px;display:grid;gap:8px}
+.note .sw{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 22px}
+.note .sw i{display:block;height:64px;border-radius:14px;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.note .sw i::after{content:attr(data-n);position:absolute;left:8px;bottom:6px;font:650 10.5px/1 "RF";font-style:normal;letter-spacing:.02em}
+.note .type{margin:0 0 22px;display:grid;gap:6px}
+.note + .note{margin-left:0}
+.stack{display:flex;flex-direction:column;gap:24px;flex:none}
+
+/* shake used by every hold demo */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .38s cubic-bezier(.36,.07,.19,.97)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+
+/* ================= Concept D · Mazzo ================= */
+.lt{--bg:#ffe27a;--ink:#1d1838;--ink2:#4d4566;--card:#fffaf0;--edge:#1d1838;--a:#ff5b3a;--b:#19b3a3;--back:#5b3df5;--back2:#7a62ff;--ok:#0f7a48;--okbg:#b8f0cf;--ko:#c02a44;--kobg:#ffd0d6;--soft:#fff1bf}
+.dk{--bg:#191530;--ink:#fff6e0;--ink2:#c9bfdc;--card:#29234d;--edge:#efe4c6;--a:#ff6f50;--b:#2cc7b6;--back:#6d52ff;--back2:#8a74ff;--ok:#5fe0a0;--okbg:#103a27;--ko:#ff8597;--kobg:#3d1622;--soft:#221d42}
+.lt .scr{background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.5) 0 2px,transparent 3px) 0 0/26px 26px,var(--bg)}
+.dk .scr{background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.05) 0 2px,transparent 3px) 0 0/26px 26px,var(--bg)}
+
+.board{display:flex;align-items:center;gap:8px;padding:8px 10px 0 16px;flex:none;height:68px}
+.pl{display:flex;align-items:center;gap:8px;height:52px;padding:0 14px 0 6px;border-radius:26px;background:var(--card);box-shadow:inset 0 0 0 2.5px var(--edge);font:800 16px/1 "RF";font-variation-settings:"wdth" 110}
+.pl svg{width:40px;height:40px}
+.pl b{font:900 22px/1 "RF";font-variation-settings:"wdth" 100;font-variant-numeric:tabular-nums;margin-left:2px}
+.pl.turn{box-shadow:inset 0 0 0 2.5px var(--edge),3px 3px 0 var(--edge)}
+.board .rd{margin-left:auto;font:850 13px/1 "RF";font-variation-settings:"wdth" 125;letter-spacing:.08em;text-transform:uppercase}
+.icon-btn{width:56px;height:56px;display:grid;place-items:center;color:var(--ink)}
+.icon-btn svg{width:24px;height:24px}
+
+.table{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 22px;min-height:0}
+.cardx{position:relative;width:100%;border-radius:28px;background:var(--card);box-shadow:inset 0 0 0 3px var(--edge),7px 7px 0 var(--edge);padding:20px 20px 22px;color:var(--ink)}
+.cardx.a{background:var(--a)}
+.cardx.b{background:var(--b)}
+.cardx .corner{position:absolute;top:16px;right:18px;font:900 28px/1 "RF";font-variation-settings:"wdth" 60}
+.ghostcard{position:absolute;left:22px;right:22px;border-radius:28px;background:var(--card);box-shadow:inset 0 0 0 3px var(--edge)}
+.kick{font:850 13px/1 "RF";font-variation-settings:"wdth" 125;letter-spacing:.12em;text-transform:uppercase}
+.big{font:900 46px/.95 "RF";font-variation-settings:"wdth" 120,"opsz" 144;letter-spacing:-.02em;margin-top:10px;text-wrap:balance}
+.txt{font:550 16px/1.4 "RF";margin-top:10px;text-wrap:pretty}
+.ava{width:96px;height:96px}
+.speech{display:flex;align-items:center;gap:6px;height:64px}
+.speech i{width:9px;border-radius:5px;background:var(--ink);height:calc(10px + 54px*var(--v,.5))}
+.timer{font:900 64px/1 "RF";font-variation-settings:"wdth" 70;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.timer small{font:800 18px/1 "RF";font-variation-settings:"wdth" 100;margin-left:6px;opacity:.75}
+.bar10{height:14px;border-radius:7px;box-shadow:inset 0 0 0 2.5px var(--edge);background:var(--card);overflow:hidden;margin-top:12px}
+.bar10 span{display:block;height:100%;width:var(--w);background:var(--edge)}
+
+.thumb{flex:none;padding:16px 20px 16px;display:flex;flex-direction:column;gap:10px}
+.btn{height:76px;border-radius:24px;background:var(--card);color:var(--ink);box-shadow:inset 0 0 0 3px var(--edge),5px 5px 0 var(--edge);display:flex;align-items:center;justify-content:center;gap:12px;font:900 21px/1 "RF";font-variation-settings:"wdth" 112;position:relative;overflow:hidden;--p:0}
+.btn svg{width:26px;height:26px}
+.btn.ink{background:var(--edge);color:var(--bg)}
+.dk .btn.ink{background:var(--ink);color:var(--bg)}
+.dk .btn.teal,.dk .cardx.b,.dk .cardx.a{color:#130f26}
+.dk .back .q{-webkit-text-stroke:3px #130f26;text-shadow:6px 6px 0 #130f26}
+.btn.red{background:var(--a)}
+.btn.teal{background:var(--b)}
+.btn.small{height:58px;font-size:17px;border-radius:20px}
+.btn:active{transform:translate(3px,3px);box-shadow:inset 0 0 0 3px var(--edge),2px 2px 0 var(--edge)}
+.row2{display:flex;gap:10px}
+.row2 .btn{flex:1}
+.btn.hold .fill{position:absolute;inset:0;background:repeating-linear-gradient(-45deg,var(--back) 0 14px,var(--back2) 14px 28px);transform-origin:0 50%;transform:scaleX(var(--p))}
+.btn.hold>span:not(.fill){position:relative;display:flex;align-items:center;gap:12px}
+.btn.hold .on{position:absolute!important;inset:0;justify-content:center;color:#fff;clip-path:inset(0 calc(100% - 100%*var(--p)) 0 0)}
+.btn.hold.done .fill{background:var(--ok)}
+
+/* face-down card */
+.back{position:relative;width:100%;aspect-ratio:1/1.08;border-radius:28px;background:var(--back);box-shadow:inset 0 0 0 3px var(--edge),7px 7px 0 var(--edge);overflow:hidden;transform-origin:50% 100%;transition:transform .2s}
+.back::before{content:"";position:absolute;inset:14px;border-radius:18px;border:3px dashed rgba(255,255,255,.5);background:repeating-linear-gradient(45deg,transparent 0 16px,rgba(255,255,255,.08) 16px 32px)}
+.back .q{position:absolute;inset:0;display:grid;place-items:center;font:900 168px/1 "RF";font-variation-settings:"wdth" 60,"opsz" 144;color:#fff;text-shadow:6px 6px 0 var(--edge);-webkit-text-stroke:3px var(--edge)}
+.back .tag{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);background:var(--card);color:var(--ink);box-shadow:inset 0 0 0 2.5px var(--edge);border-radius:14px;padding:9px 14px;font:850 13px/1 "RF";font-variation-settings:"wdth" 120;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.lift{transform:perspective(900px) rotateX(calc(var(--p)*18deg)) translateY(calc(var(--p)*-14px))}
+
+.chiprow{display:flex;gap:10px;align-items:center;margin-top:14px}
+.playchip{height:56px;padding:0 18px 0 8px;border-radius:28px;background:var(--card);box-shadow:inset 0 0 0 2.5px var(--edge);display:inline-flex;align-items:center;gap:10px;font:850 15px/1 "RF";color:var(--ink)}
+.playchip i{width:42px;height:42px;border-radius:50%;background:var(--edge);color:var(--card);display:grid;place-items:center}
+.playchip i svg{width:18px;height:18px}
+.stamp{position:absolute;top:-22px;right:-8px;transform:rotate(9deg);background:var(--okbg);color:var(--ok);box-shadow:inset 0 0 0 3px var(--ok);border-radius:16px;padding:10px 14px;font:900 22px/1 "RF";font-variation-settings:"wdth" 120;letter-spacing:.02em;text-transform:uppercase}
+.dk .stamp{color:var(--ok)}
+.score2{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-top:22px}
+.score2 div{border-radius:22px;background:var(--card);box-shadow:inset 0 0 0 2.5px var(--edge);padding:10px 12px;display:flex;align-items:center;gap:10px}
+.score2 svg{width:46px;height:46px;flex:none}
+.score2 b{font:900 36px/1 "RF";font-variation-settings:"wdth" 80;font-variant-numeric:tabular-nums}
+.score2 span{font:750 12px/1.2 "RF";letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+.score2 .up b{color:var(--ok)}
+.plus{font:900 14px/1 "RF";background:var(--okbg);color:var(--ok);padding:4px 7px;border-radius:8px;margin-left:4px;vertical-align:8px}
+
+@container (max-height:700px){
+  .board{height:56px;padding-top:2px}
+  .pl{height:46px}.pl svg{width:34px;height:34px}
+  .big{font-size:34px}
+  .timer{font-size:48px}
+  .ava{width:72px;height:72px}
+  .btn{height:64px;font-size:19px}
+  .thumb{padding:12px 18px 10px}
+  .hide-s{display:none!important}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ava-a" viewBox="0 0 96 96"><path d="M48 6c24 0 42 14 42 40 0 28-18 44-42 44S6 74 6 46C6 20 24 6 48 6z" fill="#ff5b3a" stroke="#1d1838" stroke-width="4"/><circle cx="34" cy="40" r="6" fill="#1d1838"/><circle cx="62" cy="40" r="6" fill="#1d1838"/><circle cx="36" cy="38" r="2" fill="#fff"/><circle cx="64" cy="38" r="2" fill="#fff"/><ellipse cx="48" cy="64" rx="13" ry="10" fill="#1d1838"/><ellipse cx="48" cy="69" rx="7" ry="4" fill="#ff9c86"/></symbol>
+    <symbol id="ava-b" viewBox="0 0 96 96"><rect x="8" y="8" width="80" height="80" rx="30" fill="#19b3a3" stroke="#1d1838" stroke-width="4"/><circle cx="34" cy="42" r="6" fill="#1d1838"/><circle cx="62" cy="42" r="6" fill="#1d1838"/><circle cx="36" cy="40" r="2" fill="#fff"/><circle cx="64" cy="40" r="2" fill="#fff"/><path d="M36 62q12 10 24 0" fill="none" stroke="#1d1838" stroke-width="5" stroke-linecap="round"/></symbol>
+    <symbol id="ava-b-talk" viewBox="0 0 96 96"><rect x="8" y="8" width="80" height="80" rx="30" fill="#19b3a3" stroke="#1d1838" stroke-width="4"/><circle cx="34" cy="40" r="6" fill="#1d1838"/><circle cx="62" cy="40" r="6" fill="#1d1838"/><circle cx="36" cy="38" r="2" fill="#fff"/><circle cx="64" cy="38" r="2" fill="#fff"/><ellipse cx="48" cy="64" rx="11" ry="9" fill="#1d1838"/></symbol>
+    <symbol id="ava-a-calm" viewBox="0 0 96 96"><path d="M48 6c24 0 42 14 42 40 0 28-18 44-42 44S6 74 6 46C6 20 24 6 48 6z" fill="#ff5b3a" stroke="#1d1838" stroke-width="4"/><circle cx="34" cy="42" r="6" fill="#1d1838"/><circle cx="62" cy="42" r="6" fill="#1d1838"/><circle cx="36" cy="40" r="2" fill="#fff"/><circle cx="64" cy="40" r="2" fill="#fff"/><path d="M38 62q10 8 20 0" fill="none" stroke="#1d1838" stroke-width="5" stroke-linecap="round"/></symbol>
+    <symbol id="d-rev" viewBox="0 0 24 24"><path d="M11.5 6.2v11.6L3 12zM21 6.2v11.6L12.5 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="d-play" viewBox="0 0 24 24"><path d="M7 4.8v14.4L19 12z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="d-stop" viewBox="0 0 24 24"><rect x="5.5" y="5.5" width="13" height="13" rx="2.5" fill="currentColor"/></symbol>
+    <symbol id="d-mic" viewBox="0 0 24 24"><rect x="8.5" y="3" width="7" height="12" rx="3.5" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="d-flip" viewBox="0 0 24 24"><path d="M4 9a8 8 0 0 1 14-3.5M20 4v4h-4M20 15a8 8 0 0 1-14 3.5M4 20v-4h4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="d-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+    <symbol id="d-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="d-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></symbol>
+    <symbol id="d-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="doc">
+  <header class="doc-head">
+    <div>
+      <div class="kicker">Reverseur · mockup v2 · concetto D</div>
+      <h1>Mazzo</h1>
+      <p class="pitch">Un gioco da tavolo in tasca: ogni round è una carta, si gira tenendola premuta, e il punteggio è una sfida tra due personaggi.</p>
+    </div>
+    <div>
+      <h3>Concetto</h3>
+      <p>Uno stile illustrato e "neo-brutalista": contorni spessi, ombre piene, colori da festa. <strong>A è il pomodoro, B è il menta</strong>: due avatar che cambiano espressione mentre parlano. Il segreto è una <strong>carta coperta</strong>: per girarla la tieni premuta, e la carta si solleva man mano che il dito resta giù. Il punteggio è <strong>competitivo per giocatore</strong> (chi indovina fa punto) e la partita dura 8 round.</p>
+    </div>
+    <div>
+      <h3>Flusso</h3>
+      <ol>
+        <li>Tavolo: tabellone A vs B, mazzo, "Pesca la carta".</li>
+        <li>Carta A (rossa): A parla, la bocca segue il VU.</li>
+        <li>Carta B (menta): ascolta A al contrario, poi registra.</li>
+        <li>Carta coperta: ascolta l'imitazione al contrario e <strong>tieni premuto per girare</strong>.</li>
+        <li>Carta girata: timbro "Indovinata", +1 sul tabellone.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Perché è meglio</h3>
+      <ul>
+        <li>Il round e il punteggio danno al gioco <strong>un inizio e una fine</strong>: si gioca a partite, non a tentativi sparsi.</li>
+        <li>La carta coperta è una metafora universale di "segreto", e tenerla premuta per girarla è naturale.</li>
+        <li>È il più caldo e infantile-friendly. Funziona con bambini e famiglie.</li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="row">
+    <!-- (a) -->
+    <div class="shot"><div class="cap"><b>a</b>Tavolo e round <span>· 390×844 chiaro</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="board"><div class="pl turn"><svg><use href="#ava-a-calm"/></svg>A <b>3</b></div><div class="pl"><svg><use href="#ava-b"/></svg>B <b>2</b></div><button class="icon-btn" style="margin-left:auto" aria-label="Menu"><svg><use href="#d-menu"/></svg></button></div>
+        <div class="table">
+          <div class="ghostcard" style="top:calc(50% - 205px);height:400px;transform:rotate(-6deg);background:var(--b)"></div>
+          <div class="ghostcard" style="top:calc(50% - 205px);height:400px;transform:rotate(4deg);background:var(--back)"></div>
+          <div class="cardx" style="height:400px;display:flex;flex-direction:column;transform:rotate(-1deg)">
+            <div class="kick">Round 3 di 8</div>
+            <div class="big">A dice,<br>B indovina.</div>
+            <div class="txt">A registra una parola segreta. B la sente solo al contrario e prova a rifarla.</div>
+            <div style="margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between">
+              <svg class="ava"><use href="#ava-a-calm"/></svg>
+              <svg width="54" height="30" viewBox="0 0 54 30" aria-hidden="true"><path d="M4 15h40M32 4l12 11-12 11" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg class="ava"><use href="#ava-b"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="thumb">
+          <button class="btn ink">Pesca la carta <svg><use href="#d-arrow"/></svg></button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (b) -->
+    <div class="shot"><div class="cap"><b>b</b>Carta A: registra</div>
+      <div class="phone lt"><div class="scr">
+        <div class="board"><div class="pl turn"><svg><use href="#ava-a"/></svg>A <b>3</b></div><div class="pl"><svg><use href="#ava-b"/></svg>B <b>2</b></div><button class="icon-btn" style="margin-left:auto" aria-label="Menu"><svg><use href="#d-menu"/></svg></button></div>
+        <div class="table">
+          <div class="cardx a" style="transform:rotate(1deg)">
+            <span class="corner">A</span>
+            <div class="kick">Tocca ad A</div>
+            <div class="big" style="font-size:40px">Di' la parola segreta!</div>
+            <div class="txt" style="margin-top:8px">B si tappa le orecchie.</div>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:22px">
+              <svg class="ava" style="width:104px;height:104px;flex:none"><use href="#ava-a"/></svg>
+              <div class="speech" data-vu><i style="--v:.3"></i><i style="--v:.7"></i><i style="--v:1"></i><i style="--v:.6"></i><i style="--v:.85"></i><i style="--v:.4"></i><i style="--v:.65"></i><i style="--v:.25"></i><i style="--v:.5"></i></div>
+            </div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:20px"><div class="timer"><span data-timer="3.4">03,4</span><small>s</small></div><div class="kick">max 10 s</div></div>
+            <div class="bar10" style="--w:34%"><span></span></div>
+          </div>
+        </div>
+        <div class="thumb">
+          <button class="btn ink"><svg><use href="#d-stop"/></svg>Fatto, ferma</button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (c) -->
+    <div class="shot"><div class="cap"><b>c</b>Carta B: ascolta al contrario e imita</div>
+      <div class="phone lt"><div class="scr">
+        <div class="board"><div class="pl"><svg><use href="#ava-a-calm"/></svg>A <b>3</b></div><div class="pl turn"><svg><use href="#ava-b-talk"/></svg>B <b>2</b></div><button class="icon-btn" style="margin-left:auto" aria-label="Menu"><svg><use href="#d-menu"/></svg></button></div>
+        <div class="table">
+          <div class="cardx b" style="transform:rotate(-1deg)">
+            <span class="corner">B</span>
+            <div class="kick">Tocca a B</div>
+            <div class="big" style="font-size:40px">Rifai i suoni al contrario!</div>
+            <div class="chiprow"><button class="playchip"><i><svg><use href="#d-rev"/></svg></i>A al contrario</button><span class="kick" style="opacity:.8">ascoltata 2×</span></div>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:18px">
+              <svg class="ava" style="width:96px;height:96px;flex:none"><use href="#ava-b-talk"/></svg>
+              <div class="speech" data-vu><i style="--v:.5"></i><i style="--v:.8"></i><i style="--v:.4"></i><i style="--v:.95"></i><i style="--v:.6"></i><i style="--v:.3"></i><i style="--v:.7"></i><i style="--v:.45"></i><i style="--v:.2"></i></div>
+            </div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:16px"><div class="timer"><span data-timer="2.1">02,1</span><small>s</small></div><div class="kick">max 10 s</div></div>
+            <div class="bar10" style="--w:21%"><span></span></div>
+          </div>
+        </div>
+        <div class="thumb">
+          <button class="btn ink"><svg><use href="#d-stop"/></svg>Fatto, ferma</button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (d) -->
+    <div class="shot"><div class="cap"><b>d</b>Carta coperta <span>· tenuta al 60%, la carta si solleva</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="board"><div class="pl"><svg><use href="#ava-a-calm"/></svg>A <b>3</b></div><div class="pl turn"><svg><use href="#ava-b"/></svg>B <b>2</b></div><button class="icon-btn" style="margin-left:auto" aria-label="Menu"><svg><use href="#d-menu"/></svg></button></div>
+        <div class="table" style="justify-content:flex-start;padding-top:14px">
+          <div class="kick" style="align-self:flex-start">B, che parola senti?</div>
+          <button class="btn teal small" style="width:100%;margin:12px 0 22px"><svg><use href="#d-rev"/></svg>La tua imitazione al contrario</button>
+          <div class="back lift" style="--p:.6;width:86%"><div class="q">?</div><div class="tag">La parola di A</div></div>
+        </div>
+        <div class="thumb">
+          <button class="btn hold" style="--p:.6" aria-label="Tieni premuto per girare la carta"><span class="fill"></span><span><svg><use href="#d-flip"/></svg>Tieni premuto per girare</span><span class="on" aria-hidden="true"><svg><use href="#d-flip"/></svg>Tieni premuto per girare</span></button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- (e) -->
+    <div class="shot"><div class="cap"><b>e</b>Carta girata e punteggio</div>
+      <div class="phone lt"><div class="scr">
+        <div class="board"><div class="pl"><svg><use href="#ava-a-calm"/></svg>A <b>3</b></div><div class="pl turn"><svg><use href="#ava-b"/></svg>B <b>3</b></div><button class="icon-btn" style="margin-left:auto" aria-label="Menu"><svg><use href="#d-menu"/></svg></button></div>
+        <div class="table">
+          <div class="cardx" style="transform:rotate(-1.5deg)">
+            <div class="stamp">Indovinata! +1</div>
+            <div class="kick">Round 3 · la parola di A</div>
+            <div class="big" style="font-size:38px">Ascolta l'originale</div>
+            <div class="chiprow" style="flex-wrap:wrap"><button class="playchip"><i><svg><use href="#d-play"/></svg></i>Originale di A</button><button class="playchip"><i><svg><use href="#d-rev"/></svg></i>B al contrario</button></div>
+          </div>
+          <div class="score2">
+            <div><svg><use href="#ava-a-calm"/></svg><span>A<br><b>3</b></span></div>
+            <div class="up"><svg><use href="#ava-b"/></svg><span>B<br><b>3</b><span class="plus">+1</span></span></div>
+          </div>
+        </div>
+        <div class="thumb">
+          <div class="row2"><button class="btn small" style="background:var(--okbg)"><svg style="color:var(--ok)"><use href="#d-check"/></svg>Indovinata</button><button class="btn small" style="box-shadow:inset 0 0 0 3px var(--edge)"><svg style="color:var(--ko)"><use href="#d-x"/></svg>Mancata</button></div>
+          <button class="btn ink">Round 4: pesca B <svg><use href="#d-arrow"/></svg></button>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="shot"><div class="cap"><b>d</b>Carta coperta <span>· scuro · tieni premuto il pulsante</span></div>
+      <div class="phone dk"><div class="scr">
+        <div class="board"><div class="pl"><svg><use href="#ava-a-calm"/></svg>A <b>3</b></div><div class="pl turn"><svg><use href="#ava-b"/></svg>B <b>2</b></div><button class="icon-btn" style="margin-left:auto" aria-label="Menu"><svg><use href="#d-menu"/></svg></button></div>
+        <div class="table" style="justify-content:flex-start;padding-top:14px">
+          <div class="kick" style="align-self:flex-start">B, che parola senti?</div>
+          <button class="btn teal small" style="width:100%;margin:12px 0 22px;color:#062723"><svg><use href="#d-rev"/></svg>La tua imitazione al contrario</button>
+          <div class="back lift" id="cardD" style="--p:0;width:86%"><div class="q">?</div><div class="tag">La parola di A</div></div>
+        </div>
+        <div class="thumb">
+          <button class="btn hold" id="holdD" aria-label="Tieni premuto per girare la carta"><span class="fill"></span><span><svg><use href="#d-flip"/></svg>Tieni premuto per girare</span><span class="on" aria-hidden="true"><svg><use href="#d-flip"/></svg>Tieni premuto per girare</span></button>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>a</b>Tavolo <span>· scuro</span></div>
+      <div class="phone dk"><div class="scr">
+        <div class="board"><div class="pl turn"><svg><use href="#ava-a-calm"/></svg>A <b>3</b></div><div class="pl"><svg><use href="#ava-b"/></svg>B <b>2</b></div><button class="icon-btn" style="margin-left:auto" aria-label="Menu"><svg><use href="#d-menu"/></svg></button></div>
+        <div class="table">
+          <div class="ghostcard" style="top:calc(50% - 205px);height:400px;transform:rotate(-6deg);background:var(--b)"></div>
+          <div class="ghostcard" style="top:calc(50% - 205px);height:400px;transform:rotate(4deg);background:var(--back)"></div>
+          <div class="cardx" style="height:400px;display:flex;flex-direction:column;transform:rotate(-1deg)">
+            <div class="kick">Round 3 di 8</div>
+            <div class="big">A dice,<br>B indovina.</div>
+            <div class="txt">A registra una parola segreta. B la sente solo al contrario e prova a rifarla.</div>
+            <div style="margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between">
+              <svg class="ava"><use href="#ava-a-calm"/></svg>
+              <svg width="54" height="30" viewBox="0 0 54 30" aria-hidden="true"><path d="M4 15h40M32 4l12 11-12 11" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg class="ava"><use href="#ava-b"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="thumb"><button class="btn ink">Pesca la carta <svg><use href="#d-arrow"/></svg></button></div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>c</b>Carta B <span>· 360×640</span></div>
+      <div class="phone s360 lt"><div class="scr">
+        <div class="board"><div class="pl"><svg><use href="#ava-a-calm"/></svg>A <b>3</b></div><div class="pl turn"><svg><use href="#ava-b-talk"/></svg>B <b>2</b></div><button class="icon-btn" style="margin-left:auto" aria-label="Menu"><svg><use href="#d-menu"/></svg></button></div>
+        <div class="table">
+          <div class="cardx b">
+            <span class="corner">B</span>
+            <div class="kick">Tocca a B</div>
+            <div class="big">Rifai i suoni!</div>
+            <div class="chiprow"><button class="playchip"><i><svg><use href="#d-rev"/></svg></i>A al contrario</button></div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:14px"><div class="timer">02,1<small>s</small></div><div class="speech" style="height:48px"><i style="--v:.5"></i><i style="--v:.8"></i><i style="--v:.4"></i><i style="--v:.6"></i><i style="--v:.3"></i></div></div>
+            <div class="bar10" style="--w:21%"><span></span></div>
+          </div>
+        </div>
+        <div class="thumb"><button class="btn ink"><svg><use href="#d-stop"/></svg>Fatto, ferma</button></div>
+      </div></div>
+    </div>
+
+    <div class="stack">
+      <div class="note">
+        <h4>Movimento</h4>
+        <ul>
+          <li><strong>Pesca:</strong> la carta scivola dal mazzo con un leggero overshoot (spring 0,6) e si inclina di ±1–2°.</li>
+          <li><strong>Avatar:</strong> la bocca si apre in proporzione all'RMS e gli occhi sbattono ogni 3–5 s. Mentre suona un audio al contrario, l'avatar ruota sottosopra di 180°.</li>
+          <li><strong>Carta coperta:</strong> tenendo premuto, il pulsante si riempie a strisce e la carta si solleva fino a 18° in prospettiva. Se lasci prima, ricade con un rimbalzo e compare «Tieni premuto!». A fine corsa si gira con un flip 3D di 500 ms.</li>
+          <li><strong>Punto:</strong> il timbro "Indovinata!" cade con un piccolo shake e +1 vola fino al tabellone.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="note">
+        <h4>Colore e tipo</h4>
+        <div class="sw"><i style="background:#ffe27a"></i><i style="background:#ff5b3a"></i><i style="background:#19b3a3"></i></div>
+        <div class="sw" style="margin-top:-12px"><i style="background:#5b3df5"></i><i style="background:#1d1838"></i><i style="background:#191530"></i></div>
+        <p>Contorni #1D1838 da 3 px e ombre piene di 5–7 px. Il testo è sempre inchiostro su colore: su pomodoro #FF5B3A arriva a 5,2:1, su menta #19B3A3 a 6,5:1. Il retro delle carte è viola come il marchio. Il tipo è Roboto Flex peso 900 e larghezza 110–125, un nero espanso che fa "gioco da tavolo", con cifre strette (larghezza 70) per i timer.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ---------- Presentation shell helpers (shared by all v2 mockups) ---------- */
+(function(){
+  const LIVE = !navigator.webdriver; // static, deterministic frames when screenshotted
+  window.LIVE = LIVE;
+  const SB = '<span>9:41</span><svg viewBox="0 0 74 14" fill="currentColor" aria-hidden="true">'+
+    '<rect x="0" y="9" width="3.4" height="5" rx="1"/><rect x="5" y="6.5" width="3.4" height="7.5" rx="1"/><rect x="10" y="4" width="3.4" height="10" rx="1"/><rect x="15" y="1" width="3.4" height="13" rx="1"/>'+
+    '<path d="M31 4.2a10 10 0 0 1 13.4 0l-1.6 1.7a7.6 7.6 0 0 0-10.2 0zM33.6 7a6.2 6.2 0 0 1 8.2 0l-1.6 1.7a3.9 3.9 0 0 0-5 0zM37.7 13.2l-2.1-2.3a3 3 0 0 1 4.2 0z"/>'+
+    '<rect x="50.5" y="1.5" width="20" height="11" rx="3.4" fill="none" stroke="currentColor" stroke-opacity=".45"/><rect x="52.5" y="3.5" width="14" height="7" rx="1.8"/><rect x="71.8" y="5" width="1.8" height="4" rx=".9" fill-opacity=".45"/></svg>';
+  document.querySelectorAll('.phone').forEach(p=>{
+    const sb=document.createElement('div');sb.className='sb';sb.innerHTML=SB;p.prepend(sb);
+    const hi=document.createElement('div');hi.className='hi';p.append(hi);
+  });
+  // seeded random
+  function rng(seed){let s=seed*9301+49297;return()=>{s=(s*9301+49297)%233280;return s/233280;};}
+  window.rng=rng;
+  // word-like envelope: a few syllable humps
+  function envelope(n,seed){
+    const r=rng(seed),humps=[];const k=2+Math.floor(r()*2);
+    for(let i=0;i<k;i++)humps.push({c:(i+.5)/k+(r()-.5)*.12,w:.08+r()*.07,a:.6+r()*.4});
+    const out=[];for(let i=0;i<n;i++){const x=i/(n-1);let v=0;humps.forEach(h=>{v+=h.a*Math.exp(-((x-h.c)**2)/(2*h.w*h.w));});
+      v=Math.min(1,v)*(.72+r()*.28);out.push(Math.max(.07,v));}
+    return out;
+  }
+  window.envelope=envelope;
+  // [data-wave="n"] data-seed data-mirror data-played="0..1"
+  document.querySelectorAll('[data-wave]').forEach(el=>{
+    const n=+el.dataset.wave,seed=+(el.dataset.seed||1);let e=envelope(n,seed);
+    if('mirror' in el.dataset)e=e.reverse();
+    const played=+(el.dataset.played||0);
+    el.innerHTML=e.map((v,i)=>`<i style="--h:${v.toFixed(3)}"${i/n<played?' class="on"':''}></i>`).join('');
+  });
+  // [data-radial="n"] radial VU ticks
+  document.querySelectorAll('[data-radial]').forEach(el=>{
+    const n=+el.dataset.radial,r=rng(+(el.dataset.seed||4));let h='';
+    for(let i=0;i<n;i++){const v=.25+.75*Math.abs(Math.sin(i*.55))*r();h+=`<i style="--a:${(i*360/n).toFixed(2)}deg;--v:${v.toFixed(3)}"></i>`;}
+    el.innerHTML=h;
+    if(LIVE){const ticks=[...el.children];setInterval(()=>{const t=performance.now()/1000;ticks.forEach((tk,i)=>{const v=.2+.8*Math.abs(Math.sin(t*3.1+i*.7)*Math.sin(t*1.7+i*.31))*(.6+.4*Math.random());tk.style.setProperty('--v',v.toFixed(3));});},90);}
+  });
+  // generic animated bars [data-vu] children get --v
+  document.querySelectorAll('[data-vu]').forEach(el=>{
+    if(!LIVE)return;const bars=[...el.children];
+    setInterval(()=>{const t=performance.now()/1000;bars.forEach((b,i)=>{const v=.15+.85*Math.abs(Math.sin(t*2.7+i*.9)*Math.cos(t*1.3+i*.4))*(.55+.45*Math.random());b.style.setProperty('--v',v.toFixed(3));});},110);
+  });
+  // ticking timers [data-timer="start seconds"]
+  document.querySelectorAll('[data-timer]').forEach(el=>{
+    if(!LIVE)return;let t=+el.dataset.timer;const fmt=v=>{const s=Math.floor(v),d=Math.floor((v-s)*10);return String(s).padStart(2,'0')+','+d;};
+    setInterval(()=>{t+=.1;if(t>=10)t=0;el.textContent=fmt(t);},100);
+  });
+  /* hold-to-confirm demo, same contract as holdButton(el,{ms,onConfirm}) */
+  window.hold=function(el,ms,onConfirm){
+    let t0=0,raf=0,on=false;const set=p=>el.style.setProperty('--p',p.toFixed(3));
+    const start=e=>{if(el.classList.contains('done'))return;if(e.pointerId!=null)el.setPointerCapture(e.pointerId);on=true;t0=performance.now();el.classList.add('holding');
+      const step=now=>{if(!on)return;const p=Math.min(1,(now-t0)/ms);set(p);if(p<1)raf=requestAnimationFrame(step);else{on=false;el.classList.remove('holding');el.classList.add('done');navigator.vibrate&&navigator.vibrate(15);onConfirm&&onConfirm(el);setTimeout(()=>{el.classList.remove('done');set(0);},2600);}};raf=requestAnimationFrame(step);};
+    const stop=()=>{if(!on)return;on=false;cancelAnimationFrame(raf);el.classList.remove('holding');set(0);el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake','hint');setTimeout(()=>el.classList.remove('hint'),1600);};
+    el.addEventListener('pointerdown',start);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,stop));
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+    el.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();start({});}});
+    el.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')stop();});
+  };
+})();
+
+(function(){
+  const h=document.getElementById('holdD'),c=document.getElementById('cardD');
+  hold(h,600,()=>{c.querySelector('.q').textContent='!';c.querySelector('.tag').textContent='Originale in riproduzione';setTimeout(()=>{c.querySelector('.q').textContent='?';c.querySelector('.tag').textContent='La parola di A';},2600);});
+  new MutationObserver(()=>{c.style.setProperty('--p',h.style.getPropertyValue('--p')||0);const t=h.classList.contains('hint')?'Tieni premuto di più!':h.classList.contains('done')?'Carta girata!':'Tieni premuto per girare';h.querySelectorAll('span:not(.fill)').forEach(sp=>sp.lastChild.textContent=t);}).observe(h,{attributes:true,attributeFilter:['style','class']});
+})();
+</script>
+</body>
+</html>

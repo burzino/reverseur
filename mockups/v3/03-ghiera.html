@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverseur v3 · 03 · Ghiera</title>
+<style>
+/* ---------- Presentation shell (shared by v3 mockups 01-05) ---------- */
+@font-face{
+  font-family:"RF";
+  src:url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2-variations"),
+      url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2");
+  font-weight:100 1000;font-stretch:25% 151%;font-display:block;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#e7e5ec;color:#17141f;font-family:"RF",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{padding:64px 64px 80px;width:max-content;min-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+svg{display:block}
+
+.doc{width:2110px}
+.doc-head{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:48px;margin-bottom:60px;align-items:start}
+.doc-head .kicker{font:650 13px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.doc-head h1{font-size:76px;line-height:.92;font-weight:880;letter-spacing:-.025em;margin-bottom:18px}
+.doc-head .pitch{font-size:21px;line-height:1.4;color:#2c2838;font-weight:450;max-width:34ch}
+.doc-head h3{font:700 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin:6px 0 14px}
+.doc-head p,.doc-head li{font-size:16px;line-height:1.55;color:#36323f}
+.doc-head ol,.doc-head ul{padding-left:20px;display:grid;gap:6px}
+.doc-head strong{font-weight:700;color:#17141f}
+
+.row{display:flex;gap:40px;align-items:flex-start;margin-bottom:64px}
+.shot{display:flex;flex-direction:column;gap:18px;flex:none}
+.cap{display:flex;align-items:baseline;gap:10px;font:600 15px/1.2 "RF";color:#3d3948;padding-left:6px}
+.cap b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#17141f;color:#fff;font:750 13px/1 "RF"}
+.cap span{color:#7a7588;font-weight:500}
+
+.phone{width:390px;height:844px;border-radius:54px;position:relative;overflow:hidden;flex:none;isolation:isolate;container-type:size;
+  box-shadow:0 0 0 10px #121018,0 0 0 11.5px #3b3846,0 40px 70px -28px rgba(25,12,60,.55);background:var(--bg);color:var(--ink)}
+.phone.s360{width:360px;height:640px;border-radius:40px}
+.sb{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;font:650 16px/1 "RF";z-index:60;pointer-events:none;color:var(--sb,var(--ink))}
+.sb svg{height:13px;width:auto}
+.s360 .sb{height:30px;font-size:13px;padding:2px 20px 0 22px}
+.hi{position:absolute;bottom:8px;left:50%;width:136px;height:5px;border-radius:3px;background:var(--sb,var(--ink));opacity:.8;transform:translateX(-50%);z-index:60;pointer-events:none}
+.s360 .hi{width:100px;height:4px;bottom:6px}
+.scr{position:absolute;inset:0;padding:50px 0 30px;display:flex;flex-direction:column}
+.s360 .scr{padding:30px 0 18px}
+
+.note{width:390px;flex:none;background:#fff;border-radius:28px;padding:30px 30px 28px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 20px 40px -30px rgba(25,12,60,.35)}
+.note h4{font:750 13px/1 "RF";letter-spacing:.14em;text-transform:uppercase;color:#6a6579;margin-bottom:16px}
+.note h4+*{margin-top:0}
+.note p,.note li{font-size:15px;line-height:1.5;color:#36323f}
+.note ul{padding-left:18px;display:grid;gap:8px}
+.note .sw{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 22px}
+.note .sw i{display:block;height:64px;border-radius:14px;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.note .sw i::after{content:attr(data-n);position:absolute;left:8px;bottom:6px;font:650 10.5px/1 "RF";font-style:normal;letter-spacing:.02em}
+.note .type{margin:0 0 22px;display:grid;gap:6px}
+.note + .note{margin-left:0}
+.stack{display:flex;flex-direction:column;gap:24px;flex:none}
+
+/* shake used by every hold demo */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .38s cubic-bezier(.36,.07,.19,.97)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ---------- v3 additions ---------- */
+.phone.land{width:844px;height:390px;border-radius:54px}
+.land .sb{display:none}
+.land .scr{padding:0 54px 18px}
+.land .hi{bottom:7px}
+.desk{width:1040px;height:650px;border-radius:18px;position:relative;overflow:hidden;flex:none;isolation:isolate;background:var(--bg);color:var(--ink);
+  box-shadow:0 0 0 1px rgba(0,0,0,.12),0 40px 70px -30px rgba(25,12,60,.45)}
+.desk .bar{height:38px;display:flex;align-items:center;gap:8px;padding:0 16px;background:#e3e1e6;border-bottom:1px solid rgba(0,0,0,.08)}
+.desk .bar i{width:12px;height:12px;border-radius:50%;background:#c9c6cf}
+.desk .bar span{margin-left:18px;flex:1;max-width:420px;height:24px;border-radius:12px;background:#fff;font:500 12.5px/24px "RF";color:#5b5766;padding:0 14px}
+.metrics{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.metrics div{background:#fff;border-radius:16px;padding:12px 16px 11px;min-width:96px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.metrics b{display:block;font:820 30px/1 "RF";font-stretch:80%;letter-spacing:-.01em;color:#17141f}
+.metrics em{display:block;font:600 11.5px/1.25 "RF";font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:#6a6579;margin-top:6px}
+/* thumb-zone map: mini phone with zones, targets drawn as absolutely positioned boxes */
+.tzwrap{display:flex;gap:18px;align-items:flex-start}
+.tz{width:132px;height:286px;border-radius:22px;position:relative;flex:none;overflow:hidden;box-shadow:0 0 0 4px #17141f;
+  background:radial-gradient(130% 62% at 78% 104%,#bfe8c8 0 58%,#f6e7a8 58% 80%,#f5c9c1 80%)}
+.tz i{position:absolute;border-radius:7px;background:#17141f;color:#fff;font:700 9px/1.1 "RF";font-style:normal;display:grid;place-items:center;text-align:center;padding:2px}
+.tz i.o{background:transparent;box-shadow:inset 0 0 0 2px #17141f;color:#17141f}
+.tzleg{display:grid;gap:7px;font-size:13px!important;line-height:1.35}
+.tzleg span{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:6px}
+
+
+/* ---------- 03 · Ghiera: one radial control, a turntable that spins backwards ---------- */
+.lt{--bg:#E6E2DA;--ink:#1C1B19;--mute:#5C574E;--plastic:#F7F5F0;--edge:rgba(28,27,25,.14);--groove:#1C1B19;--orange:#E8501A;--lcd:#1C1B19;--amber:#FFB547;--ambdim:rgba(255,181,71,.1)}
+.dk{--bg:#141412;--ink:#ECE8E0;--mute:#A39D92;--plastic:#26251F;--edge:rgba(236,232,224,.12);--groove:#0A0A09;--orange:#FF6A33;--lcd:#050505;--amber:#FFB547;--ambdim:rgba(255,181,71,.08)}
+.scr{padding:50px 20px 30px;gap:12px}
+.s360 .scr{padding:30px 16px 18px;gap:8px}
+.bar{display:flex;align-items:center;justify-content:space-between;height:56px}
+.brand{font:800 13px/1 "RF";letter-spacing:.32em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.brand i{width:10px;height:10px;border-radius:50%;background:var(--orange)}
+.menu{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--plastic);box-shadow:0 1px 0 var(--edge),0 6px 14px -8px rgba(0,0,0,.4)}
+.menu svg{width:22px;height:22px}
+
+/* LCD display: glanceable state */
+.lcd{flex:1;min-height:0;border-radius:26px;background:var(--lcd);color:var(--amber);padding:18px 20px 16px;display:flex;flex-direction:column;box-shadow:inset 0 2px 0 rgba(0,0,0,.4),0 1px 0 rgba(255,255,255,.6)}
+.dk .lcd{box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.lcd .l1{display:flex;justify-content:space-between;font:700 12px/1 "RF";letter-spacing:.2em;text-transform:uppercase}
+.lcd .l1 span{opacity:.78}
+.lcd .l1 b{font-weight:800;opacity:1}
+.lcd .main{margin-top:auto;font:760 34px/1.02 "RF";font-stretch:80%;letter-spacing:-.005em;color:#FFE2B0}
+.lcd .main small{display:block;font:500 15px/1.35 "RF";font-stretch:100%;color:var(--amber);opacity:.85;margin-top:8px;letter-spacing:0}
+.digits{position:relative;font:500 104px/.86 "RF";font-stretch:45%;letter-spacing:.01em;font-variant-numeric:tabular-nums;margin-top:auto}
+.digits::before{content:"88,8";position:absolute;inset:0;color:var(--ambdim)}
+.digits span{position:relative}
+.digits.ng::before{content:none}
+.digits small{font:650 16px/1 "RF";font-stretch:100%;margin-left:8px;opacity:.8;letter-spacing:.1em}
+.led{display:flex;gap:4px;margin-top:14px;height:16px}
+.led i{flex:1;border-radius:3px;background:var(--ambdim)}
+.led i.on{background:var(--amber)}
+.led i.hot{background:#FF5A3C}
+.lwave{height:40px;margin-top:14px;color:var(--amber)}
+.wave{display:flex;align-items:center;gap:2.5px;height:100%}
+.wave i{flex:1;height:calc(var(--h) * 100%);min-height:3px;border-radius:2px;background:currentColor;opacity:.25}
+.wave i.on{opacity:1}
+
+.cue{display:block;font:650 15px/40px "RF";text-align:center;min-height:40px;white-space:nowrap}
+.cue b{font-weight:800}
+.cue .k{vertical-align:middle;margin:-3px 8px 0 0;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--bg);font:850 12px/1 "RF"}
+
+/* the dial */
+.dial{width:350px;height:350px;align-self:center;flex:none;position:relative}
+.dial svg{width:100%;height:100%;overflow:visible}
+.s360 .dial{width:290px;height:290px}
+.land .dial{width:340px;height:340px}
+.dial .spin{transform-origin:180px 180px;transform-box:view-box}
+.live .dial .spin.fw{animation:rot 1.8s linear infinite}
+.live .dial .spin.bw{animation:rot 1.8s linear infinite reverse}
+@keyframes rot{to{transform:rotate(360deg)}}
+.legend{display:flex;justify-content:space-between;font:700 11px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:var(--mute);padding:0 12px}
+
+/* landscape: display left, dial right */
+.land .scr{flex-direction:row;align-items:center;gap:28px;padding:20px 54px}
+.land .lcol{flex:1;align-self:stretch;display:flex;flex-direction:column;gap:12px}
+
+/* little static key for notes */
+.keyd{display:grid;gap:10px;margin-top:6px}
+.keyd div{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center;font-size:14px;line-height:1.35;color:#36323f}
+.keyd i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:800 15px/1 "RF";font-style:normal}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div class="doc">
+  <header class="doc-head">
+    <div>
+      <div class="kicker">Reverseur · mockup v3 · concetto 03</div>
+      <h1>Ghiera</h1>
+      <p class="pitch">Un solo comando rotondo, come un giradischi. Il centro registra, il settore sinistro suona al contrario e il disco gira all'indietro. Per scoprire la parola si gira la ghiera, come la combinazione di una cassaforte.</p>
+      <div class="metrics">
+        <div><b>6</b><em>tocchi per round</em></div>
+        <div><b>1</b><em>comando</em></div>
+        <div><b>Ø 350</b><em>px ghiera</em></div>
+        <div><b>64 px</b><em>settori</em></div>
+      </div>
+    </div>
+    <div>
+      <h3>Concetto</h3>
+      <p>L'interfaccia è un oggetto: un <strong>display LCD</strong> in alto per lo stato (solo da leggere) e una <strong>ghiera</strong> in basso per tutte le azioni. Il centro (Ø 100) è REC/STOP. L'anello ha due settori da 160°: <strong>◀◀ al contrario</strong> a sinistra e <strong>▶ originale</strong> a destra. Il disco in mezzo gira avanti o indietro con l'audio, e mentre registri l'anello diventa il contatore dei 10 s. Ogni funzione ha sempre lo stesso posto: dopo un round le mani lo sanno già.</p>
+    </div>
+    <div>
+      <h3>Flusso</h3>
+      <ol>
+        <li>A tocca il centro: l'anello si riempie di rosso in 10 s. Tocca di nuovo per fermare.</li>
+        <li>B tocca ◀◀: il disco gira all'indietro mentre suona. Si può anche trascinare il settore per scorrere avanti e indietro.</li>
+        <li>B tocca il centro e imita, poi ◀◀ per sentire l'imitazione al contrario.</li>
+        <li>Rivela: B prende la manopola col lucchetto sul settore destro e la porta fino a ▲ (120°, almeno 600 ms).</li>
+        <li>I settori diventano ✕ mancata e ✓ indovinata, il centro diventa «round 4».</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Perché il layout è ottimale</h3>
+      <ul>
+        <li>Tutte le azioni stanno in un cerchio nella metà bassa dello schermo: con la mano destra il pollice arriva al centro e ai due settori senza riposizionare il telefono.</li>
+        <li>Lo stato non si tocca mai, si legge e basta, ed è il display a dirlo. Tutto quello che si tocca è nella ghiera.</li>
+        <li>Lo spoiler è un <strong>movimento rotatorio di 120°</strong> e non un tap: non si può fare per sbaglio, e mostra il progresso in modo naturale.</li>
+        <li>Si legge da lontano: rosso = registro, arancio = al contrario, verde = indovinata.</li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="row">
+    <div class="shot"><div class="cap"><b>a</b>Inizio round <span>· 390×844 chiaro</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="bar"><div class="brand"><i></i>Reverseur</div><button class="menu" aria-label="Menu"><svg><use href="#i-dots"/></svg></button></div>
+        <div class="lcd"><div class="l1"><span>Rnd 03 · turno A</span><b>ok 4 · no 2</b></div>
+          <div class="main">A registra una parola segreta.<small>B si tappa le orecchie. Massimo 10 secondi.</small></div></div>
+        <div class="cue"><span class="k">A</span>Tocca il <b>centro</b> per registrare</div>
+        <div class="dial" data-dial='{"c":"rec","l":"off","r":"off","spin":""}'></div>
+        <div class="legend"><span>◀◀ contrario</span><span>● rec</span><span>▶ originale</span></div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>b</b>A registra <span>· l'anello conta i 10 s</span></div>
+      <div class="phone lt live"><div class="scr">
+        <div class="bar"><div class="brand"><i></i>Reverseur</div><button class="menu" aria-label="Menu"><svg><use href="#i-dots"/></svg></button></div>
+        <div class="lcd"><div class="l1"><span>Rnd 03 · A · rec</span><b>● 10 s max</b></div>
+          <div class="digits"><span data-timer="3.4">03,4</span><small>s</small></div>
+          <div class="led" data-vu><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="hot"></i><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="cue">Parla adesso · tocca il <b>centro</b> per fermare</div>
+        <div class="dial" data-dial='{"c":"stop","rec":0.34,"spin":"fw"}'></div>
+        <div class="legend"><span>0 s</span><span>■ stop</span><span>10 s</span></div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>c</b>B ascolta al contrario <span>· il disco gira all'indietro</span></div>
+      <div class="phone lt live"><div class="scr">
+        <div class="bar"><div class="brand"><i></i>Reverseur</div><button class="menu" aria-label="Menu"><svg><use href="#i-dots"/></svg></button></div>
+        <div class="lcd"><div class="l1"><span>Rnd 03 · turno B</span><b>◀◀ 2×</b></div>
+          <div class="main">Parola di A, al contrario.<small>Poi tocca il centro e rifai i suoni.</small></div>
+          <div class="lwave"><div class="wave" data-wave="44" data-seed="3" data-mirror data-played=".55"></div></div></div>
+        <div class="cue"><span class="k">B</span>◀◀ quante volte vuoi, poi <b>centro</b> = imita</div>
+        <div class="dial" data-dial='{"c":"rec","cl":"imita","l":"on","r":"lock","spin":"bw"}'></div>
+        <div class="legend"><span>◀◀ contrario</span><span>● imita</span><span>originale chiuso</span></div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>d</b>Indovina e rivela <span>· gira la manopola fino a ▲ · 62%</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="bar"><div class="brand"><i></i>Reverseur</div><button class="menu" aria-label="Menu"><svg><use href="#i-dots"/></svg></button></div>
+        <div class="lcd"><div class="l1"><span>Rnd 03 · indovina</span><b>ok 4 · no 2</b></div>
+          <div class="main">Che parola senti?<small>È la tua imitazione al contrario. Dilla ad alta voce, poi gira.</small></div>
+          <div class="lwave"><div class="wave" data-wave="44" data-seed="11" data-mirror data-played="1"></div></div></div>
+        <div class="cue">Trascina la <b>manopola</b> fino a ▲ · 62%</div>
+        <div class="dial" data-dial='{"c":"rec","cl":"rifai","dim":1,"l":"on","ll":"imitazione","knob":0.62}'></div>
+        <div class="legend"><span>◀◀ imitazione</span><span>● rifai</span><span>↻ rivela</span></div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>e</b>Esito e punteggio <span>· i settori diventano il verdetto</span></div>
+      <div class="phone lt"><div class="scr">
+        <div class="bar"><div class="brand"><i></i>Reverseur</div><button class="menu" aria-label="Menu"><svg><use href="#i-dots"/></svg></button></div>
+        <div class="lcd"><div class="l1"><span>Rnd 03 · rivelato</span><b>▶ originale</b></div>
+          <div class="lwave" style="margin-top:18px"><div class="wave" data-wave="44" data-seed="3" data-played=".8"></div></div>
+          <div class="digits ng" style="font-size:96px"><span>5:2</span><small>ok:no</small></div></div>
+        <div class="cue" style="color:#0F7A3E"><b>✓ Indovinata · +1</b>&nbsp;· tocca il centro per il round 4</div>
+        <div class="dial" data-dial='{"c":"next","cl":"round 4","l":"no","r":"ok","sel":"r"}'></div>
+        <div class="legend"><span>✕ mancata</span><span>→ B registra</span><span>✓ indovinata</span></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="shot"><div class="cap"><b>c</b>B imita <span>· scuro · disco avanti, anello rosso</span></div>
+      <div class="phone dk live"><div class="scr">
+        <div class="bar"><div class="brand"><i></i>Reverseur</div><button class="menu" aria-label="Menu"><svg><use href="#i-dots"/></svg></button></div>
+        <div class="lcd"><div class="l1"><span>Rnd 03 · B · rec</span><b>● imita</b></div>
+          <div class="digits"><span data-timer="2.1">02,1</span><small>s</small></div>
+          <div class="led" data-vu><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="cue">Rifai i suoni · tocca il <b>centro</b> per fermare</div>
+        <div class="dial" data-dial='{"c":"stop","rec":0.21,"spin":"fw"}'></div>
+        <div class="legend"><span>0 s</span><span>■ stop</span><span>10 s</span></div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>d</b>Rivela <span>· 360×640</span></div>
+      <div class="phone lt s360"><div class="scr">
+        <div class="lcd" style="padding:14px 16px"><div class="l1"><span>Rnd 03 · indovina</span><b>4 · 2</b></div>
+          <div class="main" style="font-size:27px">Che parola senti?<small style="font-size:13.5px">Dilla ad alta voce, poi gira.</small></div>
+          <div class="lwave" style="height:30px;margin-top:10px"><div class="wave" data-wave="36" data-seed="11" data-mirror data-played="1"></div></div></div>
+        <div class="cue" style="font-size:14px;min-height:28px;line-height:28px">Trascina la <b>manopola</b> fino a ▲</div>
+        <div class="dial" data-dial='{"c":"rec","cl":"rifai","dim":1,"l":"on","ll":"imitazione","knob":0.62}'></div>
+      </div></div>
+    </div>
+
+    <div class="shot"><div class="cap"><b>+</b>Orizzontale e desktop <span>· 844×390 · display a sinistra, ghiera a destra</span></div>
+      <div class="phone lt land live"><div class="scr">
+        <div class="lcol">
+          <div class="lcd"><div class="l1"><span>Rnd 03 · turno B</span><b>◀◀ 2×</b></div>
+            <div class="main">Parola di A, al contrario.<small>Poi tocca il centro e rifai i suoni.</small></div>
+            <div class="lwave"><div class="wave" data-wave="56" data-seed="3" data-mirror data-played=".55"></div></div></div>
+          <div class="cue" style="text-align:left;min-height:28px"><span class="k">B</span>Tastiera: ← contrario · Spazio rec · → originale</div>
+        </div>
+        <div class="dial" data-dial='{"c":"rec","cl":"imita","l":"on","r":"lock","spin":"bw"}'></div>
+      </div></div>
+    </div>
+
+    <div class="note">
+      <h4>Anatomia della ghiera</h4>
+      <div class="keyd">
+        <div><i style="background:#F7F5F0;box-shadow:inset 0 0 0 2px #1C1B19"><span style="width:16px;height:16px;border-radius:50%;background:#D9361E;display:block"></span></i>Centro Ø 100: REC/STOP, poi «imita», «rifai», «round 4». Ha sempre il compito più frequente.</div>
+        <div><i style="background:#E8501A;color:#fff">◀◀</i>Settore sinistro, 160°: al contrario. Toccalo per suonare, trascinalo in senso antiorario per scorrere a mano.</div>
+        <div><i style="background:#F7F5F0;box-shadow:inset 0 0 0 2px #1C1B19;color:#1C1B19">▶</i>Settore destro, 160°: originale. Chiuso per B. Nella fase «indovina» diventa la guida della manopola di rivelazione.</div>
+        <div><i style="background:#1C1B19;color:#FFB547">↻</i>Disco: gira con l'audio, all'indietro quando suona al contrario. È la spiegazione del gioco disegnata.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="note">
+      <h4>Mappa del pollice</h4>
+      <div class="tzwrap">
+        <div class="tz">
+          <i class="o" style="left:8px;right:8px;top:8px;height:100px">display (lettura)</i>
+          <i class="o" style="left:10px;right:10px;top:140px;height:112px;border-radius:50%"></i>
+          <i style="left:46px;width:40px;top:176px;height:40px;border-radius:50%">rec</i>
+          <i style="left:12px;width:26px;top:170px;height:52px;border-radius:26px 8px 8px 26px;background:#E8501A">◀◀</i>
+          <i style="right:12px;width:26px;top:170px;height:52px;border-radius:8px 26px 26px 8px">▶</i>
+        </div>
+        <div class="tzleg">
+          <p>Il centro della ghiera è a ~250 px dal fondo, al centro del verde per il pollice destro. Il settore sinistro sta nel giallo: si allunga un po' il pollice ma resta largo 64 px su un arco di 160°.</p>
+          <p>Mancini: in Impostazioni si possono scambiare i settori, così ◀◀ (il più usato) va dal lato del pollice.</p>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <h4>Movimento</h4>
+      <ul>
+        <li><strong>Disco:</strong> 33 giri al minuto (1,8 s per giro) avanti con l'originale, indietro con l'audio invertito, fermo in pausa. Il riflesso a due spicchi rende visibile la rotazione anche sui frame fermi.</li>
+        <li><strong>REC:</strong> l'anello si colora di rosso in senso orario con 60 tacche, una ogni 1/6 di secondo. A 8 s pulsa.</li>
+        <li><strong>Manopola:</strong> segue il dito lungo l'arco con un piccolo «scatto» ogni 10° (vibrazione da 5 ms). Arrivata a ▲, lo scatto finale apre il lucchetto e il disco gira in avanti con l'originale.</li>
+        <li><strong>Rilascio anticipato:</strong> la manopola torna indietro con una molla da 240 ms.</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h4>Colore e accessibilità</h4>
+      <div class="sw"><i style="background:#E6E2DA" data-n="scocca"></i><i style="background:#F7F5F0" data-n="plastica"></i><i style="background:#1C1B19;color:#FFB547" data-n="LCD"></i><i style="background:#E8501A;color:#fff" data-n="al contrario"></i><i style="background:#D9361E;color:#fff" data-n="rec"></i><i style="background:#0F7A3E;color:#fff" data-n="indovinata"></i></div>
+      <p>Ambra su LCD 11:1, inchiostro su plastica 15:1, bianco su arancio 3,6:1 (solo icone ed etichette maiuscole ≥ 18,7 px in grassetto, cioè testo grande AA). Ogni settore ha anche l'icona, quindi il colore non è l'unico segnale.</p>
+      <p style="margin-top:10px"><strong>Tastiera e screen reader:</strong> la ghiera è un gruppo di tre pulsanti (← ↵ →). La manopola è uno <code>slider</code> che si sblocca anche tenendo premuto Invio per 600 ms.</p>
+    </div>
+    <div class="note">
+      <h4>Impatto</h4>
+      <p>Il flusso a fasi è lo stesso, la vista diventa un unico componente <code>Ghiera.svelte</code> (SVG, archi calcolati) con <code>fase</code> → contenuto di centro e settori. La rotazione del disco è CSS: <code>animation-direction: reverse</code> quando suona l'audio invertito. Il trascinamento circolare usa <code>atan2</code> sul <code>pointermove</code>, con una soglia di 20 px per distinguerlo dal tap. Lo scorrimento a mano dell'audio è opzionale (fase 2).</p>
+    </div>
+  </section>
+</div>
+<script>
+/* ---------- Presentation shell helpers (shared by v3 mockups 01-05) ---------- */
+(function(){
+  const LIVE = !navigator.webdriver; // static, deterministic frames when screenshotted
+  window.LIVE = LIVE;
+  const SB = '<span>9:41</span><svg viewBox="0 0 74 14" fill="currentColor" aria-hidden="true">'+
+    '<rect x="0" y="9" width="3.4" height="5" rx="1"/><rect x="5" y="6.5" width="3.4" height="7.5" rx="1"/><rect x="10" y="4" width="3.4" height="10" rx="1"/><rect x="15" y="1" width="3.4" height="13" rx="1"/>'+
+    '<path d="M31 4.2a10 10 0 0 1 13.4 0l-1.6 1.7a7.6 7.6 0 0 0-10.2 0zM33.6 7a6.2 6.2 0 0 1 8.2 0l-1.6 1.7a3.9 3.9 0 0 0-5 0zM37.7 13.2l-2.1-2.3a3 3 0 0 1 4.2 0z"/>'+
+    '<rect x="50.5" y="1.5" width="20" height="11" rx="3.4" fill="none" stroke="currentColor" stroke-opacity=".45"/><rect x="52.5" y="3.5" width="14" height="7" rx="1.8"/><rect x="71.8" y="5" width="1.8" height="4" rx=".9" fill-opacity=".45"/></svg>';
+  document.querySelectorAll('.phone').forEach(p=>{
+    const sb=document.createElement('div');sb.className='sb';sb.innerHTML=SB;p.prepend(sb);
+    const hi=document.createElement('div');hi.className='hi';p.append(hi);
+  });
+  // seeded random
+  function rng(seed){let s=seed*9301+49297;return()=>{s=(s*9301+49297)%233280;return s/233280;};}
+  window.rng=rng;
+  // word-like envelope: a few syllable humps
+  function envelope(n,seed){
+    const r=rng(seed),humps=[];const k=2+Math.floor(r()*2);
+    for(let i=0;i<k;i++)humps.push({c:(i+.5)/k+(r()-.5)*.12,w:.08+r()*.07,a:.6+r()*.4});
+    const out=[];for(let i=0;i<n;i++){const x=i/(n-1);let v=0;humps.forEach(h=>{v+=h.a*Math.exp(-((x-h.c)**2)/(2*h.w*h.w));});
+      v=Math.min(1,v)*(.72+r()*.28);out.push(Math.max(.07,v));}
+    return out;
+  }
+  window.envelope=envelope;
+  // [data-wave="n"] data-seed data-mirror data-played="0..1"
+  document.querySelectorAll('[data-wave]').forEach(el=>{
+    const n=+el.dataset.wave,seed=+(el.dataset.seed||1);let e=envelope(n,seed);
+    if('mirror' in el.dataset)e=e.reverse();
+    const played=+(el.dataset.played||0);
+    el.innerHTML=e.map((v,i)=>`<i style="--h:${v.toFixed(3)}"${i/n<played?' class="on"':''}></i>`).join('');
+  });
+  // [data-radial="n"] radial VU ticks
+  document.querySelectorAll('[data-radial]').forEach(el=>{
+    const n=+el.dataset.radial,r=rng(+(el.dataset.seed||4));let h='';
+    for(let i=0;i<n;i++){const v=.25+.75*Math.abs(Math.sin(i*.55))*r();h+=`<i style="--a:${(i*360/n).toFixed(2)}deg;--v:${v.toFixed(3)}"></i>`;}
+    el.innerHTML=h;
+    if(LIVE){const ticks=[...el.children];setInterval(()=>{const t=performance.now()/1000;ticks.forEach((tk,i)=>{const v=.2+.8*Math.abs(Math.sin(t*3.1+i*.7)*Math.sin(t*1.7+i*.31))*(.6+.4*Math.random());tk.style.setProperty('--v',v.toFixed(3));});},90);}
+  });
+  // generic animated bars [data-vu] children get --v
+  document.querySelectorAll('[data-vu]').forEach(el=>{
+    if(!LIVE)return;const bars=[...el.children];
+    setInterval(()=>{const t=performance.now()/1000;bars.forEach((b,i)=>{const v=.15+.85*Math.abs(Math.sin(t*2.7+i*.9)*Math.cos(t*1.3+i*.4))*(.55+.45*Math.random());b.style.setProperty('--v',v.toFixed(3));});},110);
+  });
+  // ticking timers [data-timer="start seconds"]
+  document.querySelectorAll('[data-timer]').forEach(el=>{
+    if(!LIVE)return;let t=+el.dataset.timer;const fmt=v=>{const s=Math.floor(v),d=Math.floor((v-s)*10);return String(s).padStart(2,'0')+','+d;};
+    setInterval(()=>{t+=.1;if(t>=10)t=0;el.textContent=fmt(t);},100);
+  });
+  /* hold-to-confirm demo, same contract as holdButton(el,{ms,onConfirm}) */
+  window.hold=function(el,ms,onConfirm){
+    let t0=0,raf=0,on=false;const set=p=>el.style.setProperty('--p',p.toFixed(3));
+    const start=e=>{if(el.classList.contains('done'))return;if(e.pointerId!=null)el.setPointerCapture(e.pointerId);on=true;t0=performance.now();el.classList.add('holding');
+      const step=now=>{if(!on)return;const p=Math.min(1,(now-t0)/ms);set(p);if(p<1)raf=requestAnimationFrame(step);else{on=false;el.classList.remove('holding');el.classList.add('done');navigator.vibrate&&navigator.vibrate(15);onConfirm&&onConfirm(el);setTimeout(()=>{el.classList.remove('done');set(0);},2600);}};raf=requestAnimationFrame(step);};
+    const stop=()=>{if(!on)return;on=false;cancelAnimationFrame(raf);el.classList.remove('holding');set(0);el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake','hint');setTimeout(()=>el.classList.remove('hint'),1600);};
+    el.addEventListener('pointerdown',start);['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,stop));
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+    el.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();start({});}});
+    el.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')stop();});
+  };
+})();
+
+(function(){
+  const C=180,R_OUT=176,R_IN=114,R_MID=145,R_PL=104;
+  const pt=(r,a)=>{const t=a*Math.PI/180;return[(C+r*Math.sin(t)).toFixed(2),(C-r*Math.cos(t)).toFixed(2)];};
+  const sector=(a0,a1)=>{const[x0,y0]=pt(R_OUT,a0),[x1,y1]=pt(R_OUT,a1),[x2,y2]=pt(R_IN,a1),[x3,y3]=pt(R_IN,a0);const lg=(a1-a0)>180?1:0;
+    return`M${x0} ${y0}A${R_OUT} ${R_OUT} 0 ${lg} 1 ${x1} ${y1}L${x2} ${y2}A${R_IN} ${R_IN} 0 ${lg} 0 ${x3} ${y3}Z`;};
+  const arc=(r,a0,a1)=>{const[x0,y0]=pt(r,a0),[x1,y1]=pt(r,a1);const sw=a1>a0?1:0;const lg=Math.abs(a1-a0)>180?1:0;return`M${x0} ${y0}A${r} ${r} 0 ${lg} ${sw} ${x1} ${y1}`;};
+  const lock=(x,y,c,sc=1)=>`<g transform="translate(${x-10*sc} ${y-11*sc}) scale(${sc})"><rect x="2" y="9" width="16" height="12" rx="3" fill="${c}"/><path d="M5.5 9V6.5a4.5 4.5 0 0 1 9 0V9" fill="none" stroke="${c}" stroke-width="2.4"/></g>`;
+  let uid=0;
+  document.querySelectorAll('[data-dial]').forEach(el=>{
+    const o=JSON.parse(el.dataset.dial);const dk=!!el.closest('.dk');const id='d'+(uid++);
+    const ink=dk?'#ECE8E0':'#1C1B19',plastic=dk?'#2C2B25':'#F7F5F0',track=dk?'#1E1D19':'#D9D4CA',orange=dk?'#FF6A33':'#E8501A',red=dk?'#FF5A3C':'#D9361E',green=dk?'#2DB56A':'#0F7A3E',mute=dk?'#A39D92':'#5C574E';
+    let s=`<svg viewBox="0 0 360 360" role="group" aria-label="Ghiera"><defs>
+      <filter id="${id}sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="${dk?.5:.22}"/></filter>
+      <radialGradient id="${id}pl" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#2a2926"/><stop offset="1" stop-color="#121110"/></radialGradient></defs>`;
+    // base ring
+    s+=`<circle cx="180" cy="180" r="${R_OUT+2}" fill="${track}"/>`;
+    if(o.rec!=null){
+      // recording: ring is a 10 s counter with 60 ticks
+      const p=o.rec;s+=`<path d="${arc(R_MID,0.01,359.9)}" fill="none" stroke="${dk?'#2C2B25':'#ECE8E0'}" stroke-width="60"/>`;
+      s+=`<path d="${arc(R_MID,0,p*360)}" fill="none" stroke="${red}" stroke-width="60"/>`;
+      for(let i=0;i<60;i++){const a=i*6;const[x0,y0]=pt(R_IN+4,a),[x1,y1]=pt(R_OUT-4,a);s+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${dk?'#141412':'#E6E2DA'}" stroke-width="${i%10?1.2:2.6}"/>`;}
+      const[hx,hy]=pt(R_MID,p*360);s+=`<circle cx="${hx}" cy="${hy}" r="9" fill="#fff" stroke="${red}" stroke-width="3"/>`;
+    }else{
+      const side=(key,a0,a1)=>{const v=o[key]||'off';let fill=plastic,fg=ink,label='',icon='';
+        if(key==='l'){label=o.ll?o.ll:'al contrario';icon='◀◀';}
+        else{label='originale';icon='▶';}
+        if(v==='on'){fill=orange;fg='#fff';}
+        if(v==='lock'){icon='LOCK';fg=mute;label='originale · chiuso';}
+        if(v==='off'){fg=mute;}
+        if(v==='no'){label='mancata';icon='✕';fg=ink;}
+        if(v==='ok'){label='indovinata';icon='✓';fill=o.sel==='r'?green:plastic;fg=o.sel==='r'?'#fff':ink;}
+        if(key==='r'&&o.knob!=null){fill=dk?'#1E1D19':'#ECE8E0';label='';icon='';}
+        s+=`<path d="${sector(a0,a1)}" fill="${fill}" filter="url(#${id}sh)"/>`;
+        if(label){const pid=id+key;
+          // label along the lower part of each sector, icon in the upper part
+          const path=key==='l'?arc(R_MID-5,200,292):arc(R_MID+5,68,160);
+          s+=`<path id="${pid}" d="${path}" fill="none"/><text font-family="RF" font-weight="800" font-size="11.5" letter-spacing="1.8" fill="${fg}" text-anchor="middle" dominant-baseline="middle"><textPath href="#${pid}" startOffset="50%">${label.toUpperCase()}</textPath></text>`;
+          const[ix,iy]=pt(R_MID,key==='l'?318:42);
+          if(icon==='LOCK')s+=lock(+ix,+iy,fg);else s+=`<text x="${ix}" y="${iy}" font-family="RF" font-weight="900" font-size="22" fill="${fg}" text-anchor="middle" dominant-baseline="central">${icon}</text>`;}
+      };
+      side('l',190,350);side('r',10,170);
+      if(o.knob!=null){const p=o.knob,a=170-p*160;
+        s+=`<path d="${arc(R_MID,170,a)}" fill="none" stroke="${ink}" stroke-width="56" stroke-linecap="round"/>`;
+        // detents
+        for(let d=170;d>=10;d-=10){const[x0,y0]=pt(R_OUT-3,d),[x1,y1]=pt(R_OUT-10,d);s+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${mute}" stroke-width="1.5"/>`;}
+        const[tx,ty]=pt(R_MID,10);s+=`<circle cx="${tx}" cy="${ty}" r="27" fill="none" stroke="${ink}" stroke-width="2" stroke-dasharray="4 4"/><text x="${tx}" y="${ty}" font-family="RF" font-weight="900" font-size="18" fill="${ink}" text-anchor="middle" dominant-baseline="central">▲</text>`;
+        const[kx,ky]=pt(R_MID,a);s+=`<circle cx="${kx}" cy="${ky}" r="31" fill="${orange}" stroke="${dk?'#141412':'#fff'}" stroke-width="5" filter="url(#${id}sh)"/>${lock(+kx,+ky-6,"#fff",.72)}<text x="${kx}" y="${(+ky+12).toFixed(1)}" font-family="RF" font-weight="850" font-size="11.5" fill="#fff" text-anchor="middle" dominant-baseline="central">${Math.round(p*100)}%</text>`;
+      }
+    }
+    // platter with grooves and a two-wedge sheen (shows rotation in still frames)
+    s+=`<circle cx="180" cy="180" r="${R_PL+5}" fill="${dk?'#141412':'#E6E2DA'}"/>`;
+    s+=`<g class="spin ${o.spin||''}"><circle cx="180" cy="180" r="${R_PL}" fill="url(#${id}pl)" ${o.dim?'opacity=".9"':''}/>`;
+    for(let r=58;r<R_PL-2;r+=3.2)s+=`<circle cx="180" cy="180" r="${r.toFixed(1)}" fill="none" stroke="#fff" stroke-opacity="${(0.035+((r*7)%5)/100).toFixed(3)}" stroke-width=".8"/>`;
+    const w=(a0,a1)=>{const[x0,y0]=pt(R_PL,a0),[x1,y1]=pt(R_PL,a1);return`M180 180L${x0} ${y0}A${R_PL} ${R_PL} 0 0 1 ${x1} ${y1}Z`;};
+    s+=`<path d="${w(20,48)}" fill="#fff" opacity=".07"/><path d="${w(200,228)}" fill="#fff" opacity=".07"/>`;
+    s+=`<circle cx="180" cy="${180-R_PL+14}" r="3" fill="${orange}"/></g>`;
+    if(o.spin){const bw=o.spin==='bw';const a0=bw?120:-120,a1=bw?40:-40;const r=R_PL-14;const[ex,ey]=pt(r,bw?40:-40);
+      s+=`<path d="${arc(r,bw?130:230,bw?50:310)}" fill="none" stroke="${o.spin==='bw'?orange:'#fff'}" stroke-opacity=".9" stroke-width="3" stroke-linecap="round"/>`;
+      const[hx,hy]=pt(r,bw?50:310);s+=`<circle cx="${hx}" cy="${hy}" r="5" fill="${o.spin==='bw'?orange:'#fff'}"/>`;}
+    // centre button
+    const cc=o.c;let cf=plastic,cin='';
+    if(cc==='rec'){cin=`<circle cx="180" cy="${o.cl?171:180}" r="15" fill="${red}"/>`+(o.cl?`<text x="180" y="200" font-family="RF" font-weight="800" font-size="12" letter-spacing="1.8" fill="${ink}" text-anchor="middle">${o.cl.toUpperCase()}</text>`:'');}
+    if(cc==='stop'){cf=red;cin=`<rect x="166" y="166" width="28" height="28" rx="6" fill="#fff"/>`;}
+    if(cc==='next'){cf=ink;cin=`<path d="M168 172h22M182 164l8 8-8 8" fill="none" stroke="${dk?'#141412':'#F7F5F0'}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><text x="180" y="200" font-family="RF" font-weight="800" font-size="11.5" letter-spacing="1.6" fill="${dk?'#141412':'#F7F5F0'}" text-anchor="middle">${(o.cl||'').toUpperCase()}</text>`;}
+    s+=`<circle cx="180" cy="180" r="50" fill="${cf}" filter="url(#${id}sh)" ${cc==='rec'&&!o.dim?`stroke="${red}" stroke-opacity=".35" stroke-width="6"`:''}/>${cin}`;
+    s+='</svg>';el.innerHTML=s;
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverseur v3 · 08 · Duello</title>
+<style>
+/* ---------- Presentation shell (shared by mockups v3 06-10) ---------- */
+@font-face{
+  font-family:"RF";
+  src:url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2-variations"),
+      url("../../web/node_modules/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2") format("woff2");
+  font-weight:100 1000;font-stretch:25% 151%;font-display:block;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:#ebe9e4;color:#16141c;font-family:"RF",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-optical-sizing:auto}
+body{padding:64px 64px 80px;width:max-content;min-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;text-align:inherit}
+svg{display:block}
+.tnum{font-variant-numeric:tabular-nums}
+
+.doc-head{display:grid;grid-template-columns:1.3fr 1fr 1fr 1.15fr;gap:52px;margin-bottom:28px;align-items:start;max-width:2140px}
+.kicker{font:680 13px/1 "RF";letter-spacing:.18em;text-transform:uppercase;color:#6b6676;margin-bottom:18px}
+.doc-head h1{font-size:84px;line-height:.9;font-weight:900;letter-spacing:-.03em;margin-bottom:20px;font-stretch:88%}
+.doc-head .pitch{font-size:21px;line-height:1.42;color:#2c2935;font-weight:450;max-width:34ch}
+.doc-head h3{font:720 13px/1 "RF";letter-spacing:.15em;text-transform:uppercase;color:#6b6676;margin:4px 0 14px}
+.doc-head p,.doc-head li{font-size:16px;line-height:1.55;color:#34313d}
+.doc-head ol,.doc-head ul{padding-left:20px;display:grid;gap:6px}
+.doc-head strong{font-weight:720;color:#16141c}
+.metrics{display:flex;gap:12px;margin:0 0 56px;flex-wrap:wrap;max-width:2140px}
+.metric{background:#fff;border-radius:18px;padding:14px 20px 13px;display:flex;align-items:baseline;gap:10px;box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.metric b{font:850 30px/1 "RF";letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.metric span{font:560 14px/1.25 "RF";color:#55505f}
+
+.row{display:flex;gap:40px;align-items:flex-start;margin-bottom:64px}
+.shot{display:flex;flex-direction:column;gap:18px;flex:none}
+.cap{display:flex;align-items:baseline;gap:10px;font:620 15px/1.2 "RF";color:#3b3746;padding-left:6px;white-space:nowrap}
+.cap b{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 6px;border-radius:13px;background:#16141c;color:#fff;font:760 13px/1 "RF"}
+.cap span{color:#77727f;font-weight:500}
+
+.phone{width:390px;height:844px;border-radius:54px;position:relative;overflow:hidden;flex:none;isolation:isolate;container-type:size;
+  box-shadow:0 0 0 10px #111016,0 0 0 11.5px #3a3744,0 40px 70px -28px rgba(25,15,50,.5);background:var(--bg);color:var(--ink)}
+.phone.s360{width:360px;height:640px;border-radius:40px}
+.phone.land{width:844px;height:390px}
+.phone.land.s360{width:640px;height:360px;border-radius:40px}
+.sb{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 40px;font:650 16px/1 "RF";z-index:60;pointer-events:none;color:var(--sb,var(--ink))}
+.sb svg{height:13px;width:auto}
+.s360 .sb{height:30px;font-size:13px;padding:2px 20px 0 22px}
+.land .sb{display:none}
+.hi{position:absolute;bottom:8px;left:50%;width:136px;height:5px;border-radius:3px;background:var(--sb,var(--ink));opacity:.75;transform:translateX(-50%);z-index:60;pointer-events:none}
+.s360 .hi{width:100px;height:4px;bottom:6px}
+.scr{position:absolute;inset:0;padding:50px 0 30px;display:flex;flex-direction:column}
+.s360 .scr{padding:30px 0 18px}
+.land .scr{padding:14px 50px 22px}
+.land.s360 .scr{padding:10px 36px 18px}
+
+.desk{border-radius:16px;overflow:hidden;position:relative;flex:none;box-shadow:0 0 0 1px #c9c6cf,0 40px 70px -30px rgba(25,15,50,.45);background:var(--bg);color:var(--ink);container-type:size}
+.desk .bar{height:38px;background:#dedce2;display:flex;align-items:center;gap:8px;padding:0 14px}
+.desk .bar i{width:12px;height:12px;border-radius:50%;background:#bdbac3}
+.desk .bar span{margin-left:16px;font:500 12.5px/1 "RF";color:#5a5663;background:#f4f3f6;border-radius:8px;padding:6px 14px}
+
+.note{width:390px;flex:none;background:#fff;border-radius:28px;padding:30px 30px 28px;box-shadow:0 1px 0 rgba(0,0,0,.04),0 20px 40px -30px rgba(25,15,50,.3)}
+.note h4{font:760 13px/1 "RF";letter-spacing:.15em;text-transform:uppercase;color:#6b6676;margin-bottom:16px}
+.note p,.note li{font-size:14.5px;line-height:1.5;color:#34313d}
+.note ul{padding-left:18px;display:grid;gap:8px}
+.note strong{color:#16141c;font-weight:720}
+.note + .note{margin-top:0}
+.stack{display:flex;flex-direction:column;gap:28px}
+.sw{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.sw i{height:54px;border-radius:14px;display:flex;align-items:flex-end;padding:7px 9px;font:650 11px/1 "RF";font-style:normal}
+
+/* thumb map */
+.thumb{display:flex;gap:18px;align-items:flex-start}
+.thumb svg{flex:none}
+.legend{display:grid;gap:8px;font:520 13px/1.35 "RF";color:#45414f}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:8px;vertical-align:-1px}
+
+/* hold demo shared */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shaking{animation:shake .32s ease}
+.shot-mode *,.shot-mode *::before,.shot-mode *::after{animation:none!important;transition:none!important}
+
+
+/* ================= 08 · DUELLO ================= */
+.phone,.desk{--bg:#f3f1ee;--surf:#ffffff;--ink:#121418;--mut:#585c66;--line:#e2dfda;
+  --a:#c2410c;--a-ink:#ffffff;--a-soft:#ffe9dd;--b:#1d5fb4;--b-ink:#ffffff;--b-soft:#e1ecfa;
+  --mid:#121418;--mid-ink:#f6f5f2;--mid-mut:#a3a6ae;--mid-2:#24272e;--rec:#e03131;--ok:#1f8f4e}
+.phone.dark,.desk.dark{--bg:#0c0d10;--surf:#1a1c21;--ink:#f1f0ee;--mut:#a8abb3;--line:#2a2d33;
+  --a:#ff8f5e;--a-ink:#2a0e00;--a-soft:#2a1910;--b:#74abff;--b-ink:#03152e;--b-soft:#0f1c31;
+  --mid:#f1f0ee;--mid-ink:#121418;--mid-mut:#5a5e68;--mid-2:#dcdad6;--rec:#ff5c5c;--ok:#46d08a}
+.wide{font-stretch:130%}
+.duel{flex:1;min-height:0;display:grid;grid-template-columns:1fr 150px 1fr;gap:10px}
+.half{border-radius:26px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--hs);--c:var(--a);--ci:var(--a-ink);--hs:var(--a-soft);min-width:0;position:relative}
+.half.b{--c:var(--b);--ci:var(--b-ink);--hs:var(--b-soft)}
+.hh{display:flex;align-items:center;gap:10px;height:40px;flex:none;padding:0 4px}
+.half.b .hh{flex-direction:row-reverse;text-align:right}
+.hh .L{font:900 40px/1 "RF";font-stretch:140%;color:var(--c);letter-spacing:-.02em}
+.hh .t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.hh .t b{font:800 15.5px/1.1 "RF";font-stretch:110%;white-space:nowrap}
+.hh .t small{font:550 12.5px/1.15 "RF";color:var(--mut);white-space:nowrap}
+.hh .st{margin-left:auto;height:26px;padding:0 10px;border-radius:13px;display:flex;align-items:center;gap:6px;font:750 11.5px/1 "RF";letter-spacing:.06em;text-transform:uppercase;background:var(--surf);color:var(--mut);white-space:nowrap}
+.half.b .hh .st{margin-left:0;margin-right:auto}
+.hh .st i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.hh .st.rec{color:var(--rec)} .hh .st.on{color:var(--c)}
+.tiles{flex:1;min-height:0;display:grid;gap:10px;grid-template-columns:1fr 1fr}
+.tiles.one{grid-template-columns:1fr}
+.tile{border-radius:20px;background:var(--surf);display:flex;flex-direction:column;justify-content:space-between;padding:14px;text-align:left;min-width:0;min-height:0;position:relative;overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.half.b .tile{text-align:right;align-items:flex-end}
+.tile .ic{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--hs);color:var(--c);flex:none}
+.tile .ic svg{width:26px;height:26px}
+.tile .tx{display:flex;flex-direction:column;gap:4px}
+.tile .tx b{font:800 17px/1.1 "RF";font-stretch:110%}
+.tile .tx small{font:520 12.5px/1.25 "RF";color:var(--mut)}
+.tile.rec .ic{background:var(--rec);color:#fff}
+.tile.fill{background:var(--c);color:var(--ci)}
+.tile.fill .ic{background:var(--ci);color:var(--c)}
+.tile.fill .tx small{color:inherit;opacity:.85}
+.tile.ghost{background:transparent;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--c) 22%,transparent)}
+.tile.off{opacity:.5}
+.tile .wave{height:40px;width:100%;color:currentColor;flex:none}
+.tile .tm{font:300 46px/.9 "RF";font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.tile .tm small{font:600 13px/1 "RF";letter-spacing:0;opacity:.75;margin-left:4px}
+.tile.recing{background:var(--rec);color:#fff}
+.tile.recing .ic{background:#fff;color:var(--rec)}
+.tile.recing .tx small{color:#fff;opacity:.9}
+.land:not(.s360) .tiles.one .tile .tx b{font-size:21px}
+.vu{display:flex;gap:3px;align-items:center;height:36px;width:100%}
+.vu span{flex:1;border-radius:2px;height:calc(6px + var(--v)*30px);background:currentColor;opacity:.9}
+.half.b .tile .row2{flex-direction:row-reverse}
+.row2{display:flex;align-items:center;gap:12px;width:100%}
+.sec{display:flex;gap:10px;flex:none}
+.half.b .sec{flex-direction:row-reverse}
+.sbtn{height:56px;flex:1;border-radius:18px;background:var(--surf);display:flex;align-items:center;justify-content:center;gap:8px;font:700 14px/1 "RF";color:var(--ink);white-space:nowrap;padding:0 12px}
+.sbtn svg{width:20px;height:20px;flex:none}
+.sbtn.lock{color:var(--mut)}
+.sbtn.off{opacity:.45}
+.cover{position:absolute;inset:0;border-radius:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;background:color-mix(in srgb,var(--hs) 88%,transparent);backdrop-filter:blur(2px);z-index:3}
+.cover svg{width:44px;height:44px;color:var(--c)}
+.cover b{font:850 22px/1.1 "RF";font-stretch:120%}
+.cover small{font:520 13.5px/1.35 "RF";color:var(--mut);max-width:24ch}
+
+/* middle column */
+.mid{background:var(--mid);color:var(--mid-ink);border-radius:26px;padding:14px 12px 12px;display:flex;flex-direction:column;align-items:stretch;gap:10px;text-align:center;min-height:0}
+.mid .k{font:750 11px/1 "RF";letter-spacing:.16em;text-transform:uppercase;color:var(--mid-mut)}
+.mid .sc{font:900 38px/1 "RF";font-stretch:135%;font-variant-numeric:tabular-nums;letter-spacing:-.02em;display:flex;justify-content:center;gap:6px;align-items:baseline}
+.mid .sc span{color:var(--mid-mut);font-weight:400;font-size:26px}
+.mid .sc small{display:block}
+.steps{display:flex;justify-content:center;gap:5px}
+.steps i{width:16px;height:5px;border-radius:3px;background:var(--mid-2)}
+.steps i.on{background:var(--mid-ink)}
+.steps i.a{background:var(--a)} .steps i.b{background:var(--b)}
+.mid .hint{font:560 12.5px/1.3 "RF";color:var(--mid-mut);flex:1;display:flex;align-items:center;justify-content:center}
+.mid .hint b{color:var(--mid-ink);font-weight:750}
+.rv{flex:none;height:150px;border-radius:20px;background:var(--mid-2);color:var(--mid-ink);position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;--p:0}
+.rv .fl{position:absolute;left:0;right:0;bottom:0;height:calc(var(--p)*100%);background:linear-gradient(0deg,var(--a),var(--b))}
+.rv > *:not(.fl){position:relative}
+.rv svg{width:30px;height:30px}
+.rv b{font:800 14px/1.1 "RF"}
+.rv small{font:600 11.5px/1.2 "RF";opacity:.8}
+.rv .pc{font:850 22px/1 "RF";font-variant-numeric:tabular-nums}
+.rv.off{opacity:.45}
+.rv.live{color:#fff}
+.dark .rv.live{color:#fff}
+.vb{height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:7px;font:750 14px/1 "RF";background:var(--mid-2);color:var(--mid-ink)}
+.vb svg{width:20px;height:20px}
+.vb.on{background:#2fb365;color:#04210f}
+.mid .newr{height:56px;border-radius:16px;background:var(--mid-ink);color:var(--mid);font:800 14px/1.1 "RF";display:flex;align-items:center;justify-content:center;gap:6px}
+.mid .newr svg{width:18px;height:18px}
+.mid .ttip{position:absolute}
+.phone[data-tip] .tipx{opacity:1}
+.tipx{position:absolute;left:50%;top:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);font:700 13.5px/1 "RF";padding:9px 14px;border-radius:10px;opacity:0;transition:opacity .2s;z-index:20;pointer-events:none;white-space:nowrap}
+
+/* small landscape */
+.land.s360 .duel{grid-template-columns:1fr 118px 1fr;gap:8px}
+.land.s360 .half{padding:9px;gap:8px;border-radius:22px}
+.land.s360 .hh{height:32px}
+.land.s360 .hh .L{font-size:32px}
+.land.s360 .hh .t small{display:none}
+.land.s360 .tile{padding:10px;border-radius:16px}
+.land.s360 .tile .ic{width:44px;height:44px}
+.land.s360 .tile .tx b{font-size:14.5px}
+.land.s360 .tile .tx small{display:none}
+.land.s360 .mid{padding:10px 8px 8px;gap:6px;border-radius:22px}
+.land.s360 .mid .sc{font-size:30px}
+.land.s360 .rv{height:118px}
+.land.s360 .sbtn{height:56px;font-size:13px}
+.land.s360 .tile .tm{font-size:36px}
+
+/* table mode: B half rotated for the player opposite */
+.tavolo .half.b{transform:rotate(180deg)}
+.tavolo .mid .flip{transform:rotate(180deg)}
+
+/* portrait degrade */
+.port .scr{padding:54px 12px 34px}
+.port .duel{grid-template-columns:1fr;grid-template-rows:1fr auto 1.35fr}
+.port .mid{flex-direction:row;align-items:center;padding:10px;gap:10px;text-align:left}
+.port .mid .meta{flex:1;display:flex;flex-direction:column;gap:8px;padding-left:6px}
+.port .mid .sc{justify-content:flex-start;font-size:32px}
+.port .mid .steps{justify-content:flex-start}
+.port .rv{height:84px;width:206px;flex-direction:row;padding:0 14px;gap:10px;justify-content:flex-start}
+.port .rv .fl{top:0;bottom:0;height:auto;width:calc(var(--p)*100%);background:linear-gradient(90deg,var(--a),var(--b))}
+.port .rv .txt{display:flex;flex-direction:column;gap:3px;text-align:left;flex:1}
+.port .rv .pc{font-size:17px}
+.port.s360 .scr{padding:34px 10px 22px}
+.port.s360 .duel{gap:8px}
+.port.s360 .half{padding:10px;gap:8px}
+.port.s360 .rv{width:180px;height:76px}
+.port.s360 .hh .t small{display:none}
+.port.s360 .tile .tx small{display:none}
+.port.s360 .mid .sc{font-size:26px}
+
+/* desktop */
+.desk .wrap{position:absolute;inset:38px 0 0;padding:28px 36px 32px;display:flex;flex-direction:column;gap:18px}
+.desk .tb{display:flex;align-items:center;gap:14px;height:44px}
+.desk .tb .lg{font:900 22px/1 "RF";font-stretch:130%;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.desk .tb .lg svg{width:26px;height:26px;color:var(--a)}
+.desk .tb .kb{margin-left:auto;font:550 13px/1 "RF";color:var(--mut);display:flex;gap:14px;align-items:center}
+.desk .tb kbd{font:700 12px/1 "RF";background:var(--surf);border-radius:6px;padding:5px 8px;box-shadow:0 0 0 1px var(--line),0 2px 0 var(--line);color:var(--ink)}
+.desk .duel{grid-template-columns:1fr 220px 1fr;gap:18px}
+.desk .half{padding:20px;gap:16px;border-radius:32px}
+.desk .hh{height:56px}
+.desk .hh .L{font-size:56px}
+.desk .hh .t b{font-size:20px}
+.desk .hh .t small{font-size:14px}
+.desk .tile{padding:22px;border-radius:26px}
+.desk .tile .ic{width:72px;height:72px}
+.desk .tile .ic svg{width:34px;height:34px}
+.desk .tile .tx b{font-size:24px}
+.desk .tile .tx small{font-size:15px}
+.desk .tile .wave{height:64px}
+.desk .sbtn{height:64px;font-size:16px}
+.desk .mid{padding:22px 18px 18px;border-radius:32px;gap:16px}
+.desk .mid .sc{font-size:56px}
+.desk .rv{height:220px}
+.desk .rv b{font-size:17px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mic" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 0 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5zm5.6-3.6a5.6 5.6 0 0 1-11.2 0H4.3a7.7 7.7 0 0 0 6.6 7.6V21h2.2v-2.5a7.7 7.7 0 0 0 6.6-7.6z"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5.5" y="5.5" width="13" height="13" rx="3" fill="currentColor"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.3v13.4a1 1 0 0 0 1.53.85l10.6-6.7a1 1 0 0 0 0-1.7L9.53 4.45A1 1 0 0 0 8 5.3z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1.3" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-rev" viewBox="0 0 24 24"><path fill="currentColor" d="M11.6 6.1v11.8a.8.8 0 0 1-1.3.63L2.9 12.63a.8.8 0 0 1 0-1.26l7.4-5.9a.8.8 0 0 1 1.3.63zm10 0v11.8a.8.8 0 0 1-1.3.63l-7.4-5.9a.8.8 0 0 1 0-1.26l7.4-5.9a.8.8 0 0 1 1.3.63z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10V7.6a5 5 0 0 1 10 0V10h.8A2.2 2.2 0 0 1 20 12.2v7.6a2.2 2.2 0 0 1-2.2 2.2H6.2A2.2 2.2 0 0 1 4 19.8v-7.6A2.2 2.2 0 0 1 6.2 10zm2.2 0h5.6V7.6a2.8 2.8 0 0 0-5.6 0z"/></symbol>
+  <symbol id="i-unlock" viewBox="0 0 24 24"><path fill="currentColor" d="M9.2 10V7.6a2.8 2.8 0 0 1 5.4-1l2-.8A5 5 0 0 0 7 7.6V10h-.8A2.2 2.2 0 0 0 4 12.2v7.6A2.2 2.2 0 0 0 6.2 22h11.6a2.2 2.2 0 0 0 2.2-2.2v-7.6a2.2 2.2 0 0 0-2.2-2.2z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.8 12.6l4.6 4.6L19.4 7.2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="18.5" cy="12" r="2" fill="currentColor"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.2v4.6h4.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4.5L3.5 8 7 11.5M3.5 8h13M17 12.5l3.5 3.5-3.5 3.5M20.5 16h-13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4.5 12h14M13 6.5l5.5 5.5-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19.5 12h-14M11 6.5L5.5 12l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5C6.5 5 2.7 9.6 1.6 11.4a1.1 1.1 0 0 0 0 1.2C2.7 14.4 6.5 19 12 19s9.3-4.6 10.4-6.4a1.1 1.1 0 0 0 0-1.2C21.3 9.6 17.5 5 12 5zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2.2a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6z"/></symbol>
+  <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9.5 6L4 11.5 9.5 17M4.5 11.5h9a6.5 6.5 0 0 1 6.5 6.5v.5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-ear" viewBox="0 0 24 24"><path d="M6.5 9a5.5 5.5 0 0 1 11 0c0 3.4-3.4 4.2-3.8 7.3-.3 2.4-1.8 3.7-3.7 3.7A3 3 0 0 1 7 17M9.5 9.2a2.5 2.5 0 0 1 5 0c0 1.4-1.3 2-1.6 3" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+
+<header class="doc-head">
+  <div>
+    <div class="kicker">Reverseur · mockup v3 · concetto 08</div>
+    <h1>Duello</h1>
+    <p class="pitch">Pensato per il telefono <strong>in orizzontale</strong> o per un portatile alla festa: <strong>due metà speculari</strong>, A a sinistra e B a destra, e una colonna centrale neutra con punteggio e rivelazione. Ognuno ha il suo campo; lo spoiler sta nella terra di nessuno.</p>
+  </div>
+  <div>
+    <h3>Concetto</h3>
+    <p>In orizzontale il telefono si tiene con due pollici: il <strong>sinistro</strong> copre la metà di A, il <strong>destro</strong> quella di B. Per questo i comandi principali stanno verso i bordi esterni, specchiati. Il centro è la zona che nessun pollice raggiunge "per caso": lì sta <strong>Svela</strong>, che va comunque tenuto premuto. Modalità <strong>Tavolo</strong>: con il telefono appoggiato tra due persone, la metà di B si gira di 180°.</p>
+  </div>
+  <div>
+    <h3>Flusso</h3>
+    <ol>
+      <li>A: tile REC grande nella sua metà; B vede «Copriti le orecchie».</li>
+      <li>A registra: la tile diventa rossa con timer e VU, tocca per fermare.</li>
+      <li>La metà di A si sigilla; in quella di B si accendono ◀◀ e REC, affiancati.</li>
+      <li>B registra; la sua ◀◀ diventa «Imitazione al contrario» e parte da sola.</li>
+      <li>Colonna centrale: tieni premuto Svela, si riempie dal basso; al 100% suona A.</li>
+      <li>Al centro: ✓/✗, punteggio, «Round 4» (le metà si scambiano i ruoli).</li>
+    </ol>
+  </div>
+  <div>
+    <h3>Perché il layout è ottimale</h3>
+    <ul>
+      <li><strong>Nessun passaggio di mano:</strong> ognuno ha il suo lato; i bersagli sono tile da 130–280 px.</li>
+      <li><strong>Simmetria = regola:</strong> la metà di B è lo specchio di quella di A, quindi si impara una volta sola.</li>
+      <li><strong>Lo spoiler è lontano da entrambi</strong> e ha una pressione lunga.</li>
+      <li><strong>Degrada bene:</strong> in verticale le metà si impilano (A sopra, B, che gioca di più, sotto il pollice) e la colonna diventa una fascia.</li>
+    </ul>
+  </div>
+</header>
+<div class="metrics">
+  <div class="metric"><b>7</b><span>tocchi per round<br>(REC·Stop · ◀◀·REC·Stop · Svela · ✓)</span></div>
+  <div class="metric"><b>0</b><span>passaggi di telefono<br>(ognuno ha la sua metà)</span></div>
+  <div class="metric"><b>130</b><span>px lato minimo di una tile<br>a 844×390</span></div>
+  <div class="metric"><b>56</b><span>px bersaglio minimo<br>anche a 640×360</span></div>
+  <div class="metric"><b>3</b><span>formati da un solo layout:<br>orizzontale, verticale, desktop</span></div>
+</div>
+
+<!-- ============ ROW 1 ============ -->
+<div class="row">
+  <div class="shot">
+    <div class="cap"><b>a</b>Inizio round <span>· 844×390 chiaro</span></div>
+    <div class="phone land" data-id="a">
+      <div class="scr"><div class="duel">
+        <div class="half a">
+          <div class="hh"><span class="L">A</span><span class="t"><b>Parola segreta</b><small>tocca a te</small></span><span class="st on"><i></i>Tuo turno</span></div>
+          <div class="tiles one"><button class="tile rec"><span class="ic"><svg><use href="#i-mic"/></svg></span><span class="tx"><b>Registra la parola</b><small>Tocca per iniziare · massimo 10 s</small></span></button></div>
+          <div class="sec"><button class="sbtn lock off"><svg><use href="#i-lock"/></svg>Originale · tieni premuto</button></div>
+        </div>
+        <div class="mid">
+          <div class="k">Round 3</div>
+          <div class="sc">4<span>:</span>2</div>
+          <div class="steps"><i class="a"></i><i></i><i></i><i></i><i></i></div>
+          <div class="hint"><span><b>A</b> registra,<br><b>B</b> non ascolta</span></div>
+          <button class="rv off"><svg><use href="#i-lock"/></svg><b>Svela</b><small>alla fine</small></button>
+        </div>
+        <div class="half b">
+          <div class="cover"><svg><use href="#i-ear"/></svg><b>Copriti le orecchie</b><small>Quando A ha finito si accendono i tuoi tasti</small></div>
+          <div class="hh"><span class="L">B</span><span class="t"><b>Imitazione</b><small>dopo A</small></span><span class="st">Attesa</span></div>
+          <div class="tiles"><button class="tile off"><span class="ic"><svg><use href="#i-rev"/></svg></span><span class="tx"><b>Al contrario</b></span></button><button class="tile rec off"><span class="ic"><svg><use href="#i-mic"/></svg></span><span class="tx"><b>Imita</b></span></button></div>
+          <div class="sec"><button class="sbtn off"><svg><use href="#i-play"/></svg>Riascolta imitazione</button></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="cap"><b>b</b>A registra <span>· timer + VU nella tile</span></div>
+    <div class="phone land" data-id="b">
+      <div class="scr"><div class="duel">
+        <div class="half a">
+          <div class="hh"><span class="L">A</span><span class="t"><b>Parola segreta</b><small>sto registrando</small></span><span class="st rec"><i></i>Rec</span></div>
+          <div class="tiles one"><button class="tile recing">
+            <div class="row2"><span class="ic"><svg><use href="#i-stop"/></svg></span><span class="tm">03,4<small>/10 s</small></span></div>
+            <div class="vu" data-vu="30" data-shape="bars"></div>
+            <span class="tx"><b>Tocca per fermare</b><small>Si ferma da solo a 10 s</small></span></button></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-x"/></svg>Annulla</button></div>
+        </div>
+        <div class="mid">
+          <div class="k">Round 3</div>
+          <div class="sc">4<span>:</span>2</div>
+          <div class="steps"><i class="a"></i><i></i><i></i><i></i><i></i></div>
+          <div class="hint"><span>Silenzio in sala</span></div>
+          <button class="rv off"><svg><use href="#i-lock"/></svg><b>Svela</b><small>alla fine</small></button>
+        </div>
+        <div class="half b">
+          <div class="cover"><svg><use href="#i-ear"/></svg><b>A sta registrando</b><small>Non ascoltare: sentirai solo la versione al contrario</small></div>
+          <div class="hh"><span class="L">B</span><span class="t"><b>Imitazione</b><small>dopo A</small></span><span class="st">Attesa</span></div>
+          <div class="tiles"><button class="tile off"><span class="ic"><svg><use href="#i-rev"/></svg></span></button><button class="tile rec off"><span class="ic"><svg><use href="#i-mic"/></svg></span></button></div>
+          <div class="sec"><button class="sbtn off">—</button></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="cap"><b>c</b>B ascolta al contrario e imita</div>
+    <div class="phone land" data-id="c">
+      <div class="scr"><div class="duel">
+        <div class="half a">
+          <div class="hh"><span class="L">A</span><span class="t"><b>Parola segreta</b><small>sigillata · 1,8 s</small></span><span class="st"><svg style="width:12px;height:12px"><use href="#i-lock"/></svg>Fatto</span></div>
+          <div class="tiles one"><div class="tile ghost"><span class="ic"><svg><use href="#i-lock"/></svg></span><div class="wave" data-wave="3" data-mode="sealed" data-bw="4"></div><span class="tx"><b>Sigillata</b><small>B la sente solo al contrario</small></span></div></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-redo"/></svg>Rifai</button><button class="sbtn lock"><svg><use href="#i-lock"/></svg>Originale</button></div>
+        </div>
+        <div class="mid">
+          <div class="k">Round 3</div>
+          <div class="sc">4<span>:</span>2</div>
+          <div class="steps"><i class="on"></i><i class="b"></i><i class="b"></i><i></i><i></i></div>
+          <div class="hint"><span><b>B</b>: ascolta,<br>poi imita</span></div>
+          <button class="rv off"><svg><use href="#i-lock"/></svg><b>Svela</b><small>alla fine</small></button>
+        </div>
+        <div class="half b">
+          <div class="hh"><span class="L">B</span><span class="t"><b>Imitazione</b><small>tocca a te</small></span><span class="st rec"><i></i>Rec</span></div>
+          <div class="tiles"><button class="tile fill"><span class="ic"><svg><use href="#i-pause"/></svg></span><div class="wave" data-wave="3" data-rev data-p=".62" data-dim=".4"></div><span class="tx"><b>A ◀◀</b><small>2 ascolti</small></span></button>
+            <button class="tile recing"><span class="ic"><svg><use href="#i-stop"/></svg></span><span class="tm">02,1</span><div class="vu" data-vu="14" data-shape="bars" style="height:28px"></div><span class="tx"><b>Stop</b><small>/10 s</small></span></button></div>
+          <div class="sec"><button class="sbtn off"><svg><use href="#i-play"/></svg>Riascolta imitazione</button></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="shot">
+    <div class="cap"><b>d</b>Indovina e svela <span>· pressione al 62%</span></div>
+    <div class="phone land" data-id="d">
+      <div class="scr"><div class="duel">
+        <div class="half a">
+          <div class="hh"><span class="L">A</span><span class="t"><b>Parola segreta</b><small>sigillata · 1,8 s</small></span></div>
+          <div class="tiles one"><div class="tile ghost"><span class="ic"><svg><use href="#i-lock"/></svg></span><div class="wave" data-wave="3" data-mode="sealed" data-bw="4"></div><span class="tx"><b>Si apre dal centro</b><small>Svela, tenendo premuto</small></span></div></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-redo"/></svg>Rifai</button><button class="sbtn lock"><svg><use href="#i-lock"/></svg>Originale</button></div>
+        </div>
+        <div class="mid">
+          <div class="k">Round 3</div>
+          <div class="sc">4<span>:</span>2</div>
+          <div class="steps"><i class="on"></i><i class="on"></i><i class="on"></i><i class="b"></i><i></i></div>
+          <div class="hint"><span><b>B</b>: di' la<br>parola</span></div>
+          <button class="rv live" data-hold="600" data-p=".62"><span class="fl"></span><svg><use href="#i-eye"/></svg><span class="pc">62%</span><small>continua…</small></button>
+        </div>
+        <div class="half b">
+          <div class="hh"><span class="L">B</span><span class="t"><b>Che parola senti?</b><small>3 ascolti</small></span><span class="st on"><i></i>Suona</span></div>
+          <div class="tiles one"><button class="tile fill"><div class="row2"><span class="ic"><svg><use href="#i-pause"/></svg></span><span class="tx"><b>Imitazione al contrario</b><small>Parte da sola · 1,1 / 2,0 s</small></span></div><div class="wave" data-wave="5" data-rev data-p=".55" data-dim=".4" style="height:70px"></div></button></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-rev"/></svg>A al contrario</button><button class="sbtn"><svg><use href="#i-redo"/></svg>Rifai</button></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="cap"><b>e</b>Esito e punteggio</div>
+    <div class="phone land" data-id="e">
+      <div class="scr"><div class="duel">
+        <div class="half a">
+          <div class="hh"><span class="L">A</span><span class="t"><b>Originale</b><small>svelato</small></span><span class="st on"><i></i>Suona</span></div>
+          <div class="tiles one"><button class="tile fill"><div class="row2"><span class="ic"><svg><use href="#i-pause"/></svg></span><span class="tx"><b>Parola di A</b><small>0,7 / 1,8 s</small></span></div><div class="wave" data-wave="3" data-p=".4" data-dim=".4" style="height:70px"></div></button></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-play"/></svg>Riascolta</button></div>
+        </div>
+        <div class="mid">
+          <div class="k">Com'è andata?</div>
+          <div class="sc">5<span>:</span>2</div>
+          <button class="vb on"><svg><use href="#i-check"/></svg>Indovinata</button>
+          <button class="vb"><svg><use href="#i-x"/></svg>Mancata</button>
+          <div style="flex:1"></div>
+          <button class="newr">Round 4<svg><use href="#i-swap"/></svg></button>
+        </div>
+        <div class="half b">
+          <div class="hh"><span class="L">B</span><span class="t"><b>Confronta</b><small>i due suoni</small></span><span class="st" style="color:var(--ok)">+1</span></div>
+          <div class="tiles one"><button class="tile"><div class="row2"><span class="ic"><svg><use href="#i-rev"/></svg></span><span class="tx"><b>Imitazione al contrario</b><small>2,0 s</small></span></div><div class="wave" data-wave="5" data-rev style="height:70px;color:var(--b)"></div></button></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-play"/></svg>Imitazione</button></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="cap"><b>d</b>Svela <span>· scuro · prova a tenere premuto</span></div>
+    <div class="phone land dark" data-id="d-dark">
+      <div class="tipx">Tieni premuto</div>
+      <div class="scr"><div class="duel">
+        <div class="half a">
+          <div class="hh"><span class="L">A</span><span class="t"><b>Parola segreta</b><small>sigillata · 1,8 s</small></span></div>
+          <div class="tiles one"><div class="tile ghost"><span class="ic"><svg><use href="#i-lock"/></svg></span><div class="wave" data-wave="3" data-mode="sealed" data-bw="4"></div><span class="tx"><b>Si apre dal centro</b><small>Svela, tenendo premuto</small></span></div></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-redo"/></svg>Rifai</button><button class="sbtn lock"><svg><use href="#i-lock"/></svg>Originale</button></div>
+        </div>
+        <div class="mid">
+          <div class="k">Round 3</div>
+          <div class="sc">4<span>:</span>2</div>
+          <div class="steps"><i class="on"></i><i class="on"></i><i class="on"></i><i class="b"></i><i></i></div>
+          <div class="hint"><span><b>B</b>: di' la<br>parola</span></div>
+          <button class="rv" data-hold="600"><span class="fl"></span><svg><use href="#i-lock"/></svg><b>Tieni premuto</b><small>per svelare</small></button>
+        </div>
+        <div class="half b">
+          <div class="hh"><span class="L">B</span><span class="t"><b>Che parola senti?</b><small>3 ascolti</small></span></div>
+          <div class="tiles one"><button class="tile fill"><div class="row2"><span class="ic"><svg><use href="#i-rev"/></svg></span><span class="tx"><b>Imitazione al contrario</b><small>Tocca per riascoltare · 2,0 s</small></span></div><div class="wave" data-wave="5" data-rev style="height:70px"></div></button></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-rev"/></svg>A al contrario</button><button class="sbtn"><svg><use href="#i-redo"/></svg>Rifai</button></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ROW 3: degrade ============ -->
+<div class="row">
+  <div class="shot">
+    <div class="cap"><b>c</b>Verifica <span>· 640×360 orizzontale</span></div>
+    <div class="phone land s360" data-id="c-small">
+      <div class="scr"><div class="duel">
+        <div class="half a">
+          <div class="hh"><span class="L">A</span><span class="t"><b>Sigillata</b></span></div>
+          <div class="tiles one"><div class="tile ghost"><span class="ic"><svg><use href="#i-lock"/></svg></span><div class="wave" data-wave="3" data-mode="sealed" data-bw="4" style="height:24px"></div><span class="tx"><b>1,8 s</b></span></div></div>
+          <div class="sec"><button class="sbtn" aria-label="Rifai"><svg><use href="#i-redo"/></svg></button><button class="sbtn lock" aria-label="Originale"><svg><use href="#i-lock"/></svg></button></div>
+        </div>
+        <div class="mid">
+          <div class="k">R3</div>
+          <div class="sc">4<span>:</span>2</div>
+          <div class="hint"><span><b>B</b> imita</span></div>
+          <button class="rv off"><svg><use href="#i-lock"/></svg><b>Svela</b></button>
+        </div>
+        <div class="half b">
+          <div class="hh"><span class="L">B</span><span class="t"><b>Imita</b></span><span class="st rec"><i></i>Rec</span></div>
+          <div class="tiles"><button class="tile fill"><span class="ic"><svg><use href="#i-pause"/></svg></span><div class="wave" data-wave="3" data-rev data-p=".62" data-dim=".4" style="height:28px"></div><span class="tx"><b>A ◀◀</b></span></button>
+            <button class="tile recing"><span class="ic"><svg><use href="#i-stop"/></svg></span><span class="tm">02,1</span><span class="tx"><b>Stop</b></span></button></div>
+          <div class="sec"><button class="sbtn off"><svg><use href="#i-play"/></svg>Imitazione</button></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="cap"><b>d</b>Modalità Tavolo <span>· telefono appoggiato tra A e B, metà di B girata</span></div>
+    <div class="phone land tavolo" data-id="tavolo">
+      <div class="scr"><div class="duel">
+        <div class="half a">
+          <div class="hh"><span class="L">A</span><span class="t"><b>Parola segreta</b><small>sigillata · 1,8 s</small></span></div>
+          <div class="tiles one"><div class="tile ghost"><span class="ic"><svg><use href="#i-lock"/></svg></span><div class="wave" data-wave="3" data-mode="sealed" data-bw="4"></div><span class="tx"><b>Si apre dal centro</b><small>Svela, tenendo premuto</small></span></div></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-redo"/></svg>Rifai</button><button class="sbtn lock"><svg><use href="#i-lock"/></svg>Originale</button></div>
+        </div>
+        <div class="mid">
+          <div class="flip"><div class="k">Round 3</div></div>
+          <div class="sc">4<span>:</span>2</div>
+          <div class="hint flip"><span><b>B</b>: di' la parola</span></div>
+          <button class="rv live" data-hold="600" data-p=".62"><span class="fl"></span><svg class="flip"><use href="#i-eye"/></svg><span class="pc flip">62%</span><span class="pc">62%</span></button>
+        </div>
+        <div class="half b">
+          <div class="hh"><span class="L">B</span><span class="t"><b>Che parola senti?</b><small>3 ascolti</small></span><span class="st on"><i></i>Suona</span></div>
+          <div class="tiles one"><button class="tile fill"><div class="row2"><span class="ic"><svg><use href="#i-pause"/></svg></span><span class="tx"><b>Imitazione al contrario</b><small>1,1 / 2,0 s</small></span></div><div class="wave" data-wave="5" data-rev data-p=".55" data-dim=".4" style="height:70px"></div></button></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-rev"/></svg>A al contrario</button><button class="sbtn"><svg><use href="#i-redo"/></svg>Rifai</button></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="cap"><b>d</b>Verticale <span>· 390×844 · B sotto il pollice</span></div>
+    <div class="phone port" data-id="port">
+      <div class="scr"><div class="duel">
+        <div class="half a">
+          <div class="hh"><span class="L">A</span><span class="t"><b>Parola segreta</b><small>sigillata · 1,8 s</small></span><span class="st"><svg style="width:12px;height:12px"><use href="#i-lock"/></svg>Fatto</span></div>
+          <div class="tiles"><div class="tile ghost"><span class="ic"><svg><use href="#i-lock"/></svg></span><span class="tx"><b>Sigillata</b><small>si apre con Svela</small></span></div><button class="tile"><span class="ic"><svg><use href="#i-redo"/></svg></span><span class="tx"><b>Rifai</b><small>con conferma</small></span></button></div>
+        </div>
+        <div class="mid">
+          <div class="meta"><div class="k">Round 3</div><div class="sc">4<span>:</span>2</div><div class="steps"><i class="on"></i><i class="on"></i><i class="on"></i><i class="b"></i><i></i></div></div>
+          <button class="rv live" data-hold="600" data-p=".62"><span class="fl"></span><svg><use href="#i-eye"/></svg><span class="txt"><b>Tieni premuto</b><small>svela A</small></span><span class="pc">62%</span></button>
+        </div>
+        <div class="half b">
+          <div class="hh"><span class="L">B</span><span class="t"><b>Che parola senti?</b><small>3 ascolti</small></span><span class="st on"><i></i>Suona</span></div>
+          <div class="tiles one"><button class="tile fill"><div class="row2"><span class="ic"><svg><use href="#i-pause"/></svg></span><span class="tx"><b>Imitazione al contrario</b><small>Parte da sola · 1,1 / 2,0 s</small></span></div><div class="wave" data-wave="5" data-rev data-p=".55" data-dim=".4" style="height:90px"></div></button></div>
+          <div class="sec"><button class="sbtn"><svg><use href="#i-rev"/></svg>A al contrario</button><button class="sbtn"><svg><use href="#i-redo"/></svg>Rifai</button></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <div class="cap"><b>c</b>Verticale <span>· 360×640</span></div>
+    <div class="phone port s360" data-id="port360">
+      <div class="scr"><div class="duel">
+        <div class="half a">
+          <div class="hh"><span class="L">A</span><span class="t"><b>Sigillata</b></span><span class="st"><svg style="width:12px;height:12px"><use href="#i-lock"/></svg>1,8 s</span></div>
+          <div class="sec" style="flex:1"><button class="sbtn" style="height:auto"><svg><use href="#i-redo"/></svg>Rifai</button><button class="sbtn lock" style="height:auto"><svg><use href="#i-lock"/></svg>Originale</button></div>
+        </div>
+        <div class="mid">
+          <div class="meta"><div class="k">Round 3</div><div class="sc">4<span>:</span>2</div></div>
+          <button class="rv off"><svg><use href="#i-lock"/></svg><span class="txt"><b>Svela</b><small>alla fine</small></span></button>
+        </div>
+        <div class="half b">
+          <div class="hh"><span class="L">B</span><span class="t"><b>Imitazione</b></span><span class="st rec"><i></i>Rec</span></div>
+          <div class="tiles"><button class="tile fill"><span class="ic"><svg><use href="#i-pause"/></svg></span><div class="wave" data-wave="3" data-rev data-p=".62" data-dim=".4" style="height:30px"></div><span class="tx"><b>A ◀◀</b><small>2 ascolti</small></span></button>
+            <button class="tile recing"><span class="ic"><svg><use href="#i-stop"/></svg></span><span class="tm">02,1</span><span class="tx"><b>Stop</b><small>/10 s</small></span></button></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ROW 4: desktop + notes ============ -->
+<div class="row">
+  <div class="shot">
+    <div class="cap"><b>d</b>Desktop <span>· 1280×760 · tastiera: Q = REC A, O = ◀◀ B, P = REC B, Spazio tenuto = Svela</span></div>
+    <div class="desk" style="width:1280px;height:760px" data-id="desk">
+      <div class="bar"><i></i><i></i><i></i><span>burzino.github.io/reverseur/</span></div>
+      <div class="wrap">
+        <div class="tb"><div class="lg"><svg><use href="#i-rev"/></svg>Reverseur</div><div class="kb"><span><kbd>Q</kbd> REC A</span><span><kbd>O</kbd> ◀◀ B</span><span><kbd>P</kbd> REC B</span><span><kbd>Spazio</kbd> tieni per svelare</span></div></div>
+        <div class="duel">
+          <div class="half a">
+            <div class="hh"><span class="L">A</span><span class="t"><b>Parola segreta</b><small>sigillata · 1,8 s</small></span><span class="st"><svg style="width:12px;height:12px"><use href="#i-lock"/></svg>Fatto</span></div>
+            <div class="tiles one"><div class="tile ghost"><span class="ic"><svg><use href="#i-lock"/></svg></span><div class="wave" data-wave="3" data-mode="sealed" data-bw="5"></div><span class="tx"><b>Si apre dal centro</b><small>Svela, tenendo premuto (mouse o Spazio)</small></span></div></div>
+            <div class="sec"><button class="sbtn"><svg><use href="#i-redo"/></svg>Rifai la parola</button><button class="sbtn lock"><svg><use href="#i-lock"/></svg>Originale · tieni premuto</button></div>
+          </div>
+          <div class="mid">
+            <div class="k">Round 3</div>
+            <div class="sc">4<span>:</span>2</div>
+            <div class="steps"><i class="on"></i><i class="on"></i><i class="on"></i><i class="b"></i><i></i></div>
+            <div class="hint"><span><b>B</b>: di' la parola<br>ad alta voce</span></div>
+            <button class="rv live" data-hold="600" data-p=".62"><span class="fl"></span><svg><use href="#i-eye"/></svg><span class="pc">62%</span><small>continua a tenere…</small></button>
+          </div>
+          <div class="half b">
+            <div class="hh"><span class="L">B</span><span class="t"><b>Che parola senti?</b><small>3 ascolti</small></span><span class="st on"><i></i>Suona</span></div>
+            <div class="tiles one"><button class="tile fill"><div class="row2"><span class="ic"><svg><use href="#i-pause"/></svg></span><span class="tx"><b>Imitazione al contrario</b><small>Parte da sola · 1,1 / 2,0 s</small></span></div><div class="wave" data-wave="5" data-rev data-p=".55" data-dim=".4" style="height:150px"></div></button></div>
+            <div class="sec"><button class="sbtn"><svg><use href="#i-rev"/></svg>A al contrario</button><button class="sbtn"><svg><use href="#i-play"/></svg>Imitazione</button><button class="sbtn"><svg><use href="#i-redo"/></svg>Rifai</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="note">
+      <h4>Mappa dei pollici · 844×390</h4>
+      <div class="thumb" style="flex-direction:column">
+        <svg data-thumb='[[50,66,286,236,"A",""],[50,312,286,56,"",""],[346,240,150,150,"Svela","lock"],[506,66,286,236,"B ◀◀",""],[506,312,286,56,"",""]]' data-w="844" data-h="390" data-s=".39"></svg>
+        <div class="legend">
+          <div><i style="background:#2fb36a88"></i>Facile: i due angoli in basso (un pollice per lato)</div>
+          <div><i style="background:#f2b82388"></i>Raggiungibile allungando</div>
+          <div><i style="background:#e5484d33"></i>Centro alto: nessun pollice ci arriva "per caso"</div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <h4>Movimento</h4>
+      <ul>
+        <li><strong>Passaggio di turno:</strong> la metà che ha finito si "spegne" (saturazione −60%, 220 ms) e il bagliore scorre verso l'altra metà attraverso la colonna centrale.</li>
+        <li><strong>Svela:</strong> la colonna si riempie dal basso con il gradiente A→B; al 100% le due metà si colorano piene per 400 ms e A suona.</li>
+        <li><strong>Rotazione:</strong> girando il telefono, le metà scivolano da affiancate a impilate (300 ms), il contenuto resta nello stesso stato.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="note">
+      <h4>Colore e tipo</h4>
+      <div class="sw">
+        <i style="background:#c2410c;color:#fff">A #C2410C</i><i style="background:#1d5fb4;color:#fff">B #1D5FB4</i><i style="background:#121418;color:#fff">Centro</i>
+        <i style="background:#ffe9dd;color:#121418">A campo</i><i style="background:#e1ecfa;color:#121418">B campo</i><i style="background:#e03131;color:#fff">REC</i>
+      </div>
+      <p>Bianco su A 5,2:1, su B 6,3:1. Roboto Flex <strong>largo</strong> (larghezza 130–140) e pesante per lettere e punteggio: si legge da un metro di distanza, sul tavolo. I testi delle tile sono a 17 px minimo in orizzontale.</p>
+    </div>
+    <div class="note">
+      <h4>Regole di adattamento</h4>
+      <ul>
+        <li><strong>≥ 600 px di larghezza in orizzontale:</strong> tre colonne 1fr / 150 px / 1fr.</li>
+        <li><strong>Verticale:</strong> righe 1fr / auto / 1,35fr: B, che tocca di più, prende la metà bassa.</li>
+        <li><strong>Desktop:</strong> stesse colonne (220 px al centro), scorciatoie da tastiera per entrambi i lati.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Presentation shell JS (shared by mockups v3 06-10). No network. ---------- */
+(() => {
+  const SHOT = /shot/.test(location.search);
+  if (SHOT) document.documentElement.classList.add("shot-mode");
+  const NS = "http://www.w3.org/2000/svg";
+  const sbIcons = '<svg viewBox="0 0 70 13" aria-hidden="true"><g fill="currentColor"><rect x="0" y="9" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="7" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/><path d="M31 3.2a10 10 0 0 1 13 0l-1.6 1.7a7.6 7.6 0 0 0-9.8 0zM33.7 6a6 6 0 0 1 7.6 0l-1.7 1.7a3.6 3.6 0 0 0-4.2 0zM37.5 12.5l-2.2-2.3a3 3 0 0 1 4.4 0z"/><rect x="50" y="1" width="17" height="11" rx="3" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.2"/><rect x="52" y="3" width="11" height="7" rx="1.6"/><rect x="68" y="4.5" width="1.6" height="4" rx=".8" opacity=".45"/></g></svg>';
+  for (const ph of document.querySelectorAll(".phone:not(.nosb)")) {
+    ph.insertAdjacentHTML("afterbegin", `<div class="sb"><span class="tnum">9:41</span>${sbIcons}</div>`);
+    ph.insertAdjacentHTML("beforeend", '<div class="hi"></div>');
+  }
+
+  /* deterministic "word-like" amplitudes */
+  function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+  window.amps = function (seed, n) {
+    const r = rng(seed * 7919 + 13), bumps = [];
+    const k = 2 + Math.floor(r() * 3);
+    for (let i = 0; i < k; i++) bumps.push([0.12 + (i + r() * 0.6) / k * 0.8, 0.06 + r() * 0.07, 0.55 + r() * 0.45]);
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const x = i / (n - 1); let e = 0;
+      for (const [c, w, a] of bumps) e = Math.max(e, a * Math.exp(-((x - c) ** 2) / (2 * w * w)));
+      out.push(Math.max(0.08, Math.min(1, e * (0.6 + 0.4 * r()) + 0.04)));
+    }
+    return out;
+  };
+  function drawWave(el) {
+    const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return;
+    const bw = +(el.dataset.bw || 3), gap = +(el.dataset.gap || 2.2);
+    const n = Math.max(4, Math.floor((w + gap) / (bw + gap)));
+    let a = amps(+el.dataset.wave || 1, n);
+    if ("rev" in el.dataset) a = a.slice().reverse();
+    const p = +(el.dataset.p || 0), mode = el.dataset.mode || "";
+    const sym = el.dataset.align !== "bottom";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("width", w); svg.setAttribute("height", h); svg.setAttribute("aria-hidden", "true");
+    const off = (w - (n * bw + (n - 1) * gap)) / 2;
+    a.forEach((v, i) => {
+      const r = document.createElementNS(NS, "rect");
+      let bh = mode === "sealed" ? Math.min(h, bw) : Math.max(bw, v * h);
+      if (mode === "live" && i / n > p) bh = 0;
+      r.setAttribute("x", off + i * (bw + gap)); r.setAttribute("width", bw);
+      r.setAttribute("y", sym ? (h - bh) / 2 : h - bh); r.setAttribute("height", bh); r.setAttribute("rx", Math.min(bw / 2, 3));
+      r.setAttribute("fill", "currentColor");
+      if (mode !== "live" && p > 0 && i / n >= p) r.setAttribute("fill-opacity", el.dataset.dim || ".32");
+      if (mode === "sealed") r.setAttribute("fill-opacity", ".45");
+      svg.appendChild(r);
+    });
+    el.replaceChildren(svg);
+  }
+  window.drawWaves = () => document.querySelectorAll("[data-wave]").forEach(drawWave);
+
+  /* VU meters: <div data-vu="12" data-level=".7"> -> spans with --v */
+  function vu(el) {
+    const n = +el.dataset.vu, lvl = +(el.dataset.level || 0.7), r = rng(n * 31 + 7);
+    const sp = []; for (let i = 0; i < n; i++) { const s = document.createElement("span"); el.appendChild(s); sp.push(s); }
+    const set = () => sp.forEach((s, i) => {
+      const shape = el.dataset.shape === "bars" ? 0.35 + 0.65 * r() : (i / n <= lvl ? 1 : 0);
+      s.style.setProperty("--v", shape.toFixed(3));
+      s.classList.toggle("on", el.dataset.shape === "bars" ? true : i / n <= lvl);
+    });
+    set();
+    if (!SHOT && !el.hasAttribute("data-still")) setInterval(set, 120);
+  }
+  document.querySelectorAll("[data-vu]").forEach(vu);
+
+  /* hold-to-confirm demo: data-hold="ms" ; sets --p ; early release -> shake + tip */
+  document.querySelectorAll("[data-hold]").forEach((el) => {
+    const ms = +el.dataset.hold; let t0 = 0, raf = 0, done = false;
+    const host = el.closest(".phone") || document.body;
+    const set = (p) => el.style.setProperty("--p", p.toFixed(3));
+    const tip = (txt) => { host.dataset.tip = txt; clearTimeout(el._tt); el._tt = setTimeout(() => { delete host.dataset.tip; }, 1400); };
+    const tick = () => {
+      const p = Math.min(1, (performance.now() - t0) / ms); set(p);
+      if (p >= 1) { done = true; host.classList.add("is-revealed"); try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
+        setTimeout(() => { host.classList.remove("is-revealed"); set(+(el.dataset.p || 0)); done = false; }, 3200); return; }
+      raf = requestAnimationFrame(tick);
+    };
+    const start = (e) => { if (done) return; if (e.pointerId != null) el.setPointerCapture(e.pointerId); t0 = performance.now(); host.classList.add("is-holding"); raf = requestAnimationFrame(tick); };
+    const stop = (cancelled) => { if (!t0) return; cancelAnimationFrame(raf); host.classList.remove("is-holding"); t0 = 0;
+      if (!done) { set(0); if (!cancelled) { el.classList.remove("shaking"); void el.offsetWidth; el.classList.add("shaking"); tip("Tieni premuto"); } } };
+    el.addEventListener("pointerdown", start);
+    el.addEventListener("pointerup", () => stop(false));
+    el.addEventListener("pointercancel", () => stop(true));
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+    el.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); start(e); } });
+    el.addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") stop(false); });
+    set(+(el.dataset.p || 0));
+  });
+
+  /* thumb-zone map: <svg data-thumb='[[x,y,w,h,"label",kind]]' data-w=390 data-h=844 data-s=.5 data-hand=r> */
+  document.querySelectorAll("[data-thumb]").forEach((svg) => {
+    const W = +(svg.dataset.w || 390), H = +(svg.dataset.h || 844), s = +(svg.dataset.s || 0.5);
+    const right = (svg.dataset.hand || "r") === "r", land = W > H;
+    svg.setAttribute("width", W * s); svg.setAttribute("height", H * s); svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const id = "c" + Math.random().toString(36).slice(2, 7);
+    let zones;
+    if (land) {
+      zones = `<circle cx="0" cy="${H}" r="${H * .62}" fill="#2fb36a" fill-opacity=".26"/><circle cx="${W}" cy="${H}" r="${H * .62}" fill="#2fb36a" fill-opacity=".26"/>
+               <circle cx="0" cy="${H}" r="${H * .95}" fill="#f2b823" fill-opacity=".2"/><circle cx="${W}" cy="${H}" r="${H * .95}" fill="#f2b823" fill-opacity=".2"/>`;
+    } else {
+      const cx = right ? W * 0.86 : W * 0.14;
+      zones = `<circle cx="${cx}" cy="${H * 1.02}" r="${H * .62}" fill="#f2b823" fill-opacity=".26"/><circle cx="${cx}" cy="${H * 1.02}" r="${H * .44}" fill="#2fb36a" fill-opacity=".3"/>`;
+    }
+    const t = JSON.parse(svg.dataset.thumb).map(([x, y, w, h, l, k]) =>
+      `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w, h) > 80 ? 22 : 14}" fill="${k === "lock" ? "#16141c" : "#fff"}" fill-opacity="${k === "lock" ? ".9" : ".78"}" stroke="#16141c" stroke-width="3" ${k === "ghost" ? 'stroke-dasharray="8 7" fill-opacity=".25"' : ""}/>` +
+      (l ? `<text x="${x + w / 2}" y="${y + h / 2 + 9}" text-anchor="middle" font-family="RF,system-ui" font-weight="760" font-size="${land ? 22 : 24}" fill="${k === "lock" ? "#fff" : "#16141c"}">${l}</text>` : "")).join("");
+    svg.innerHTML = `<defs><clipPath id="${id}"><rect width="${W}" height="${H}" rx="${land ? 40 : 54}"/></clipPath></defs>
+      <g clip-path="url(#${id})"><rect width="${W}" height="${H}" fill="#f1eff4"/>${zones}<rect x="0" y="0" width="${W}" height="${H}" fill="#e5484d" fill-opacity=".07"/>${t}</g>
+      <rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" rx="${land ? 40 : 54}" fill="none" stroke="#16141c" stroke-width="3"/>`;
+  });
+
+  const go = () => drawWaves();
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(go);
+  addEventListener("resize", go);
+})();
+
+</script>
+</body>
+</html>
