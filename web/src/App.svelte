@@ -1,34 +1,19 @@
 <script lang="ts">
-  // Schermata unica: intestazione con "Nuova", come si gioca, slot A e B, Rivela, punteggio.
-  // La logica dei gesti sta in ui/gioco.svelte.ts; lo stato della sessione in ui/state.svelte.ts.
+  // Una fase del round alla volta: prova di A, passaggio a B, prova di B, esito (e ritorno ad A se serve).
+  // La logica dei gesti sta in ui/gioco.svelte.ts; lo stato della sessione (fase compresa) in ui/state.svelte.ts.
   import ConfermaInline from "./ui/componenti/ConfermaInline.svelte";
   import ErroreMicrofono from "./ui/componenti/ErroreMicrofono.svelte";
+  import Esito from "./ui/componenti/Esito.svelte";
   import Icona from "./ui/componenti/Icona.svelte";
-  import Punteggio from "./ui/componenti/Punteggio.svelte";
-  import Slot from "./ui/componenti/Slot.svelte";
-  import { gioco, MAX_RECORD_MS, sbloccaAudio } from "./ui/gioco.svelte";
-  import { hold } from "./ui/holdButton";
-  import type { SlotId } from "./ui/sessione";
-  import { sessione, store } from "./ui/state.svelte";
+  import Passaggio from "./ui/componenti/Passaggio.svelte";
+  import Prova from "./ui/componenti/Prova.svelte";
+  import { gioco } from "./ui/gioco.svelte";
+  import { sessione } from "./ui/state.svelte";
   import { riempi, t } from "./ui/testi";
 
   const s = $derived(sessione.stato);
-  const r = $derived(gioco.registrazione);
-  const suonaOriginaleA = $derived(s.playing?.slot === "A" && s.playing.mode === "original");
   const totale = $derived(s.score.guessed + s.score.missed);
   let regole: HTMLDialogElement | undefined = $state();
-  const puoRivelare = $derived(s.slots.A.original !== null && s.slots.A.status !== "recording" && r === null);
-
-  function registrazioneDi(id: SlotId) {
-    return r && r.slot === id ? r : null;
-  }
-
-  function erroreDi(id: SlotId): string | null {
-    const e = gioco.erroreSlot;
-    if (!e || e.slot !== id) return null;
-    if (e.tipo === "interrotta") return t.registrazioneInterrotta;
-    return e.tipo === "debole" ? t.registrazioneDebole : t.registrazioneNonRiuscita;
-  }
 
   // Pagina nascosta/visibile ed errori del registratore.
   $effect(() => gioco.collega());
@@ -40,13 +25,13 @@
       <div class="marchio">
         <h1>{t.titoloApp}</h1>
         <p class="sottotitolo" aria-live="polite">
+          <span data-role="round">{riempi(t.round, { n: s.round })}</span>
           {#if totale > 0}
+            ·
             <span class="solo-lettori">{t.punteggio}:</span>
             <span class="totale" title={riempi(t.punteggioRiga, { g: s.score.guessed, m: s.score.missed })}
               >{riempi(t.punteggioBreve, { g: s.score.guessed, n: totale })}</span
             >
-          {:else}
-            {t.sottotitoloApp}
           {/if}
         </p>
       </div>
@@ -92,75 +77,22 @@
     </div>
   </header>
 
-  <main class="contenuto">
+  <main class="contenuto" data-fase={s.fase}>
     <ErroreMicrofono codice={gioco.erroreMicrofono} onChiudi={() => gioco.chiudiErrore()} />
 
-    <div class="slots">
-      {#each ["A", "B"] as const as id (id)}
-        <Slot
-          {id}
-          slot={s.slots[id]}
-          playing={s.playing}
-          revealed={s.revealed}
-          registrazione={registrazioneDi(id)}
-          altroOccupato={r !== null && r.slot !== id}
-          confermaAperta={gioco.confermaRiregistra === id}
-          errore={erroreDi(id)}
-          suggerimento={id === "A" && gioco.suggerimento === "A"}
-          massimoMs={MAX_RECORD_MS}
-          onRegistra={() => gioco.premiRegistra(id)}
-          onConfermaRiregistra={() => gioco.confermaRiregistrazione(id)}
-          onAnnullaRiregistra={() => gioco.annullaRiregistrazione()}
-          onAscolta={(mode) => gioco.premiAscolta(id, mode)}
-          onScarica={() => gioco.scarica(id)}
-          onPressioneAnnullata={(motivo) => gioco.pressioneAnnullata("A", motivo)}
-        />
-      {/each}
-    </div>
-
-    <!-- Barra in fondo: Rivela; dopo la rivelazione Rivela si riduce a icona e accanto compare l'esito -->
-    <div class="fondo">
-      <div class="rivela" class:compatta={s.revealed}>
-        <div class="contenitore-trattieni">
-          <p
-            class="suggerimento"
-            class:visibile={gioco.suggerimento === "rivela"}
-            data-role="reveal-hint"
-            aria-live="polite"
-          >
-            {gioco.suggerimento === "rivela" ? t.tieniPremuto : ""}
-          </p>
-          <button
-            type="button"
-            id="reveal"
-            class="pulsante pieno grande"
-            class:trattieni={!s.revealed}
-            aria-describedby={s.revealed ? undefined : "aiuto-rivela"}
-            title={s.revealed ? t.rivelaDopo : undefined}
-            disabled={!puoRivelare}
-            use:sbloccaAudio
-            use:hold={{
-              onConfirm: () => gioco.rivela(),
-              onCancel: ({ reason }) => gioco.pressioneAnnullata("rivela", reason),
-              bypass: () => {
-                const st = store.getState();
-                return st.revealed || (st.playing?.slot === "A" && st.playing.mode === "original");
-              },
-            }}
-          >
-            <Icona nome={suonaOriginaleA ? "stop" : "occhio"} misura={28} />
-            <span class="etichetta" class:solo-lettori={s.revealed}>
-              <span>{t.rivela}</span>
-              <span class="sotto">{suonaOriginaleA ? t.toccaPerFermare : s.revealed ? t.rivelaDopo : t.tieniPremuto}</span>
-            </span>
-            {#if !s.revealed}<span class="lucchetto"><Icona nome="lucchetto" misura={18} /></span>{/if}
-          </button>
-        </div>
-        {#if !s.revealed}<span class="solo-lettori" id="aiuto-rivela">{t.rivelaAiuto}</span>{/if}
-      </div>
-
-      <Punteggio visibile={s.revealed} esito={s.verdict} onEsito={(v) => store.judge(v)} />
-    </div>
+    {#key s.fase}
+      {#if s.fase === "provaA"}
+        <Prova giocatore="A" />
+      {:else if s.fase === "passaAB"}
+        <Passaggio verso="B" />
+      {:else if s.fase === "provaB"}
+        <Prova giocatore="B" />
+      {:else if s.fase === "passaBA"}
+        <Passaggio verso="A" />
+      {:else}
+        <Esito />
+      {/if}
+    {/key}
   </main>
 
   <dialog id="rules" class="regole" aria-labelledby="titolo-regole" bind:this={regole}>
@@ -181,7 +113,7 @@
 </div>
 
 <style>
-  /* Una sola schermata senza scorrimento: intestazione, due slot che si dividono l'altezza, barra in fondo.
+  /* Una sola schermata senza scorrimento: intestazione e la fase corrente, con le azioni in fondo.
      Sotto i 600 px di altezza (telefono in orizzontale) si torna a scorrere. */
   #app {
     --spazio-schermata: clamp(8px, 1.4dvh, 16px);
@@ -270,40 +202,6 @@
     padding-bottom: calc(var(--spazio-schermata) + env(safe-area-inset-bottom));
   }
 
-  /* Gli slot sono alti quanto il contenuto: i pad di Slot.svelte si dimensionano con le unita' cq di questo
-     contenitore (altezza libera, ma al massimo 1:1,3). Lo spazio che avanza va sopra e sotto. */
-  .slots {
-    flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-rows: auto auto;
-    align-content: center;
-    gap: var(--spazio-schermata);
-    container-type: size;
-  }
-
-  .fondo {
-    flex: none;
-    display: flex;
-    gap: var(--spazio-2);
-  }
-  .rivela {
-    flex: 1;
-    min-width: 0;
-  }
-  .rivela.compatta {
-    flex: none;
-  }
-  #reveal {
-    justify-content: flex-start;
-    min-height: clamp(var(--altezza-pulsante), 8dvh, var(--altezza-pulsante-grande));
-  }
-  .compatta #reveal {
-    width: clamp(var(--altezza-pulsante), 8dvh, var(--altezza-pulsante-grande));
-    padding: 0;
-    justify-content: center;
-  }
-
   /* Come si gioca: dialogo modale nativo (Esc chiude, il focus torna al pulsante) */
   .regole {
     width: min(100% - 2 * var(--margine-schermata), 480px);
@@ -336,37 +234,12 @@
     padding-left: 1.25rem;
   }
 
+  /* Telefono grande, tablet e desktop: una colonna centrata, come un telefono */
   @media (min-width: 600px) {
     .interno,
     .contenuto,
     .interno-conferma {
-      max-width: 600px;
-    }
-  }
-  /* Desktop: slot affiancati e Rivela subito sotto, raggruppati al centro dello spazio libero */
-  @media (min-width: 900px) {
-    .interno,
-    .contenuto {
-      max-width: 1080px;
-    }
-    .interno-conferma {
-      max-width: 560px;
-    }
-    .contenuto {
-      justify-content: center;
-      gap: var(--spazio-5);
-    }
-    .slots {
-      flex: none;
-      container-type: inline-size;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto;
-      gap: var(--spazio-5);
-    }
-    .fondo {
-      width: 100%;
       max-width: 520px;
-      align-self: center;
     }
   }
   /* Schermi molto bassi (orizzontale): l'altezza non basta, si scorre */
@@ -374,11 +247,6 @@
     #app {
       height: auto;
       min-height: 100dvh;
-    }
-    .slots {
-      flex: none;
-      container-type: inline-size;
-      grid-template-rows: auto;
     }
   }
 </style>

@@ -162,33 +162,36 @@ createStore(initial?) → { getState(), setSlot(id, patch), setPlaying(p | null)
 `state.js` must not import browser modules; localStorage access is wrapped in
 try/catch and injected (`createStore({ storage })`) so it can be unit-tested.
 
-## DOM contract (used by `main.js`, CSS, and Playwright)
+## DOM contract (used by `App.svelte`, CSS, and Playwright)
+
+One phase of the round at a time (`state.fase`, transitions in `sessione.ts` `TRANSIZIONI`):
+`provaA -> passaAB -> provaB -> esito -> provaA` (next round), plus `passaAB -> provaA` and
+`provaB -> passaBA -> provaA` (B gives the phone back; B's tries are dropped).
 
 ```
 #app                                  data-revealed="true|false"
-button#new-game                       "↻ Nuova"
-  #new-game-confirm (hidden)          inline confirm, contains
-    button[data-action=confirm-new], button[data-action=cancel-new]
-section.slot#slot-A[data-slot=A][data-state=empty|recording|ready|playing]
-section.slot#slot-B[data-slot=B][data-state=...]
-  inside each slot:
-    button[data-action=record]                (aria-pressed while recording)
-    button[data-action=play-reversed]         (aria-pressed while playing)
-    button[data-action=play-original]         (aria-pressed while playing; in slot A it is a holdButton)
-    button[data-action=download]              (optional WAV export)
-    [data-role=timer]  [data-role=vu]  [data-role=status] (aria-live=polite)
-                                              (timer and vu live inside button[data-action=record])
-    [role=alert]                              slot notice (too short / interrupted / too weak), overlays the slot header
-    [data-role=rerecord-confirm] (hidden) with
-       button[data-action=confirm-rerecord], button[data-action=cancel-rerecord]
-    [data-role=hold-hint]                     "Tieni premuto" (slot A only)
-button#reveal                         holdButton; plays A original, sets revealed
-                                      (a tap while A's original plays only stops it)
-  [data-role=reveal-hint]             "Tieni premuto" live region, sibling of #reveal
-button#help                           opens dialog#rules ("Come si gioca", native modal <dialog>)
-#score  with button[data-action=guessed], button[data-action=missed]   (visible after reveal)
-#mic-error[role=alert] (hidden)       permission-denied help (Chrome / Safari)
+  [data-role=round]                   "Round N" in the header
+button#new-game                       "Nuova"
+  #new-game-confirm (hidden)          inline confirm with button[data-action=confirm-new|cancel-new]
+button#help                           opens dialog#rules ("Come si gioca")
+main[data-fase=provaA|passaAB|provaB|passaBA|esito]
+  #mic-error[role=alert] (hidden)     permission-denied help (Chrome / Safari)
+  provaA: section#slot-A[data-state=empty|recording|ready|playing]
+    button[data-action=play-a-original|play-a-reversed]   (aria-pressed while playing)
+    button[data-action=record]        "Registra" / "Rifai" (aria-pressed while recording;
+                                      [data-role=timer] and [data-role=vu] inside)
+    button[data-action=pass-to-b]     enabled once A has a recording
+  passaAB: button[data-action=start-b], button[data-action=back-to-a]
+  provaB: section#slot-B[data-state=...]
+    button[data-action=back-to-a]     opens the inline confirm (only if B has a recording)
+      button[data-action=confirm-back-to-a|cancel-back-to-a]
+    button[data-action=play-a-reversed|play-b-reversed]
+    button[data-action=record]        "Imita" / "Rifai"; on stop B's reversed imitation plays by itself
+    button#reveal[data-action=reveal] holdButton (600 ms); goes to esito and plays A original
+      [data-role=reveal-hint]         "Tieni premuto" after an early release
+  passaBA: button[data-action=start-a]
+  esito: #score
+    button[data-action=play-a-original|play-b-reversed|download]
+    button[data-action=guessed|missed] (aria-pressed), button[data-action=next-round]
 ```
-`data-state="playing"` on a slot is set while either of its sounds is playing.
-Layout: one screen, no vertical scroll at heights >= 600 px (header, two slots sharing the height,
-reveal/score bar). Inline confirms, the mic error and hints overlay content instead of pushing it.
+A recording that fails keeps the previous try. Phase changes are refused while recording and stop playback.

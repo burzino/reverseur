@@ -8,13 +8,11 @@ Il gioco della parola al contrario: registra, inverti, imita, indovina.
 
 ## Come si gioca
 
-1. **Giocatore A** registra una parola o una frase (l'originale).
-2. **Giocatore B** ascolta la registrazione **al contrario**.
-3. **Giocatore B** registra la sua imitazione di quello che ha sentito.
-4. L'app riproduce **al contrario** l'imitazione di B: se l'imitazione è buona si sente la parola originale, e B prova a indovinarla.
-5. Alla fine si ascolta l'originale di A per confrontare.
-
-"Ascolta originale" di A e "Rivela" svelano la soluzione, quindi vanno **tenuti premuti per almeno 200 ms** (anche `Spazio`/`Invio` da tastiera). Un tocco accidentale non rovina la partita.
+1. **Giocatore A** registra una parola segreta. Può riascoltarla e rifarla finché è chiara, poi passa il telefono a B.
+2. **Giocatore B** ascolta la parola **al contrario** e registra la sua imitazione.
+3. Allo stop l'app riproduce **al contrario** l'imitazione di B: se è buona, si sente la parola originale. B può riascoltare e rifare quante volte vuole, oppure ridare il telefono ad A perché la scandisca meglio.
+4. B prova a indovinare, poi **tiene premuto «Rivela»** (600 ms, anche `Spazio`/`Invio` da tastiera) per sentire l'originale di A. Un tocco accidentale non rovina la partita.
+5. Si segna se è stata indovinata e si passa al round dopo.
 
 ## Caratteristiche
 

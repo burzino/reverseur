@@ -6,6 +6,20 @@ export type SlotId = "A" | "B";
 export type SlotStatus = "empty" | "recording" | "ready" | "playing";
 export type PlayMode = "original" | "reversed";
 export type Verdict = "guessed" | "missed";
+/**
+ * Passo del round. A prova la parola quante volte vuole, passa il telefono, B prova l'imitazione
+ * quante volte vuole e poi rivela. Da B si puo' ridare il telefono ad A (le prove di B si perdono).
+ */
+export type Fase = "provaA" | "passaAB" | "provaB" | "passaBA" | "esito";
+
+/** Passaggi ammessi tra le fasi: ogni altro passaggio viene ignorato. */
+export const TRANSIZIONI: Record<Fase, readonly Fase[]> = {
+  provaA: ["passaAB"],
+  passaAB: ["provaB", "provaA"],
+  provaB: ["esito", "passaBA"],
+  passaBA: ["provaA"],
+  esito: ["provaA"],
+};
 
 export interface SlotState {
   status: SlotStatus;
@@ -34,6 +48,9 @@ export interface State {
   score: Score;
   /** Esito scelto per la partita corrente (estensione additiva del contratto): null finche' non si sceglie. */
   verdict: Verdict | null;
+  fase: Fase;
+  /** Numero del round, da 1. */
+  round: number;
 }
 
 /** Sottoinsieme di `Storage` usato dallo store. */
@@ -48,16 +65,16 @@ export interface Store {
   getState(): State;
   setSlot(id: SlotId, patch: Partial<SlotState>): void;
   setPlaying(p: Playing | null): void;
-  setRevealed(revealed: boolean): void;
+  /**
+   * Passa alla fase indicata se il passaggio e' ammesso (TRANSIZIONI) e restituisce se e' avvenuto.
+   * Effetti: si ferma la riproduzione; "passaAB" richiede la parola di A; "passaBA" cancella le prove di B;
+   * "esito" segna la rivelazione; da "esito" a "provaA" parte un round nuovo (slot vuoti, round + 1).
+   */
+  vai(fase: Fase): boolean;
   addScore(kind: Verdict, delta?: number): void;
   /** Sceglie l'esito della partita: aggiorna il punteggio una sola volta, cambiare idea sposta il punto. */
   judge(v: Verdict): void;
-  /**
-   * Nuovo giro con la stessa partita: toglie rivelazione ed esito, slot e punteggio restano.
-   * Si chiama quando A registra una nuova parola (la soluzione non e' piu' nota).
-   */
-  newRound(): void;
-  /** Azzera slot, riproduzione, rivelazione ed esito; il punteggio resta. */
+  /** Azzera slot, riproduzione, rivelazione ed esito e torna al round 1; il punteggio resta. */
   reset(): void;
   /** Azzera il punteggio salvato. */
   resetScore(): void;
@@ -119,6 +136,8 @@ export function createStore(opts: StoreOptions = {}): Store {
     playing: null,
     revealed: false,
     verdict: null,
+    fase: "provaA",
+    round: 1,
     ...opts.initial,
     score: opts.initial?.score ?? loadScore(storage, key),
   };
@@ -158,9 +177,23 @@ export function createStore(opts: StoreOptions = {}): Store {
       commit({ ...state, playing, slots: withPlaying(state.slots, playing) });
     },
 
-    setRevealed(revealed) {
-      if (state.revealed === revealed) return;
-      commit({ ...state, revealed });
+    vai(fase) {
+      if (!TRANSIZIONI[state.fase].includes(fase)) return false;
+      const A = state.slots.A;
+      if (fase === "passaAB" && (!A.original || A.status === "recording")) return false;
+      if (fase === "esito" && !A.original) return false;
+      let slots = withPlaying(state.slots, null);
+      let { round, revealed, verdict } = state;
+      if (fase === "passaBA") slots = { ...slots, B: emptySlot() };
+      if (fase === "esito") revealed = true;
+      if (state.fase === "esito") {
+        slots = { A: emptySlot(), B: emptySlot() };
+        round += 1;
+        revealed = false;
+        verdict = null;
+      }
+      commit({ ...state, slots, playing: null, fase, round, revealed, verdict });
+      return true;
     },
 
     addScore(kind, delta = 1) {
@@ -179,13 +212,16 @@ export function createStore(opts: StoreOptions = {}): Store {
       commit({ ...state, score, verdict: v });
     },
 
-    newRound() {
-      if (!state.revealed && state.verdict === null) return;
-      commit({ ...state, revealed: false, verdict: null });
-    },
-
     reset() {
-      commit({ ...state, slots: { A: emptySlot(), B: emptySlot() }, playing: null, revealed: false, verdict: null });
+      commit({
+        ...state,
+        slots: { A: emptySlot(), B: emptySlot() },
+        playing: null,
+        revealed: false,
+        verdict: null,
+        fase: "provaA",
+        round: 1,
+      });
     },
 
     resetScore() {

@@ -86,59 +86,73 @@ describe("createStore", () => {
     expect(store.getState().slots.B.status).toBe("recording");
   });
 
-  it("setRevealed non notifica se il valore non cambia", () => {
-    const store = createStore();
-    const fn = vi.fn();
-    store.subscribe(fn);
-    store.setRevealed(false);
-    expect(fn).not.toHaveBeenCalled();
-    store.setRevealed(true);
-    expect(store.getState().revealed).toBe(true);
-    expect(fn).toHaveBeenCalledTimes(1);
-  });
-
-  it("reset azzera slot, riproduzione, rivelazione ed esito ma tiene il punteggio", () => {
+  it("reset azzera slot, riproduzione, rivelazione, esito e round ma tiene il punteggio", () => {
     const storage = fakeStorage();
     const store = createStore({ storage });
     store.setSlot("A", ready);
-    store.setPlaying({ slot: "A", mode: "reversed" });
-    store.setRevealed(true);
+    store.vai("passaAB");
+    store.vai("provaB");
+    store.vai("esito");
     store.judge("guessed");
     store.reset();
     const s = store.getState();
-    expect(s.slots.A.status).toBe("empty");
     expect(s.slots.A.original).toBeNull();
     expect(s.playing).toBeNull();
     expect(s.revealed).toBe(false);
     expect(s.verdict).toBeNull();
+    expect(s.fase).toBe("provaA");
     expect(s.score).toEqual({ guessed: 1, missed: 0 });
   });
+});
 
-  it("newRound toglie rivelazione ed esito ma tiene slot e punteggio", () => {
-    const storage = fakeStorage();
-    const store = createStore({ storage });
-    store.setSlot("A", ready);
-    store.setSlot("B", ready);
-    store.setRevealed(true);
-    store.judge("guessed");
-    store.newRound();
-    const s = store.getState();
-    expect(s.revealed).toBe(false);
-    expect(s.verdict).toBeNull();
-    expect(s.slots.A.status).toBe("ready");
-    expect(s.slots.B.original).toBe(buf);
-    expect(s.score).toEqual({ guessed: 1, missed: 0 });
-    // Il giro nuovo si giudica da capo: il punto precedente resta, uno nuovo si aggiunge.
-    store.judge("missed");
-    expect(store.getState().score).toEqual({ guessed: 1, missed: 1 });
-  });
-
-  it("newRound non notifica se non c'e' niente da azzerare", () => {
+describe("fasi del round", () => {
+  it("A non passa il telefono senza una parola registrata", () => {
     const store = createStore();
-    const fn = vi.fn();
-    store.subscribe(fn);
-    store.newRound();
-    expect(fn).not.toHaveBeenCalled();
+    expect(store.vai("passaAB")).toBe(false);
+    store.setSlot("A", { status: "recording" });
+    expect(store.vai("passaAB")).toBe(false);
+    store.setSlot("A", ready);
+    expect(store.vai("passaAB")).toBe(true);
+    expect(store.getState().fase).toBe("passaAB");
+  });
+
+  it("i passaggi non ammessi vengono ignorati", () => {
+    const store = createStore();
+    store.setSlot("A", ready);
+    expect(store.vai("esito")).toBe(false);
+    expect(store.vai("provaB")).toBe(false);
+    expect(store.getState().fase).toBe("provaA");
+  });
+
+  it("ridare il telefono ad A cancella le prove di B e tiene la parola di A", () => {
+    const store = createStore();
+    store.setSlot("A", ready);
+    store.vai("passaAB");
+    store.vai("provaB");
+    store.setSlot("B", ready);
+    store.setPlaying({ slot: "B", mode: "reversed" });
+    expect(store.vai("passaBA")).toBe(true);
+    const s = store.getState();
+    expect(s.slots.B.original).toBeNull();
+    expect(s.slots.A.original).toBe(buf);
+    expect(s.playing).toBeNull();
+    store.vai("provaA");
+    expect(store.getState().round).toBe(1);
+  });
+
+  it("l'esito rivela; il round dopo riparte vuoto con round + 1", () => {
+    const store = createStore();
+    store.setSlot("A", ready);
+    store.vai("passaAB");
+    store.vai("provaB");
+    expect(store.vai("esito")).toBe(true);
+    expect(store.getState().revealed).toBe(true);
+    store.judge("missed");
+    store.vai("provaA");
+    const s = store.getState();
+    expect(s).toMatchObject({ fase: "provaA", round: 2, revealed: false, verdict: null });
+    expect(s.slots.A.original).toBeNull();
+    expect(s.score).toEqual({ guessed: 0, missed: 1 });
   });
 
   it("unsubscribe smette di notificare", () => {
@@ -146,7 +160,7 @@ describe("createStore", () => {
     const fn = vi.fn();
     const off = store.subscribe(fn);
     off();
-    store.setRevealed(true);
+    store.setSlot("A", ready);
     expect(fn).not.toHaveBeenCalled();
   });
 });

@@ -1,63 +1,60 @@
-// Full game flow on the real app: record A → reversed A → record B →
-// reversed B → reveal with a long press.
+// One smoke test of the whole round on the real app (fake mic): A tries, passes to B,
+// B loops (listen, imitate, retry), gives the phone back to A, then reveals and starts round 2.
 import { test, expect } from "@playwright/test";
-import { openApp, slot, action, spy, spySince, spyCount, storeState, press } from "./helpers";
+import { act, main, openApp, press, record, spyCount, spySince } from "./helpers";
 
-test("full flow: record A, reversed A, record B, reversed B, reveal", async ({ page }) => {
-  test.setTimeout(60_000);
+test("round completo con prove ripetute e ritorno ad A", async ({ page }) => {
+  test.setTimeout(90_000);
   await openApp(page);
-  const A = slot(page, "A");
-  const B = slot(page, "B");
-  await expect(page.locator("#app")).toHaveAttribute("data-revealed", "false");
-  await expect(page.locator("#score")).toBeHidden();
 
-  // 1. Record A: recording (timer visible) → ready.
-  await action(page, "A", "record").click();
-  await expect(A).toHaveAttribute("data-state", "recording");
-  await expect(action(page, "A", "record")).toHaveAttribute("aria-pressed", "true");
-  await expect(A.locator("[data-role=timer]")).toBeVisible();
-  await page.waitForTimeout(1800);
-  await action(page, "A", "record").click();
-  await expect(A).toHaveAttribute("data-state", "ready", { timeout: 10_000 });
-  await expect(action(page, "A", "record")).not.toHaveAttribute("aria-pressed", "true");
-  const afterA = await storeState(page);
-  expect(afterA.A.status).toBe("ready");
-  expect(afterA.A.duration).toBeGreaterThan(0.3);
-  expect(afterA.A.duration).toBeLessThan(2.5);
-  await expect(action(page, "A", "play-reversed")).toBeEnabled();
-
-  // 2. Play A reversed: a source starts with meta {A, reversed}; playing → ready.
+  // A: can't pass without a word; records, listens, re-records.
+  await expect(act(page, "pass-to-b")).toBeDisabled();
+  await record(page, "A");
   let n = await spyCount(page);
-  await action(page, "A", "play-reversed").click();
-  await expect.poll(() => spySince(page, n)).toEqual([{ slot: "A", mode: "reversed" }]);
-  await expect(A).toHaveAttribute("data-state", "playing");
-  const entryA = (await spy(page))[n];
-  expect(entryA.duration).toBeCloseTo(afterA.A.duration, 2);
-  await expect(A).toHaveAttribute("data-state", "ready", { timeout: 5_000 });
-  expect((await storeState(page)).playing).toBeNull();
-
-  // 3. Record B.
-  await action(page, "B", "record").click();
-  await expect(B).toHaveAttribute("data-state", "recording");
-  await expect(B.locator("[data-role=timer]")).toBeVisible();
-  await page.waitForTimeout(1800);
-  await action(page, "B", "record").click();
-  await expect(B).toHaveAttribute("data-state", "ready", { timeout: 10_000 });
-  await expect(A).toHaveAttribute("data-state", "ready");
-
-  // 4. Play B reversed.
-  n = await spyCount(page);
-  await action(page, "B", "play-reversed").click();
-  await expect.poll(() => spySince(page, n)).toEqual([{ slot: "B", mode: "reversed" }]);
-  await expect(B).toHaveAttribute("data-state", "playing");
-  await expect(B).toHaveAttribute("data-state", "ready", { timeout: 5_000 });
-
-  // 5. Reveal with a long press: plays A original, sets revealed, shows score.
-  n = await spyCount(page);
-  await press(page, page.locator("#reveal"), 300);
+  await act(page, "play-a-original").click();
   await expect.poll(() => spySince(page, n)).toEqual([{ slot: "A", mode: "original" }]);
-  await expect(page.locator("#app")).toHaveAttribute("data-revealed", "true");
-  await expect(page.locator("#score")).toBeVisible();
-  expect((await storeState(page)).revealed).toBe(true);
-  await expect(A).toHaveAttribute("data-state", "ready", { timeout: 5_000 });
+  await record(page, "A");
+  await act(page, "pass-to-b").click();
+  await expect(main(page)).toHaveAttribute("data-fase", "passaAB");
+  await act(page, "start-b").click();
+  await expect(main(page)).toHaveAttribute("data-fase", "provaB");
+
+  // B: listens to A reversed, imitates (auto-play of B reversed), listens again, retries.
+  n = await spyCount(page);
+  await act(page, "play-a-reversed").click();
+  await record(page, "B");
+  await expect.poll(() => spySince(page, n)).toEqual([
+    { slot: "A", mode: "reversed" },
+    { slot: "B", mode: "reversed" },
+  ]);
+  await act(page, "play-a-reversed").click();
+  await record(page, "B");
+  await expect(act(page, "play-b-reversed")).toBeEnabled();
+
+  // B gives the phone back to A (confirm: B's tries are dropped), A re-records and passes again.
+  await act(page, "back-to-a").click();
+  await act(page, "confirm-back-to-a").click();
+  await expect(main(page)).toHaveAttribute("data-fase", "passaBA");
+  await act(page, "start-a").click();
+  await expect(act(page, "play-a-original")).toBeEnabled();
+  await record(page, "A");
+  await act(page, "pass-to-b").click();
+  await act(page, "start-b").click();
+  await expect(act(page, "play-b-reversed")).toBeDisabled();
+  await record(page, "B");
+
+  // Reveal needs a long press: a short tap does nothing.
+  await press(page, act(page, "reveal"), 100);
+  await expect(main(page)).toHaveAttribute("data-fase", "provaB");
+  n = await spyCount(page);
+  await press(page, act(page, "reveal"), 900);
+  await expect(main(page)).toHaveAttribute("data-fase", "esito");
+  await expect.poll(() => spySince(page, n)).toContainEqual({ slot: "A", mode: "original" });
+
+  // Verdict and next round.
+  await act(page, "guessed").click();
+  await act(page, "next-round").click();
+  await expect(main(page)).toHaveAttribute("data-fase", "provaA");
+  await expect(page.locator("[data-role=round]")).toHaveText("Round 2");
+  await expect(act(page, "play-a-original")).toBeDisabled();
 });

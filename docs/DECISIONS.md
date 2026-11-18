@@ -27,3 +27,14 @@ Le due combinazioni a confronto:
 Scelta: A. Nel gioco nessun altro audio suona durante la registrazione, perché la riproduzione viene fermata prima di registrare, quindi la cancellazione dell'eco non ha nulla da cancellare. Su Chrome e Safari, però, l'AEC applica un gating che taglia attacchi e code delle parole, cioè proprio i transitori che contano quando si inverte l'audio. AGC e soppressione del rumore restano attivi: livellano le due voci, che poi vengono comunque normalizzate a −1 dBFS, e tolgono il fruscio di fondo che, invertito, diventa più evidente.
 
 Limite onesto: in questa sessione di sviluppo non è stato possibile ascoltare le due varianti su dispositivi reali. Il parametro `?mic=alt` serve proprio per confrontarle a orecchio sul telefono. Se B suona meglio, si cambia il default in `recorder.ts`.
+
+## D4 · Un passo alla volta invece della schermata unica con due slot (2026-11-18)
+
+`PROMPT.md` chiedeva una schermata unica con due sezioni. La plancia con sei pulsanti obbligava a capire le regole prima di giocare e lasciava l'originale di A a portata di B, protetto solo dalla pressione lunga. Dopo tre giri di mockup (`mockups/`, v1–v3) l'utente ha scelto un flusso a fasi (base: v2 «Staffetta»), con due richieste precise:
+- B deve poter ripetere liberamente il ciclo «ascolto A al contrario → imito → sento la mia imitazione al contrario → riprovo». Per questo la prova di B è **una sola schermata** con tutto il ciclo, e l'imitazione al contrario parte da sola allo stop.
+- A deve poter rifare la parola nello stesso round, anche dopo averla passata: «Ridai il telefono ad A» riporta ad A e cancella le prove di B, che riguardavano la parola vecchia.
+
+Conseguenze:
+- L'originale di A al dritto è irraggiungibile per B fino all'esito. Resta la pressione lunga su «Rivela», portata a 600 ms perché la barra di riempimento si veda (il minimo da specifica è 200 ms).
+- «Rifai» non chiede conferma: sostituisce la prova, e se la registrazione fallisce resta la prova precedente.
+- Test: la suite E2E è ridotta a un solo test di fumo del flusso completo, su un solo progetto Chromium, per non appesantire lo sviluppo. Store, audio e registratore restano coperti dai test unitari.

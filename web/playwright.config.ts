@@ -29,13 +29,10 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
+  // Un solo progetto: la suite e' un test di fumo del flusso, i dettagli li coprono i test unitari.
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"], permissions: ["microphone"], launchOptions: { args: chromiumArgs } },
-    },
-    {
-      name: "mobile-chromium",
       use: { ...devices["Pixel 7"], permissions: ["microphone"], launchOptions: { args: chromiumArgs } },
     },
   ],

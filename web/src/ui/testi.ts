@@ -15,60 +15,80 @@ export const t = {
   comeSiGioca: "Come si gioca",
   chiudi: "Chiudi",
   passi: [
-    "Il Giocatore A registra una parola o una frase breve. Gli altri non devono sentirla.",
-    "Il Giocatore B ascolta la registrazione di A al contrario.",
-    "B registra la sua imitazione di quello che ha sentito, suono per suono.",
-    "Si ascolta l'imitazione di B al contrario: se B è stato bravo, salta fuori la parola originale. B prova a indovinarla.",
-    "Con «Rivela» si ascolta l'originale di A e si confronta. Segnate se è stata indovinata.",
+    "A registra una parola segreta, la riascolta e la rifà finché è chiara. B intanto si tappa le orecchie.",
+    "A passa il telefono a B.",
+    "B ascolta la parola di A al contrario e registra la sua imitazione, suono per suono.",
+    "Allo stop l'imitazione di B suona al contrario: se è buona, salta fuori la parola. B può riascoltare e rifare quante volte vuole.",
+    "B prova a indovinare, poi tiene premuto «Rivela» per sentire l'originale di A. Segnate se è stata indovinata.",
   ],
 
-  // Slot
-  /** Titolo breve dello slot A: non "Originale", che e' gia' l'etichetta della pillola di ascolto. */
-  titoloSlotA: "Parola",
-  giocatoreA: "Giocatore A",
-  titoloSlotB: "Imitazione",
-  giocatoreB: "Giocatore B",
+  // Intestazione: round e punteggio
+  round: "Round {n}",
+  punteggioBreve: "Indovinate {g} su {n}",
+  punteggioRiga: "Indovinate {g} · Mancate {m}",
+  punteggio: "Punteggio",
+
+  // Prova di A
+  toccaA: "Tocca ad A",
+  provaATitolo: "Di' una parola segreta",
+  provaAAiuto: "B si tappa le orecchie. Riascoltala e rifalla finché è chiara.",
+  laTuaParola: "La tua parola",
+  comeLaSentiraB: "Come la sentirà B",
+  passaAB: "Fatto: passa a B",
+
+  // Passaggi di mano
+  passaABTitolo: "Passa il telefono a B",
+  passaABAiuto: "B sentirà la parola solo al contrario: l'originale resta nascosto fino alla fine.",
+  sonoB: "Sono B, ascolto",
+  rifaiParolaA: "A: rifai la parola",
+  passaBATitolo: "Ridai il telefono ad A",
+  passaBAAiuto: "A può riascoltare la parola e registrarla di nuovo, più scandita. Poi la ripassa a B.",
+  sonoA: "Sono A",
+
+  // Prova di B
+  toccaB: "Tocca a B",
+  provaBTitolo: "Imita, poi indovina",
+  provaBAiuto: "Ascolta la parola al contrario e rifai i suoni che senti. Riprova quante volte vuoi.",
+  parolaAContrario: "Parola di A, al contrario",
+  imitazioneContrario: "La tua imitazione, al contrario",
+  imitazioneVuota: "Registra per sentirla",
+  imita: "Imita",
+  ridaiAdA: "Ridai il telefono ad A",
+  ridaiDomanda: "Le prove di B verranno cancellate. Ridare il telefono ad A?",
+  ridaiConferma: "Sì, ridai ad A",
+
+  // Registrazione
   registra: "Registra",
+  rifai: "Rifai",
   elaboro: "Elaboro…",
   attendoMicrofono: "Attendo il microfono…",
-  ascoltaContrario: "Ascolta al contrario",
-  ascoltaOriginale: "Ascolta originale",
-  /** Etichette visibili brevi dei pulsanti di ascolto (il nome accessibile resta quello lungo). */
-  contrarioBreve: "Al contrario",
-  originaleBreve: "Originale",
   toccaPerFermare: "Tocca per fermare",
-  scaricaWav: "Scarica WAV",
-  scaricaDopoRivela: "Disponibile dopo «Rivela»",
-  tieniPremuto: "Tieni premuto",
-  tieniPremutoAiuto: "Tieni premuto per ascoltare: svela la soluzione.",
-  riregistraDomanda: "Sovrascrivere la registrazione?",
-  riregistraConferma: "Sì, registra di nuovo",
-
-  // Stati dello slot: una parola sola (la riga del titolo deve stare in 360 px; la durata e' in "Al contrario")
-  statoVuoto: "Vuoto",
-  statoRegistrazione: "Registro…",
-  statoPronto: "Pronto",
-  statoRiproduzione: "Riproduco…",
   timer: "{trascorso} / {massimo}",
+  ascolti: "{n}×",
   livelloMicrofono: "Livello del microfono",
   registrazioneNonRiuscita: "Registrazione non riuscita o troppo breve. Riprova.",
   registrazioneDebole: "Registrazione troppo debole: riprova più vicino al microfono.",
   registrazioneInterrotta:
     "La registrazione si è interrotta: il microfono si è fermato (scollegato o preso da un'altra app). Riprova.",
 
-  // Rivela e punteggio
-  rivela: "Rivela / confronta",
-  rivelaAiuto: "Tieni premuto per ascoltare l'originale di A.",
-  rivelaAncora: "Rivela di nuovo",
-  rivelaDopo: "Tocca per riascoltare l'originale",
+  // Rivela
+  rivela: "Rivela",
+  rivelaSotto: "Tieni premuto per sentire l'originale",
+  tieniPremuto: "Tieni premuto",
+  rivelaAiuto: "Tieni premuto per ascoltare l'originale di A: svela la soluzione.",
+
+  // Esito
+  esitoTitolo: "Era questa!",
+  esitoAiuto: "Confronta l'originale di A con l'imitazione di B al contrario.",
+  originaleA: "Originale di A",
+  imitazioneBContrario: "Imitazione di B, al contrario",
   comeEAndata: "Com'è andata?",
-  indovinata: "Indovinata ✓",
-  nonIndovinata: "Non indovinata ✗",
-  punteggio: "Punteggio",
-  punteggioRiga: "Indovinate {g} · Non indovinate {m}",
-  /** Totale nell'intestazione: corto, deve stare in 360 px accanto a "?" e "Nuova". */
-  punteggioBreve: "Indovinate {g} su {n}",
-  azzeraPunteggio: "Azzera",
+  indovinata: "Indovinata",
+  mancata: "Mancata",
+  prossimoRound: "Round {n}: tocca ad A",
+  scaricaWav: "Scarica WAV",
+  scaricaParola: "Parola",
+  scaricaImitazione: "Imitazione",
 
   // Errori del microfono
   erroreNegatoTitolo: "Il microfono è bloccato",

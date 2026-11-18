@@ -15,10 +15,21 @@
     /** Livello del microfono 0..1 (VU-meter dentro il pulsante). */
     livello: number;
     massimoMs: number;
+    /** Etichetta a riposo: "Registra", "Imita" o "Rifai". */
+    etichetta?: string;
     onPremi: () => void;
   }
-  let { inRegistrazione, inAvvio, inElaborazione, disabilitato, trascorso, livello, massimoMs, onPremi }: Props =
-    $props();
+  let {
+    inRegistrazione,
+    inAvvio,
+    inElaborazione,
+    disabilitato,
+    trascorso,
+    livello,
+    massimoMs,
+    etichetta = t.registra,
+    onPremi,
+  }: Props = $props();
 
   const sotto = $derived(
     inElaborazione ? t.elaboro : inAvvio ? t.attendoMicrofono : inRegistrazione ? t.toccaPerFermare : "",
@@ -41,7 +52,7 @@
     <Icona nome={inRegistrazione || inElaborazione ? "stop" : "registra"} misura={28} />
   </span>
   <span class="etichetta">
-    <span>{t.registra}</span>
+    <span>{etichetta}</span>
     {#if sotto}<span class="sotto">{sotto}</span>{/if}
   </span>
   <span class="timer" data-role="timer" hidden={!inRegistrazione && !inElaborazione}>
@@ -51,7 +62,7 @@
 </button>
 
 <style>
-  /* Le unita' cq si riferiscono all'area dei pad (.azioni in Slot.svelte) */
+  /* Le unita' cq si riferiscono al contenitore del pulsante (.registra-box in Prova.svelte) */
   .registra {
     flex-direction: column;
     gap: min(8px, 2.5cqh);

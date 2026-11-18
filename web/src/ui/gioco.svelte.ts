@@ -4,11 +4,13 @@ import type { Action } from "svelte/action";
 import * as audio from "../audio/audio";
 import * as recorder from "../audio/recorder";
 import { RecorderError, type RecorderErrorCode } from "../audio/recorder";
-import type { PlayMode, SlotId } from "./sessione";
+import type { Fase, PlayMode, SlotId } from "./sessione";
 import { store } from "./state.svelte";
 
 /** Durata massima di una registrazione: poi si ferma da sola. */
 export const MAX_RECORD_MS = 10_000;
+/** Pressione lunga di "Rivela": abbastanza da vedere la barra riempirsi (minimo da specifica: 200 ms). */
+export const RIVELA_MS = 600;
 /** Quanto resta visibile "Tieni premuto" dopo una pressione troppo breve. */
 export const HINT_MS = 1600;
 /**
@@ -75,10 +77,13 @@ class Gioco {
   erroreMicrofono = $state<ErroreMicrofono | null>(null);
   /** Errore di registrazione per slot (troppo breve, decodifica fallita, microfono interrotto). */
   erroreSlot = $state<{ slot: SlotId; tipo: TipoErroreSlot } | null>(null);
-  confermaRiregistra = $state<SlotId | null>(null);
   confermaNuova = $state(false);
-  /** Dove mostrare "Tieni premuto": il pulsante originale di A o Rivela. */
-  suggerimento = $state<"A" | "rivela" | null>(null);
+  /** Conferma di "Ridai il telefono ad A" (cancella le prove di B). */
+  confermaRidai = $state(false);
+  /** Quante volte B ha ascoltato la parola di A al contrario in questo round. */
+  ascoltiA = $state(0);
+  /** "Tieni premuto" sopra Rivela dopo una pressione troppo breve. */
+  suggerimento = $state(false);
 
   #giro = 0; // incrementato da ogni avvio/annullamento: scarta i risultati di registrazioni superate
   #inizio = 0; // performance.now() all'avvio effettivo della registrazione
@@ -155,28 +160,15 @@ class Gioco {
       if (r.slot === id && !r.avvio && !r.elaborazione) void this.#ferma();
       return; // l'altro slot sta registrando: il pulsante e' comunque disabilitato
     }
-    if (store.getState().slots[id].original) {
-      this.confermaRiregistra = this.confermaRiregistra === id ? null : id;
-      return;
-    }
+    // "Rifai" sostituisce la prova precedente senza conferma: se fallisce, la prova precedente resta.
     void this.#avvia(id);
-  }
-
-  confermaRiregistrazione(id: SlotId): void {
-    riattiva();
-    this.confermaRiregistra = null;
-    if (!this.registrazione) void this.#avvia(id);
-  }
-
-  annullaRiregistrazione(): void {
-    this.confermaRiregistra = null;
   }
 
   async #avvia(id: SlotId): Promise<void> {
     this.#fermaRiproduzione();
     this.erroreMicrofono = null;
     this.erroreSlot = null;
-    this.confermaRiregistra = null;
+    this.confermaRidai = false;
     const giro = ++this.#giro;
     this.registrazione = { slot: id, trascorso: 0, livello: 0, avvio: true, elaborazione: false };
     try {
@@ -197,9 +189,6 @@ class Gioco {
       this.#annulla(id);
       return;
     }
-    // Una nuova parola di A apre un giro nuovo: la soluzione non e' piu' nota.
-    // B che registra di nuovo dopo Rivela non cambia nulla (l'originale e' gia' stato sentito).
-    if (id === "A") store.newRound();
     store.setSlot(id, { status: "recording" });
     const inizio = performance.now();
     this.#inizio = inizio;
@@ -236,9 +225,10 @@ class Gioco {
       const { buffer: original, voiced } = audio.processWithInfo(decodificato);
       const reversed = audio.reverse(original);
       if (giro !== this.#giro) return;
-      if (id === "A") store.newRound();
       store.setSlot(id, { status: "ready", blob, original, reversed, duration: original.duration });
       if (!voiced) this.#avvisoSlot(id, "debole");
+      // B sente subito la propria imitazione al contrario: ogni tentativo costa un solo tocco.
+      else if (id === "B") this.#suona("B", "reversed");
     } catch {
       if (giro !== this.#giro) return;
       // Resta l'audio precedente, se c'era.
@@ -273,6 +263,11 @@ class Gioco {
       this.#fermaRiproduzione();
       return;
     }
+    if (id === "A" && mode === "reversed" && store.getState().fase === "provaB") this.ascoltiA++;
+    this.#suona(id, mode);
+  }
+
+  #suona(id: SlotId, mode: PlayMode): void {
     const slot = store.getState().slots[id];
     const buf = mode === "original" ? slot.original : slot.reversed;
     if (!buf) return;
@@ -286,33 +281,28 @@ class Gioco {
     if (token === this.#token) store.setPlaying({ slot: id, mode });
   }
 
-  /** Rivela: suona l'originale di A e segna la partita come rivelata (o ferma, se sta gia' suonando). */
+  /** Rivela (pressione lunga confermata): passa all'esito e suona l'originale di A. */
   rivela(): void {
     riattiva();
     this.#nascondiSuggerimento();
-    if (!store.getState().slots.A.original || this.registrazione) return;
-    // Tap (bypass) mentre suona l'originale di A: ferma soltanto, non rivela.
-    if (this.staSuonando("A", "original")) {
-      this.#fermaRiproduzione();
-      return;
-    }
-    store.setRevealed(true);
-    this.premiAscolta("A", "original");
+    if (this.registrazione) return;
+    this.confermaRidai = false;
+    if (this.#vai("esito")) this.#suona("A", "original");
   }
 
   #nascondiSuggerimento(): void {
     if (this.#timerSuggerimento) clearTimeout(this.#timerSuggerimento);
     this.#timerSuggerimento = null;
-    this.suggerimento = null;
+    this.suggerimento = false;
   }
 
   /** Pressione lunga annullata: "Tieni premuto" solo se il dito si e' alzato troppo presto. */
-  pressioneAnnullata(dove: "A" | "rivela", motivo: string): void {
+  pressioneAnnullata(motivo: string): void {
     if (motivo !== "early") return;
     if (this.#timerSuggerimento) clearTimeout(this.#timerSuggerimento);
-    this.suggerimento = dove;
+    this.suggerimento = true;
     this.#timerSuggerimento = setTimeout(() => {
-      this.suggerimento = null;
+      this.suggerimento = false;
       this.#timerSuggerimento = null;
     }, HINT_MS);
   }
@@ -333,6 +323,35 @@ class Gioco {
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
+  // ---------- Fasi del round ----------
+
+  /** Cambio di fase: mai durante una registrazione; ferma l'audio e chiude conferme e avvisi. */
+  #vai(fase: Fase): boolean {
+    if (this.registrazione) return false;
+    this.#token++;
+    audio.stopAll();
+    if (!store.vai(fase)) return false;
+    if (fase !== "esito") this.ascoltiA = 0;
+    this.erroreSlot = null;
+    this.confermaRidai = false;
+    this.#nascondiSuggerimento();
+    return true;
+  }
+
+  /** Tasti di navigazione: fase di arrivo. "passaBA" (cancella le prove di B) chiede conferma se B ha gia' provato. */
+  vai(fase: Fase): void {
+    riattiva();
+    if (fase === "passaBA" && store.getState().slots.B.original && !this.confermaRidai) {
+      this.confermaRidai = true;
+      return;
+    }
+    this.#vai(fase);
+  }
+
+  annullaRidai(): void {
+    this.confermaRidai = false;
+  }
+
   // ---------- Partita ----------
 
   premiNuova(): void {
@@ -351,9 +370,10 @@ class Gioco {
     recorder.cancel();
     this.#fermaRiproduzione();
     store.reset();
+    this.ascoltiA = 0;
     this.registrazione = null;
     this.confermaNuova = false;
-    this.confermaRiregistra = null;
+    this.confermaRidai = false;
     this.erroreMicrofono = null;
     this.erroreSlot = null;
     this.#nascondiSuggerimento();
