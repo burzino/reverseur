@@ -87,71 +87,28 @@ describe("createStore", () => {
   });
 
   it("reset azzera slot, riproduzione, rivelazione, esito e round ma tiene il punteggio", () => {
-    const storage = fakeStorage();
-    const store = createStore({ storage });
+    const store = createStore({ storage: fakeStorage() });
     store.setSlot("A", ready);
-    store.vai("passaAB");
-    store.vai("provaB");
-    store.vai("esito");
+    store.setRevealed(true);
     store.judge("guessed");
+    store.nuovoRound();
     store.reset();
     const s = store.getState();
     expect(s.slots.A.original).toBeNull();
-    expect(s.playing).toBeNull();
-    expect(s.revealed).toBe(false);
-    expect(s.verdict).toBeNull();
-    expect(s.fase).toBe("provaA");
+    expect(s).toMatchObject({ playing: null, revealed: false, verdict: null, round: 1 });
     expect(s.score).toEqual({ guessed: 1, missed: 0 });
   });
-});
 
-describe("fasi del round", () => {
-  it("A non passa il telefono senza una parola registrata", () => {
-    const store = createStore();
-    expect(store.vai("passaAB")).toBe(false);
-    store.setSlot("A", { status: "recording" });
-    expect(store.vai("passaAB")).toBe(false);
+  it("nuovoRound svuota gli slot, toglie rivelazione ed esito e conta il round", () => {
+    const store = createStore({ storage: fakeStorage() });
     store.setSlot("A", ready);
-    expect(store.vai("passaAB")).toBe(true);
-    expect(store.getState().fase).toBe("passaAB");
-  });
-
-  it("i passaggi non ammessi vengono ignorati", () => {
-    const store = createStore();
-    store.setSlot("A", ready);
-    expect(store.vai("esito")).toBe(false);
-    expect(store.vai("provaB")).toBe(false);
-    expect(store.getState().fase).toBe("provaA");
-  });
-
-  it("ridare il telefono ad A cancella le prove di B e tiene la parola di A", () => {
-    const store = createStore();
-    store.setSlot("A", ready);
-    store.vai("passaAB");
-    store.vai("provaB");
     store.setSlot("B", ready);
-    store.setPlaying({ slot: "B", mode: "reversed" });
-    expect(store.vai("passaBA")).toBe(true);
-    const s = store.getState();
-    expect(s.slots.B.original).toBeNull();
-    expect(s.slots.A.original).toBe(buf);
-    expect(s.playing).toBeNull();
-    store.vai("provaA");
-    expect(store.getState().round).toBe(1);
-  });
-
-  it("l'esito rivela; il round dopo riparte vuoto con round + 1", () => {
-    const store = createStore();
-    store.setSlot("A", ready);
-    store.vai("passaAB");
-    store.vai("provaB");
-    expect(store.vai("esito")).toBe(true);
-    expect(store.getState().revealed).toBe(true);
+    store.setRevealed(true);
     store.judge("missed");
-    store.vai("provaA");
+    store.nuovoRound();
     const s = store.getState();
-    expect(s).toMatchObject({ fase: "provaA", round: 2, revealed: false, verdict: null });
-    expect(s.slots.A.original).toBeNull();
+    expect(s).toMatchObject({ round: 2, revealed: false, verdict: null });
+    expect(s.slots.B.original).toBeNull();
     expect(s.score).toEqual({ guessed: 0, missed: 1 });
   });
 

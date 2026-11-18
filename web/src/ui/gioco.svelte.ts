@@ -4,13 +4,14 @@ import type { Action } from "svelte/action";
 import * as audio from "../audio/audio";
 import * as recorder from "../audio/recorder";
 import { RecorderError, type RecorderErrorCode } from "../audio/recorder";
-import type { Fase, PlayMode, SlotId } from "./sessione";
+import { originaleASvela } from "./guida";
+import { emptySlot, type PlayMode, type SlotId } from "./sessione";
 import { store } from "./state.svelte";
 
 /** Durata massima di una registrazione: poi si ferma da sola. */
 export const MAX_RECORD_MS = 10_000;
-/** Pressione lunga di "Rivela": abbastanza da vedere la barra riempirsi (minimo da specifica: 200 ms). */
-export const RIVELA_MS = 600;
+/** Pressione lunga di "Svela": abbastanza da vedere il pad riempirsi (minimo da specifica: 200 ms). */
+export const SVELA_MS = 600;
 /** Quanto resta visibile "Tieni premuto" dopo una pressione troppo breve. */
 export const HINT_MS = 1600;
 /**
@@ -78,11 +79,11 @@ class Gioco {
   /** Errore di registrazione per slot (troppo breve, decodifica fallita, microfono interrotto). */
   erroreSlot = $state<{ slot: SlotId; tipo: TipoErroreSlot } | null>(null);
   confermaNuova = $state(false);
-  /** Conferma di "Ridai il telefono ad A" (cancella le prove di B). */
-  confermaRidai = $state(false);
-  /** Quante volte B ha ascoltato la parola di A al contrario in questo round. */
+  /** Conferma di "Rifai" su A quando B ha gia' imitato (l'imitazione si cancella). */
+  confermaRifaiA = $state(false);
+  /** Quante volte la parola di A al contrario e' stata ascoltata da quando e' stata registrata. */
   ascoltiA = $state(0);
-  /** "Tieni premuto" sopra Rivela dopo una pressione troppo breve. */
+  /** "Tieni premuto" sul pad Originale di A dopo una pressione troppo breve. */
   suggerimento = $state(false);
 
   #giro = 0; // incrementato da ogni avvio/annullamento: scarta i risultati di registrazioni superate
@@ -152,23 +153,45 @@ class Gioco {
 
   // ---------- Registrazione ----------
 
-  /** Tap su "Registra": avvia, ferma, oppure chiede conferma se lo slot ha gia' audio. */
+  /**
+   * Tap su "Registra": avvia o ferma. "Rifai" sostituisce la prova senza conferma (se fallisce resta la
+   * precedente), tranne una nuova parola di A quando B ha gia' imitato: l'imitazione andrebbe persa.
+   */
   premiRegistra(id: SlotId): void {
     riattiva();
     const r = this.registrazione;
     if (r) {
       if (r.slot === id && !r.avvio && !r.elaborazione) void this.#ferma();
-      return; // l'altro slot sta registrando: il pulsante e' comunque disabilitato
+      return; // l'altro slot sta registrando: il pad e' comunque disabilitato
     }
-    // "Rifai" sostituisce la prova precedente senza conferma: se fallisce, la prova precedente resta.
+    const st = store.getState();
+    if (st.revealed) return;
+    if (id === "A" && st.slots.B.original) {
+      this.confermaRifaiA = !this.confermaRifaiA;
+      return;
+    }
     void this.#avvia(id);
+  }
+
+  /** Conferma di "Rifai" su A: cancella l'imitazione di B e registra la parola nuova. */
+  confermaRifaiParola(): void {
+    riattiva();
+    this.confermaRifaiA = false;
+    if (this.registrazione) return;
+    this.#fermaRiproduzione();
+    store.setSlot("B", emptySlot());
+    void this.#avvia("A");
+  }
+
+  annullaRifaiParola(): void {
+    this.confermaRifaiA = false;
   }
 
   async #avvia(id: SlotId): Promise<void> {
     this.#fermaRiproduzione();
     this.erroreMicrofono = null;
     this.erroreSlot = null;
-    this.confermaRidai = false;
+    this.confermaRifaiA = false;
     const giro = ++this.#giro;
     this.registrazione = { slot: id, trascorso: 0, livello: 0, avvio: true, elaborazione: false };
     try {
@@ -226,6 +249,7 @@ class Gioco {
       const reversed = audio.reverse(original);
       if (giro !== this.#giro) return;
       store.setSlot(id, { status: "ready", blob, original, reversed, duration: original.duration });
+      if (id === "A") this.ascoltiA = 0; // parola nuova: B non l'ha ancora sentita
       if (!voiced) this.#avvisoSlot(id, "debole");
       // B sente subito la propria imitazione al contrario: ogni tentativo costa un solo tocco.
       else if (id === "B") this.#suona("B", "reversed");
@@ -263,7 +287,7 @@ class Gioco {
       this.#fermaRiproduzione();
       return;
     }
-    if (id === "A" && mode === "reversed" && store.getState().fase === "provaB") this.ascoltiA++;
+    if (id === "A" && mode === "reversed") this.ascoltiA++;
     this.#suona(id, mode);
   }
 
@@ -281,13 +305,23 @@ class Gioco {
     if (token === this.#token) store.setPlaying({ slot: id, mode });
   }
 
-  /** Rivela (pressione lunga confermata): passa all'esito e suona l'originale di A. */
-  rivela(): void {
+  /**
+   * Pad "Originale" di A, pressione lunga confermata (o tap in bypass). Se B ha gia' imitato e' "Svela":
+   * segna la rivelazione e suona l'originale; altrimenti e' l'ascolto di controllo di A.
+   */
+  premiOriginaleA(): void {
     riattiva();
     this.#nascondiSuggerimento();
     if (this.registrazione) return;
-    this.confermaRidai = false;
-    if (this.#vai("esito")) this.#suona("A", "original");
+    if (this.staSuonando("A", "original")) {
+      this.#fermaRiproduzione();
+      return;
+    }
+    if (originaleASvela(store.getState())) {
+      this.confermaRifaiA = false;
+      store.setRevealed(true);
+    }
+    this.#suona("A", "original");
   }
 
   #nascondiSuggerimento(): void {
@@ -323,33 +357,18 @@ class Gioco {
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
-  // ---------- Fasi del round ----------
+  // ---------- Round ----------
 
-  /** Cambio di fase: mai durante una registrazione; ferma l'audio e chiude conferme e avvisi. */
-  #vai(fase: Fase): boolean {
-    if (this.registrazione) return false;
-    this.#token++;
-    audio.stopAll();
-    if (!store.vai(fase)) return false;
-    if (fase !== "esito") this.ascoltiA = 0;
-    this.erroreSlot = null;
-    this.confermaRidai = false;
-    this.#nascondiSuggerimento();
-    return true;
-  }
-
-  /** Tasti di navigazione: fase di arrivo. "passaBA" (cancella le prove di B) chiede conferma se B ha gia' provato. */
-  vai(fase: Fase): void {
+  /** Round successivo: slot vuoti, punteggio invariato. */
+  nuovoRound(): void {
     riattiva();
-    if (fase === "passaBA" && store.getState().slots.B.original && !this.confermaRidai) {
-      this.confermaRidai = true;
-      return;
-    }
-    this.#vai(fase);
-  }
-
-  annullaRidai(): void {
-    this.confermaRidai = false;
+    if (this.registrazione) return;
+    this.#fermaRiproduzione();
+    store.nuovoRound();
+    this.ascoltiA = 0;
+    this.erroreSlot = null;
+    this.confermaRifaiA = false;
+    this.#nascondiSuggerimento();
   }
 
   // ---------- Partita ----------
@@ -373,7 +392,7 @@ class Gioco {
     this.ascoltiA = 0;
     this.registrazione = null;
     this.confermaNuova = false;
-    this.confermaRidai = false;
+    this.confermaRifaiA = false;
     this.erroreMicrofono = null;
     this.erroreSlot = null;
     this.#nascondiSuggerimento();

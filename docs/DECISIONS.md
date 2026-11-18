@@ -28,13 +28,13 @@ Scelta: A. Nel gioco nessun altro audio suona durante la registrazione, perché 
 
 Limite onesto: in questa sessione di sviluppo non è stato possibile ascoltare le due varianti su dispositivi reali. Il parametro `?mic=alt` serve proprio per confrontarle a orecchio sul telefono. Se B suona meglio, si cambia il default in `recorder.ts`.
 
-## D4 · Un passo alla volta invece della schermata unica con due slot (2026-11-18)
+## D4 · Plancia di pad con guida (2026-11-18)
 
-`PROMPT.md` chiedeva una schermata unica con due sezioni. La plancia con sei pulsanti obbligava a capire le regole prima di giocare e lasciava l'originale di A a portata di B, protetto solo dalla pressione lunga. Dopo tre giri di mockup (`mockups/`, v1–v3) l'utente ha scelto un flusso a fasi (base: v2 «Staffetta»), con due richieste precise:
-- B deve poter ripetere liberamente il ciclo «ascolto A al contrario → imito → sento la mia imitazione al contrario → riprovo». Per questo la prova di B è **una sola schermata** con tutto il ciclo, e l'imitazione al contrario parte da sola allo stop.
-- A deve poter rifare la parola nello stesso round, anche dopo averla passata: «Ridai il telefono ad A» riporta ad A e cancella le prove di B, che riguardavano la parola vecchia.
-
-Conseguenze:
-- L'originale di A al dritto è irraggiungibile per B fino all'esito. Resta la pressione lunga su «Rivela», portata a 600 ms perché la barra di riempimento si veda (il minimo da specifica è 200 ms).
-- «Rifai» non chiede conferma: sostituisce la prova, e se la registrazione fallisce resta la prova precedente.
-- Test: la suite E2E è ridotta a un solo test di fumo del flusso completo, su un solo progetto Chromium, per non appesantire lo sviluppo. Store, audio e registratore restano coperti dai test unitari.
+La prima schermata, con due slot da sei pulsanti, obbligava a capire le regole prima di giocare. Una prima alternativa a fasi (una schermata per passo, mockup v2 «Staffetta») è stata provata e scartata dall'utente perché poco intuitiva. La scelta finale è la v3 09 «Pad», migliorata:
+- **Plancia 3×3 sempre uguale**: righe A, B e partita; colonne Registra, Al contrario e Originale. È la «schermata unica con due sezioni» di `PROMPT.md`, in forma di drum machine.
+- **Guida**: il display dice a parole cosa fare, e il prossimo pad da premere ha il bordo tratteggiato che pulsa (`guida.ts`, funzione pura e testata).
+- **Ciclo libero per B**: ◀◀ A, Imita/Rifai e ◀◀ B sono sempre lì. Allo stop, l'imitazione al contrario parte da sola.
+- **A rifà la parola nello stesso round**: «Rifai» su A è sempre disponibile fino alla rivelazione. Se B ha già imitato, chiede conferma, perché l'imitazione della parola vecchia si cancella.
+- **Originale di A**: finché B non ha imitato, è l'ascolto di controllo di A (pressione lunga di 200 ms contro i tocchi per sbaglio). Dopo diventa «Svela»: pad scuro con lucchetto, 600 ms di pressione per vedere il riempimento, e segna la rivelazione.
+- «Rifai» non chiede conferma negli altri casi: sostituisce la prova, e se la registrazione fallisce resta quella precedente.
+- Test: la suite E2E è un solo test di fumo del round completo, su un solo progetto Chromium, per non appesantire lo sviluppo. Store, guida, audio e registratore sono coperti dai test unitari.

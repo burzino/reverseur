@@ -23,22 +23,6 @@
   --su-contenitore-accento: var(--colore-su-contenitore-terziario);
 }
 
-/* Una fase del round: colonna che riempie lo spazio sotto l'intestazione, azioni in fondo. */
-.schermata {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spazio-schermata);
-  animation: entra-schermata var(--molla-spaziale);
-}
-@keyframes entra-schermata {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-}
-
 .pulsante {
   position: relative;
   display: inline-flex;
@@ -240,9 +224,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .schermata {
-    animation: none;
-  }
   /* lo shake diventa un lampo di contorno: l'informazione resta, il movimento no */
   .pulsante.is-shake {
     animation: none;

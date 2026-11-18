@@ -10,7 +10,7 @@ export const act = (page: Page, name: string): Locator => main(page).locator(`[d
 /** Opens the app in test mode and waits for the spy and the store. */
 export async function openApp(page: Page): Promise<void> {
   await page.goto("./?test");
-  await expect(main(page)).toHaveAttribute("data-fase", "provaA");
+  await expect(page.locator("#slot-A")).toHaveAttribute("data-state", "empty");
   await page.waitForFunction(() => !!(window as any).__reverseurSpy && !!(window as any).__reverseur?.store);
 }
 
@@ -25,14 +25,15 @@ export async function spySince(page: Page, from: number) {
 export const spyCount = (page: Page): Promise<number> =>
   page.evaluate(() => (window as any).__reverseurSpy.started.length);
 
-/** Tap Registra, keep recording for `ms`, tap again, wait until the slot is no longer recording. */
+/** Tap the record pad of `id`, keep recording for `ms`, tap again, wait until the row is no longer recording. */
 export async function record(page: Page, id: SlotId, ms = 1500): Promise<void> {
-  const screen = page.locator(`#slot-${id}`);
-  await act(page, "record").click();
-  await expect(screen).toHaveAttribute("data-state", "recording");
+  const row = page.locator(`#slot-${id}`);
+  const pad = act(page, `record-${id.toLowerCase()}`);
+  await pad.click();
+  await expect(row).toHaveAttribute("data-state", "recording");
   await page.waitForTimeout(ms); // recording length needs real time
-  await act(page, "record").click();
-  await expect(screen).not.toHaveAttribute("data-state", "recording", { timeout: 10_000 });
+  await pad.click();
+  await expect(row).not.toHaveAttribute("data-state", "recording", { timeout: 10_000 });
 }
 
 /** Mouse press of `holdMs` in the centre of the element. */

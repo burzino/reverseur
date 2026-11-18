@@ -164,34 +164,29 @@ try/catch and injected (`createStore({ storage })`) so it can be unit-tested.
 
 ## DOM contract (used by `App.svelte`, CSS, and Playwright)
 
-One phase of the round at a time (`state.fase`, transitions in `sessione.ts` `TRANSIZIONI`):
-`provaA -> passaAB -> provaB -> esito -> provaA` (next round), plus `passaAB -> provaA` and
-`provaB -> passaBA -> provaA` (B gives the phone back; B's tries are dropped).
+One screen: a read-only display on top and a 3x3 pad board below (rows A, B, partita; columns
+Registra, Al contrario, Originale). `guida.ts` derives the next pad to press and the display text.
 
 ```
 #app                                  data-revealed="true|false"
-  [data-role=round]                   "Round N" in the header
-button#new-game                       "Nuova"
-  #new-game-confirm (hidden)          inline confirm with button[data-action=confirm-new|cancel-new]
+button#new-game                       "Nuova"; #new-game-confirm with button[data-action=confirm-new|cancel-new]
 button#help                           opens dialog#rules ("Come si gioca")
-main[data-fase=provaA|passaAB|provaB|passaBA|esito]
-  #mic-error[role=alert] (hidden)     permission-denied help (Chrome / Safari)
-  provaA: section#slot-A[data-state=empty|recording|ready|playing]
-    button[data-action=play-a-original|play-a-reversed]   (aria-pressed while playing)
-    button[data-action=record]        "Registra" / "Rifai" (aria-pressed while recording;
-                                      [data-role=timer] and [data-role=vu] inside)
-    button[data-action=pass-to-b]     enabled once A has a recording
-  passaAB: button[data-action=start-b], button[data-action=back-to-a]
-  provaB: section#slot-B[data-state=...]
-    button[data-action=back-to-a]     opens the inline confirm (only if B has a recording)
-      button[data-action=confirm-back-to-a|cancel-back-to-a]
-    button[data-action=play-a-reversed|play-b-reversed]
-    button[data-action=record]        "Imita" / "Rifai"; on stop B's reversed imitation plays by itself
-    button#reveal[data-action=reveal] holdButton (600 ms); goes to esito and plays A original
-      [data-role=reveal-hint]         "Tieni premuto" after an early release
-  passaBA: button[data-action=start-a]
-  esito: #score
-    button[data-action=play-a-original|play-b-reversed|download]
-    button[data-action=guessed|missed] (aria-pressed), button[data-action=next-round]
+#mic-error[role=alert] (hidden)       permission-denied help (Chrome / Safari)
+section.display                       [data-role=round] "Round N", [data-role=guide] next step,
+                                      [data-role=timer] + [data-role=vu] while recording, [role=alert] notices,
+                                      button[data-action=download] x2 after the reveal
+#slot-A[data-state=empty|recording|ready|playing]   row A
+  button[data-action=record-a]        Registra / Rifai / Stop. With B recorded it opens
+                                      [data-role=rerecord-confirm] (button[data-action=confirm-rerecord|cancel-rerecord]):
+                                      re-recording A drops B's imitation
+  button[data-action=play-a-reversed] with the listen counter
+  button[data-action=play-a-original] holdButton: 200 ms = A's check while B has no imitation;
+                                      600 ms = "Svela" once B has one (sets revealed); plain tap after the reveal
+  [data-role=hold-hint]               "Tieni premuto" after an early release
+#slot-B[data-state=...]               row B: button[data-action=record-b|play-b-reversed|play-b-original]
+                                      (on stop, B reversed plays by itself)
+#score                                row partita, enabled after the reveal:
+                                      button[data-action=guessed|missed] (aria-pressed), button[data-action=next-round]
 ```
-A recording that fails keeps the previous try. Phase changes are refused while recording and stop playback.
+Every pad has `data-stato=spento|pronto|prossimo|attivo|registra|sigillato` (`prossimo` = suggested next step).
+A recording that fails keeps the previous try. Layout: no vertical scroll at heights >= 600 px.

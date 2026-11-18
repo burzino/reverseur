@@ -1,18 +1,16 @@
 <script lang="ts">
-  // Una fase del round alla volta: prova di A, passaggio a B, prova di B, esito (e ritorno ad A se serve).
-  // La logica dei gesti sta in ui/gioco.svelte.ts; lo stato della sessione (fase compresa) in ui/state.svelte.ts.
+  // Schermata unica: display in alto (cosa succede, cosa fare) e plancia 3x3 di pad sotto il pollice.
+  // La logica dei gesti sta in ui/gioco.svelte.ts; lo stato della sessione in ui/state.svelte.ts.
   import ConfermaInline from "./ui/componenti/ConfermaInline.svelte";
   import ErroreMicrofono from "./ui/componenti/ErroreMicrofono.svelte";
-  import Esito from "./ui/componenti/Esito.svelte";
+  import Display from "./ui/componenti/Display.svelte";
   import Icona from "./ui/componenti/Icona.svelte";
-  import Passaggio from "./ui/componenti/Passaggio.svelte";
-  import Prova from "./ui/componenti/Prova.svelte";
+  import Plancia from "./ui/componenti/Plancia.svelte";
   import { gioco } from "./ui/gioco.svelte";
   import { sessione } from "./ui/state.svelte";
-  import { riempi, t } from "./ui/testi";
+  import { t } from "./ui/testi";
 
   const s = $derived(sessione.stato);
-  const totale = $derived(s.score.guessed + s.score.missed);
   let regole: HTMLDialogElement | undefined = $state();
 
   // Pagina nascosta/visibile ed errori del registratore.
@@ -24,16 +22,7 @@
     <div class="interno">
       <div class="marchio">
         <h1>{t.titoloApp}</h1>
-        <p class="sottotitolo" aria-live="polite">
-          <span data-role="round">{riempi(t.round, { n: s.round })}</span>
-          {#if totale > 0}
-            ·
-            <span class="solo-lettori">{t.punteggio}:</span>
-            <span class="totale" title={riempi(t.punteggioRiga, { g: s.score.guessed, m: s.score.missed })}
-              >{riempi(t.punteggioBreve, { g: s.score.guessed, n: totale })}</span
-            >
-          {/if}
-        </p>
+        <p class="sottotitolo">{t.sottotitoloApp}</p>
       </div>
       <button
         type="button"
@@ -77,22 +66,10 @@
     </div>
   </header>
 
-  <main class="contenuto" data-fase={s.fase}>
+  <main class="contenuto">
     <ErroreMicrofono codice={gioco.erroreMicrofono} onChiudi={() => gioco.chiudiErrore()} />
-
-    {#key s.fase}
-      {#if s.fase === "provaA"}
-        <Prova giocatore="A" />
-      {:else if s.fase === "passaAB"}
-        <Passaggio verso="B" />
-      {:else if s.fase === "provaB"}
-        <Prova giocatore="B" />
-      {:else if s.fase === "passaBA"}
-        <Passaggio verso="A" />
-      {:else}
-        <Esito />
-      {/if}
-    {/key}
+    <Display />
+    <Plancia />
   </main>
 
   <dialog id="rules" class="regole" aria-labelledby="titolo-regole" bind:this={regole}>
@@ -113,7 +90,7 @@
 </div>
 
 <style>
-  /* Una sola schermata senza scorrimento: intestazione e la fase corrente, con le azioni in fondo.
+  /* Una sola schermata senza scorrimento: intestazione, display che prende lo spazio libero, plancia in fondo.
      Sotto i 600 px di altezza (telefono in orizzontale) si torna a scorrere. */
   #app {
     --spazio-schermata: clamp(8px, 1.4dvh, 16px);
@@ -177,9 +154,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .totale {
-    font-variant-numeric: tabular-nums;
-  }
   .nuova {
     flex: none;
     gap: var(--spazio-2);
@@ -190,7 +164,9 @@
     padding: 0;
   }
 
+  /* Contenitore delle unita' cq della plancia (altezza dei pad in base allo spazio) */
   .contenuto {
+    container-type: size;
     flex: 1;
     min-height: 0;
     display: flex;
@@ -247,6 +223,9 @@
     #app {
       height: auto;
       min-height: 100dvh;
+    }
+    .contenuto {
+      container-type: inline-size;
     }
   }
 </style>
